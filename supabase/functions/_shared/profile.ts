@@ -239,6 +239,11 @@ export async function generateProfile(
 /** Used when the patient-summary model call fails: still honest, still in-language. */
 export function fallbackPatientSummary(profile: ProfileJson, language: Language): string {
   const heard = profile.domains.filter((d) => d.constructs.some((c) => c.quotes.length > 0));
+  if (heard.length === 0) {
+    return language === "es"
+      ? "No alcanzamos a hablar mucho esta vez, y no pasa nada. Su equipo de atención verá que la conversación fue corta. Si quiere añadir algo ahora, puede escribirlo aquí."
+      : "We didn't get to talk much this time, and that's okay. Your care team will see that the conversation was short. If you'd like to add anything now, you can write it here.";
+  }
   const lines = language === "es" ? ["Esto es lo que escuché:"] : ["Here is what I heard:"];
   for (const d of heard) {
     const q = d.constructs.flatMap((c) => c.quotes).slice(0, 1).map((q) => `"${q.text}"`).join("");

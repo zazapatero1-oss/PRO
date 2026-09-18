@@ -63,7 +63,13 @@ export async function generateAndStoreProfile(
   let usageOut = gen.usage.output_tokens;
 
   let patientSummary = opts.existing?.patient_summary ?? "";
-  if (opts.regeneratePatientSummary || !patientSummary) {
+  const heardAnything = gen.profile.domains.some((d) =>
+    d.constructs.some((c) => c.quotes.length > 0)
+  );
+  if (!heardAnything) {
+    // Nothing to reflect back; the model would only speculate.
+    patientSummary = fallbackPatientSummary(gen.profile, ctx.session.language);
+  } else if (opts.regeneratePatientSummary || !patientSummary) {
     const { system, user } = buildPatientSummaryPrompt({
       language: ctx.session.language,
       ageBand: ctx.participant.age_band,

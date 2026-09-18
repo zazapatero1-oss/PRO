@@ -14,7 +14,7 @@ export interface Config {
 export const DEFAULT_MODEL = "claude-sonnet-5";
 /** Second, model-based safety layer (SPEC §7.4). Set SAFETY_MODEL=off to disable. */
 export const DEFAULT_SAFETY_MODEL = "claude-haiku-4-5-20251001";
-export const MAX_OUTPUT_TOKENS = 600;
+export const MAX_OUTPUT_TOKENS = 1500;
 /** Output budget for non-streaming JSON generations (profile, extraction). */
 export const MAX_JSON_OUTPUT_TOKENS = 4000;
 export const DEFAULT_MAX_TURNS = 40;

@@ -59,7 +59,7 @@ Deno.test("chat-turn: opening message moves consented → active, streams tokens
   assertEquals(call.messages[0].role, "user");
   assertStringIncludes(systemText(call.system), "# Coverage status");
   assertEquals((call.tools as { name: string }[]).length, 5);
-  assertEquals(call.max_tokens, 600);
+  assertEquals(call.max_tokens, 1500);
 });
 
 Deno.test("chat-turn: happy path records evidence via tools and emits evidence events", async () => {

@@ -113,6 +113,28 @@ export async function streamTurn(opts: StreamTurnOptions): Promise<StreamTurnRes
     messages.push({ role: "user", content: results });
   }
 
+  // Every round was tool calls, or the output cap cut a tool call off before any text:
+  // ask once more with tools off so the patient always gets a reply.
+  if (!text.trim() && (stopReason === "tool_use" || stopReason === "max_tokens")) {
+    rounds++;
+    const stream = opts.client.messages.stream({
+      model: opts.model,
+      max_tokens: opts.maxTokens,
+      system: opts.system,
+      messages,
+      tools: opts.tools,
+      tool_choice: { type: "none" },
+    });
+    stream.on("text", (delta) => {
+      text += delta;
+      opts.onText(delta);
+    });
+    const message = await stream.finalMessage();
+    usage.input_tokens += message.usage.input_tokens;
+    usage.output_tokens += message.usage.output_tokens;
+    stopReason = message.stop_reason;
+  }
+
   return { text, usage, stopReason, rounds, toolCalls };
 }
 

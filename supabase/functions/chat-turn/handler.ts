@@ -336,6 +336,21 @@ async function* runTurn(
   }
   const { result } = outcome;
   const latency = Date.now() - t0;
+  if (Deno.env.get("DEBUG_ERRORS") === "1") {
+    yield {
+      event: "debug",
+      data: {
+        rounds: result.rounds,
+        stop: result.stopReason,
+        tools: result.toolCalls.map((c) => ({
+          name: c.name,
+          error: c.result.is_error ?? false,
+          result: c.result.content.slice(0, 200),
+          input: JSON.stringify(c.input).slice(0, 200),
+        })),
+      },
+    };
+  }
 
   // ---- persist ----
   if (result.text.trim()) {

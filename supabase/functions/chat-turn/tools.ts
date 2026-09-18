@@ -172,6 +172,7 @@ export async function executeTool(
         return { content: `Unknown tool ${name}`, is_error: true };
     }
   } catch (err) {
+    console.error("tool failed", name, (err as Error).message);
     return { content: `Invalid input: ${(err as Error).message}`, is_error: true };
   }
 }

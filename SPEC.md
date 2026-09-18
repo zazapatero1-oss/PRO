@@ -115,7 +115,7 @@ face-q-conversation/
   `clinician_notes`, `audit_log` (via functions). Anon role has no direct table
   access. All patient-side mutations go through edge functions.
 - **Model**: `claude-sonnet-5` default, configured by env `ANTHROPIC_MODEL`. Streaming
-  on. Max output tokens per turn 600. Temperature default.
+  on. Max output tokens per turn 1500 (tool calls with verbatim quotes precede the reply). Temperature default.
 - **Environments**: two hosted Supabase projects, `dev` and `demo`. Web build reads
   `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_FUNCTIONS_URL`.
 - **Secrets** (Supabase function secrets): `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL`,

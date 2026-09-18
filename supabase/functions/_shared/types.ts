@@ -404,6 +404,7 @@ export type SseEvent =
   }
   | { event: "safety"; data: { message: string } }
   | { event: "ended"; data: { reason: EndReason } }
+  | { event: "debug"; data: unknown }
   | { event: "error"; data: { retryable: boolean; message: string } };
 
 // ---------------------------------------------------------------------------

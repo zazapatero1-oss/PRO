@@ -45,12 +45,12 @@ Deno.test("streamTurn: runs the tool loop, feeds tool_result back, stops at end_
   assertEquals(results.every((r) => r.type === "tool_result"), true);
 });
 
-Deno.test("streamTurn: caps at 3 rounds even if the model keeps calling tools", async () => {
+Deno.test("streamTurn: after 3 tool-only rounds, one forced tools-off reply gives the patient text", async () => {
   const client = new FakeAnthropic([
     { toolUses: [{ name: "record_evidence", input: {} }] },
     { toolUses: [{ name: "record_evidence", input: {} }] },
     { toolUses: [{ name: "record_evidence", input: {} }] },
-    { text: "never reached" },
+    { text: "forced reply" },
   ]);
   let calls = 0;
   const result = await streamTurn({
@@ -66,9 +66,14 @@ Deno.test("streamTurn: caps at 3 rounds even if the model keeps calling tools", 
       return Promise.resolve({ content: "ok" });
     },
   });
-  assertEquals(result.rounds, 3);
+  assertEquals(result.rounds, 4);
   assertEquals(calls, 3);
-  assertEquals(result.stopReason, "tool_use");
+  assertEquals(result.text, "forced reply");
+  assertEquals(
+    (client.calls[3].params as { tool_choice?: unknown }).tool_choice,
+    { type: "none" },
+  );
+  assertEquals(result.stopReason, "end_turn");
 });
 
 Deno.test("streamTurn: a tool that throws becomes an is_error tool_result; refusal skips tools", async () => {
