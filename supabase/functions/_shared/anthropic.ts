@@ -52,8 +52,12 @@ export interface StreamTurnResult {
   toolCalls: ToolCallRecord[];
 }
 
-export function createAnthropicClient(apiKey: string): AnthropicClientLike {
-  return new Anthropic({ apiKey });
+export function createAnthropicClient(apiKey: string, workspaceId?: string): AnthropicClientLike {
+  // Keys that are not scoped to a workspace must name one on every request.
+  return new Anthropic({
+    apiKey,
+    defaultHeaders: workspaceId ? { "anthropic-workspace-id": workspaceId } : undefined,
+  });
 }
 
 export async function streamTurn(opts: StreamTurnOptions): Promise<StreamTurnResult> {

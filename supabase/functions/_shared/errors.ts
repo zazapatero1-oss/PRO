@@ -56,7 +56,15 @@ export function toErrorBody(err: unknown): { status: number; body: ErrorBody } {
   console.error("unhandled error", err);
   return {
     status: 500,
-    body: { error: { code: "internal", message: "Internal error", retryable: true } },
+    body: {
+      error: {
+        code: "internal",
+        message: "Internal error",
+        retryable: true,
+        // Dev-only: DEBUG_ERRORS=1 surfaces the exception text in the response.
+        ...(Deno.env.get("DEBUG_ERRORS") === "1" ? { detail: String(err) } : {}),
+      },
+    },
   };
 }
 

@@ -25,7 +25,7 @@ export function wireDeps(): RealDeps {
     config,
     db: createDb(client),
     auth: createAuthClient(client),
-    anthropic: createAnthropicClient(config.anthropicApiKey),
+    anthropic: createAnthropicClient(config.anthropicApiKey, config.anthropicWorkspaceId),
     model: config.model,
     safetyModel: config.safetyModel,
     promptVersion: config.promptVersion,

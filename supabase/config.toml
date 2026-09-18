@@ -434,3 +434,6 @@ enabled = true
 
 [functions.session-state]
 verify_jwt = false
+
+[functions.app]
+verify_jwt = false

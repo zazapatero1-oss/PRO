@@ -2,6 +2,7 @@
 
 export interface Config {
   anthropicApiKey: string;
+  anthropicWorkspaceId?: string;
   model: string;
   safetyModel?: string;
   promptVersion: string;
@@ -33,6 +34,7 @@ export function loadConfig(env: EnvReader = Deno.env): Config {
   };
   return {
     anthropicApiKey: require("ANTHROPIC_API_KEY"),
+    anthropicWorkspaceId: env.get("ANTHROPIC_WORKSPACE_ID") || undefined,
     model: env.get("ANTHROPIC_MODEL") || DEFAULT_MODEL,
     safetyModel: env.get("SAFETY_MODEL") === "off"
       ? undefined

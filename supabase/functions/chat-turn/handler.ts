@@ -329,6 +329,7 @@ async function* runTurn(
       data: {
         retryable: isRetryableAnthropicError(outcome.error),
         message: "One moment… the assistant could not reply. Please try again.",
+        ...(Deno.env.get("DEBUG_ERRORS") === "1" ? { detail: String(outcome.error) } : {}),
       },
     };
     return;
