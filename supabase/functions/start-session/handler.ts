@@ -15,7 +15,11 @@ import type {
 import { badRequest, HttpError, jsonResponse } from "../_shared/errors.ts";
 import { requireClinician } from "../_shared/auth.ts";
 import { generateResumeToken, hashToken, writeAudit } from "../_shared/db.ts";
-import { DEFAULT_MAX_TURNS, DEFAULT_TARGET_MINUTES } from "../_shared/config.ts";
+import {
+  DEFAULT_MAX_TURNS,
+  DEFAULT_TARGET_MINUTES,
+  RESUME_TOKEN_TTL_MS,
+} from "../_shared/config.ts";
 import { isMinorBand } from "../_shared/safety_messages.ts";
 
 export interface StartSessionDeps {
@@ -146,6 +150,7 @@ export async function handleStartSession(
     model_id: deps.model,
     status: "intake",
     resume_token_hash: await hashToken(token),
+    resume_token_expires_at: new Date(Date.now() + RESUME_TOKEN_TTL_MS).toISOString(),
     max_turns: DEFAULT_MAX_TURNS,
     target_minutes: DEFAULT_TARGET_MINUTES,
     started_at: null,

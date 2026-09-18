@@ -50,6 +50,15 @@ export async function requireSessionToken(
   if (!token) throw badRequest("resume_token is required", "missing_token");
   const session = await db.getSessionByTokenHash(await hashToken(token));
   if (!session) throw unauthorized("Invalid session link", "invalid_token");
+  const expires = session.resume_token_expires_at
+    ? Date.parse(session.resume_token_expires_at)
+    : NaN;
+  if (!Number.isNaN(expires) && expires < Date.now()) {
+    throw unauthorized(
+      "This session link has expired. Ask your care team for a new one.",
+      "token_expired",
+    );
+  }
   if (typeof body.session_id === "string" && body.session_id && body.session_id !== session.id) {
     throw unauthorized("Token does not match session", "invalid_token");
   }

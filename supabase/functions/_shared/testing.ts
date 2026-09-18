@@ -521,6 +521,7 @@ export async function seedSession(
     maxTurns: number;
     targetMinutes: number;
     startedAt: string | null;
+    expiresAt: string | null;
   }> = {},
 ): Promise<SeededSession> {
   const { hashToken } = await import("./db.ts");
@@ -570,6 +571,7 @@ export async function seedSession(
     model_id: "fake-model",
     status: opts.status ?? "consented",
     resume_token_hash: tokenHash,
+    resume_token_expires_at: opts.expiresAt ?? null,
     max_turns: opts.maxTurns ?? 40,
     target_minutes: opts.targetMinutes ?? 12,
     started_at: opts.startedAt ?? null,
@@ -581,4 +583,13 @@ export async function seedSession(
     cost_usd_estimate: null,
   });
   return { db, session, participant, mapRow, token, tokenHash };
+}
+
+/** The system prompt as text whether it was sent as a string or as cache-split blocks. */
+export function systemText(system: unknown): string {
+  if (typeof system === "string") return system;
+  if (Array.isArray(system)) {
+    return system.map((b) => (b as { text?: string }).text ?? "").join("\n\n");
+  }
+  return String(system);
 }

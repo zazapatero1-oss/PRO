@@ -3,6 +3,7 @@
 export interface Config {
   anthropicApiKey: string;
   model: string;
+  safetyModel?: string;
   promptVersion: string;
   supabaseUrl: string;
   serviceRoleKey: string;
@@ -10,10 +11,14 @@ export interface Config {
 }
 
 export const DEFAULT_MODEL = "claude-sonnet-5";
+/** Second, model-based safety layer (SPEC §7.4). Set SAFETY_MODEL=off to disable. */
+export const DEFAULT_SAFETY_MODEL = "claude-haiku-4-5-20251001";
 export const MAX_OUTPUT_TOKENS = 600;
 /** Output budget for non-streaming JSON generations (profile, extraction). */
 export const MAX_JSON_OUTPUT_TOKENS = 4000;
 export const DEFAULT_MAX_TURNS = 40;
+/** Patient links expire after this (SPEC §4). */
+export const RESUME_TOKEN_TTL_MS = 14 * 24 * 60 * 60 * 1000;
 export const DEFAULT_TARGET_MINUTES = 12;
 
 export interface EnvReader {
@@ -29,6 +34,9 @@ export function loadConfig(env: EnvReader = Deno.env): Config {
   return {
     anthropicApiKey: require("ANTHROPIC_API_KEY"),
     model: env.get("ANTHROPIC_MODEL") || DEFAULT_MODEL,
+    safetyModel: env.get("SAFETY_MODEL") === "off"
+      ? undefined
+      : env.get("SAFETY_MODEL") || DEFAULT_SAFETY_MODEL,
     promptVersion: env.get("PROMPT_VERSION") || "dev",
     supabaseUrl: require("SUPABASE_URL"),
     // Supabase injects SUPABASE_SERVICE_ROLE_KEY automatically; SERVICE_ROLE_KEY is the

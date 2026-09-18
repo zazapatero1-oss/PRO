@@ -25,6 +25,7 @@ const session: SessionRow = {
   prompt_version: "v1",
   model_id: "claude-sonnet-5",
   status: "completed",
+  resume_token_expires_at: null,
   resume_token_hash: "h",
   max_turns: 40,
   target_minutes: 12,

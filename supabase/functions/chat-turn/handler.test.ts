@@ -1,7 +1,7 @@
 import { assert, assertEquals, assertStringIncludes } from "@std/assert";
 import { handleChatTurn } from "./handler.ts";
 import { parseSseText } from "../_shared/sse.ts";
-import { FakeAnthropic, seedSession } from "../_shared/testing.ts";
+import { FakeAnthropic, seedSession, systemText } from "../_shared/testing.ts";
 import type { SseEvent } from "../_shared/types.ts";
 
 async function turn(
@@ -57,7 +57,7 @@ Deno.test("chat-turn: opening message moves consented → active, streams tokens
   // The synthetic session-start user message precedes the model call; system prompt has our sections.
   const call = anthropic.calls[0].params;
   assertEquals(call.messages[0].role, "user");
-  assertStringIncludes(String(call.system), "# Coverage status");
+  assertStringIncludes(systemText(call.system), "# Coverage status");
   assertEquals((call.tools as { name: string }[]).length, 5);
   assertEquals(call.max_tokens, 600);
 });
@@ -199,8 +199,8 @@ Deno.test("chat-turn: skip marks the current construct declined deterministicall
   const declined = s.db.evidence.filter((e) => e.severity === "declined");
   assertEquals(declined.length, 1);
   assertEquals(declined[0].construct_id, "appearance.nose");
-  assertStringIncludes(String(anthropic.calls[0].params.system), "# This turn");
-  assertStringIncludes(String(anthropic.calls[0].params.system), "declined the current topic");
+  assertStringIncludes(systemText(anthropic.calls[0].params.system), "# This turn");
+  assertStringIncludes(systemText(anthropic.calls[0].params.system), "declined the current topic");
 });
 
 Deno.test("chat-turn: end_session tool → wrapping-up + ended", async () => {
@@ -247,7 +247,7 @@ Deno.test("chat-turn: budget exhausted forces a final turn and ended(turn_budget
   const anthropic = new FakeAnthropic([{ text: "Thank you, we'll stop here." }]);
   const { events } = await turn(s, anthropic, "ok");
   assertEquals(events[events.length - 1].data, { reason: "turn_budget" });
-  assertStringIncludes(String(anthropic.calls[0].params.system), "The budget is used up");
+  assertStringIncludes(systemText(anthropic.calls[0].params.system), "The budget is used up");
   assertEquals(s.db.sessions[0].status, "wrapping-up");
 });
 
@@ -261,7 +261,7 @@ Deno.test("chat-turn: 80% budget by time adds the wrap-up instruction", async ()
   const anthropic = new FakeAnthropic([{ text: "Let's start wrapping up." }]);
   await turn(s, anthropic, "hello", { now: () => new Date(start.getTime() + 8.5 * 60000) });
   assertStringIncludes(
-    String(anthropic.calls[0].params.system),
+    systemText(anthropic.calls[0].params.system),
     "Begin wrapping up; do not open new topics.",
   );
   assertEquals(s.db.sessions[0].status, "active");
@@ -335,8 +335,71 @@ Deno.test("chat-turn: non-baseline session injects the prior-session brief", asy
   });
   const anthropic = new FakeAnthropic([{ text: "Welcome back!" }]);
   await turn(s, anthropic, null);
-  const sys = String(anthropic.calls[0].params.system);
+  const sys = systemText(anthropic.calls[0].params.system);
   assertStringIncludes(sys, "## Prior-session brief");
   assertStringIncludes(sys, "Very unhappy with nose.");
   assertStringIncludes(sys, "outcome.decision");
+});
+
+Deno.test("chat-turn: model safety layer halts when patterns miss (detected_by model)", async () => {
+  const s = await seedSession({ status: "active", startedAt: new Date().toISOString() });
+  const anthropic = new FakeAnthropic([{
+    text: '{"trigger":"self_harm","rationale":"passive ideation"}',
+  }]);
+  const res = await handleChatTurn(
+    { db: s.db, anthropic, model: "fake-model", safetyModel: "fake-safety" },
+    {
+      session_id: s.session.id,
+      resume_token: s.token,
+      text: "some days I think everyone would be fine if I just wasn't around",
+      input_mode: "text",
+    },
+  );
+  const events = parseSseText(await res.text());
+  assertEquals(events[0].event, "safety");
+  assertEquals(anthropic.calls.map((c) => c.kind), ["create"]);
+  assertEquals(s.db.flags[0].detected_by, "model");
+  assertEquals(s.db.sessions[0].status, "safety-halted");
+});
+
+Deno.test("chat-turn: model safety layer clears → conversation proceeds", async () => {
+  const s = await seedSession({ status: "active", startedAt: new Date().toISOString() });
+  const anthropic = new FakeAnthropic([{ text: '{"trigger":null,"rationale":"idiom"}' }, {
+    text: "Ouch, that sounds sore.",
+  }]);
+  const res = await handleChatTurn(
+    { db: s.db, anthropic, model: "fake-model", safetyModel: "fake-safety" },
+    {
+      session_id: s.session.id,
+      resume_token: s.token,
+      text: "this scar is killing me",
+      input_mode: "text",
+    },
+  );
+  const events = parseSseText(await res.text());
+  assertEquals(anthropic.calls.map((c) => c.kind), ["create", "stream"]);
+  assert(events.some((e) => e.event === "token"));
+  assertEquals(s.db.flags.length, 0);
+});
+
+Deno.test("chat-turn: system prompt is sent as a cached stable block plus a dynamic tail", async () => {
+  const s = await seedSession({ status: "active", startedAt: new Date().toISOString() });
+  const anthropic = new FakeAnthropic([{ text: "Hello" }]);
+  await turn(s, anthropic, "hi");
+  const system = anthropic.calls[0].params.system as { text: string; cache_control?: unknown }[];
+  assertEquals(system.length, 2);
+  assertEquals(system[0].cache_control, { type: "ephemeral" });
+  assertStringIncludes(system[0].text, "# Role");
+  assertEquals(system[1].cache_control, undefined);
+  assertStringIncludes(system[1].text, "# Coverage status");
+});
+
+Deno.test("chat-turn: expired resume token is rejected", async () => {
+  const s = await seedSession({
+    status: "active",
+    expiresAt: new Date(Date.now() - 1000).toISOString(),
+  });
+  const { status, json } = await turn(s, new FakeAnthropic([]), "hi");
+  assertEquals(status, 401);
+  assertEquals((json as { error: { code: string } }).error.code, "token_expired");
 });

@@ -20,10 +20,21 @@ export interface ToolCallRecord {
   result: ToolExecResult;
 }
 
+/**
+ * Splits the system prompt into a cached stable prefix and an uncached dynamic tail.
+ * Cache order is tools → system → messages, so the stable block must come first.
+ */
+export function cachedSystem(stable: string, dynamic: string): Anthropic.TextBlockParam[] {
+  return [
+    { type: "text", text: stable, cache_control: { type: "ephemeral" } },
+    { type: "text", text: dynamic },
+  ];
+}
+
 export interface StreamTurnOptions {
   client: AnthropicClientLike;
   model: string;
-  system: string;
+  system: string | Anthropic.TextBlockParam[];
   messages: Anthropic.MessageParam[];
   tools: Anthropic.Tool[];
   maxTokens: number;

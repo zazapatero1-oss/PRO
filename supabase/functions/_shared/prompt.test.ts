@@ -39,7 +39,7 @@ function input(overrides: Partial<SystemPromptInput> = {}): SystemPromptInput {
   };
 }
 
-Deno.test("system prompt: sections appear in SPEC §7.2 order", () => {
+Deno.test("system prompt: stable sections first, per-turn sections last (SPEC §7.2, cache-friendly)", () => {
   const p = buildSystemPrompt(input());
   const order = [
     "# Role",
@@ -47,10 +47,10 @@ Deno.test("system prompt: sections appear in SPEC §7.2 order", () => {
     "# Patient context",
     "# Clinician focus note",
     "# What matters to understand",
-    "# Coverage status",
-    "# Turn budget",
     "# Tools and how to use them",
     "# Control phrases",
+    "# Coverage status",
+    "# Turn budget",
   ];
   let last = -1;
   for (const h of order) {

@@ -10,6 +10,7 @@ import type {
   Language,
   MessageRow,
   RaiseSafetyFlagInput,
+  SafetyTrigger,
   SessionRow,
   Severity,
   SseEvent,
@@ -23,12 +24,13 @@ import { detectControlPhrase } from "../_shared/control.ts";
 import { computeCoverage, prioritisedOpen } from "../_shared/tracker.ts";
 import {
   budgetFraction,
-  buildSystemPrompt,
+  buildSystemPromptBlocks,
   buildToolDefinitions,
   renderPriorBrief,
   type TurnBudget,
 } from "../_shared/prompt.ts";
-import { isRetryableAnthropicError, streamTurn } from "../_shared/anthropic.ts";
+import { cachedSystem, isRetryableAnthropicError, streamTurn } from "../_shared/anthropic.ts";
+import { classifySafety } from "../_shared/safety_classifier.ts";
 import { estimateCostUsd, MAX_OUTPUT_TOKENS } from "../_shared/config.ts";
 import { writeAudit } from "../_shared/db.ts";
 import {
@@ -45,6 +47,8 @@ export interface ChatTurnDeps {
   db: Db;
   anthropic: AnthropicClientLike;
   model: string;
+  /** Model for the second safety layer; undefined disables it (tests, SAFETY_MODEL=off). */
+  safetyModel?: string;
   origin?: string;
   now?: () => Date;
 }
@@ -127,16 +131,35 @@ async function* runTurn(
   if (body.text !== null) {
     patientMessage = await insertPatientMessageIdempotent(db, ctx, body);
 
-    const safety = detectSafety(body.text, language);
+    // Layer 1: deterministic patterns (all languages). Layer 2: an independent small model,
+    // consulted only when layer 1 is silent. Both halt the session the same way.
+    const keywordHit = detectSafety(body.text, language);
+    let safety:
+      | { trigger: SafetyTrigger; detected_by: "keyword" | "model"; detail: string }
+      | null = keywordHit
+        ? {
+          trigger: keywordHit.trigger,
+          detected_by: "keyword",
+          detail: `matched "${keywordHit.matched}"`,
+        }
+        : null;
+    if (!safety && deps.safetyModel) {
+      const c = await classifySafety({
+        client: deps.anthropic,
+        model: deps.safetyModel,
+        text: body.text,
+        recent: ctx.messages.map((m) => ({ role: m.role, content: m.content })),
+      });
+      if (c) safety = { trigger: c.trigger, detected_by: "model", detail: c.rationale };
+    }
     if (safety) {
       const message = safetyMessageFor(language, ctx.participant.age_band);
       await db.insertSafetyFlag({
         session_id: session.id,
         message_id: patientMessage.id,
         trigger: safety.trigger,
-        detected_by: "keyword",
-        action_taken:
-          `session halted; fixed ${language} message shown; matched "${safety.matched}"`,
+        detected_by: safety.detected_by,
+        action_taken: `session halted; fixed ${language} message shown; ${safety.detail}`,
         reviewed_by: null,
         reviewed_at: null,
       });
@@ -148,7 +171,7 @@ async function* runTurn(
         action: "session.safety_halt",
         target_type: "session",
         target_id: session.id,
-        metadata: { trigger: safety.trigger, detected_by: "keyword" },
+        metadata: { trigger: safety.trigger, detected_by: safety.detected_by },
       });
       yield { event: "safety", data: { message } };
       return;
@@ -237,7 +260,7 @@ async function* runTurn(
       focus_constructs: [...new Set(ctx.notes.flatMap((n) => n.focus_constructs ?? []))],
     }
     : null;
-  const system = buildSystemPrompt({
+  const { stable, dynamic } = buildSystemPromptBlocks({
     language,
     ageBand: ctx.participant.age_band,
     readingComfort: ctx.participant.reading_comfort,
@@ -266,7 +289,7 @@ async function* runTurn(
   const run = streamTurn({
     client: deps.anthropic,
     model: deps.model,
-    system,
+    system: cachedSystem(stable, dynamic),
     messages: history,
     tools: buildToolDefinitions(),
     maxTokens: MAX_OUTPUT_TOKENS,

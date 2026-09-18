@@ -197,6 +197,8 @@ export interface SessionRow {
   model_id: string;
   status: SessionStatus;
   resume_token_hash: string;
+  /** Links stop working after this; set on creation (SPEC §4). */
+  resume_token_expires_at: string | null;
   max_turns: number;
   target_minutes: number;
   started_at: string | null;

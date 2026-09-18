@@ -13,6 +13,7 @@ export interface RealDeps {
   auth: AuthClient;
   anthropic: AnthropicClientLike;
   model: string;
+  safetyModel?: string;
   promptVersion: string;
   origin: string;
 }
@@ -26,6 +27,7 @@ export function wireDeps(): RealDeps {
     auth: createAuthClient(client),
     anthropic: createAnthropicClient(config.anthropicApiKey),
     model: config.model,
+    safetyModel: config.safetyModel,
     promptVersion: config.promptVersion,
     origin: config.webOrigin,
   };

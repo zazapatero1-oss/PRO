@@ -25,7 +25,9 @@ export const PROMPT_FILE_VERSION = "2026-09-18.1";
 
 export const PRIORITY_GUIDANCE =
   "Prioritise: FOCUS → needs_clarification → drill_down_pending → untouched core → untouched standard. " +
-  "Weave, don't interrogate. One topic per message. Max ~2 questions per message.";
+  "Weave, don't interrogate. One topic per message. Max ~2 questions per message. " +
+  "For needs_clarification: reflect back what you heard in your own words and check it once more before moving on; " +
+  "only if it is still unclear leave it for the clinician.";
 export const WRAP_UP_80 = "Begin wrapping up; do not open new topics.";
 export const WRAP_UP_100 =
   'The budget is used up: thank them, close warmly in one or two sentences, and call `end_session` with reason "turn_budget" now.';
@@ -331,21 +333,38 @@ export interface SystemPromptInput {
   turnNotes?: string[];
 }
 
-export function buildSystemPrompt(input: SystemPromptInput): string {
-  const sections: (string | null)[] = [
+export interface SystemPromptBlocks {
+  /** Identical for every turn of a session: eligible for prompt caching. */
+  stable: string;
+  /** Changes every turn (coverage, budget, per-turn notes); always last so the cached prefix holds. */
+  dynamic: string;
+}
+
+const joinSections = (sections: (string | null)[]) =>
+  sections.filter((s): s is string => s !== null).join("\n\n");
+
+export function buildSystemPromptBlocks(input: SystemPromptInput): SystemPromptBlocks {
+  const stable = joinSections([
     ROLE_AND_PRINCIPLES,
     renderRegisterProfile(input),
     renderPatientContext(input),
     renderClinicianNote(input.clinicianNote),
     renderConstructMap(input.activeConstructs, input.population),
+    TOOL_RULES,
+  ]);
+  const dynamic = joinSections([
     renderCoverage(input.coverage),
     renderTurnBudget(input.budget),
-    TOOL_RULES,
     input.turnNotes && input.turnNotes.length
       ? ["# This turn", ...input.turnNotes.map((n) => `- ${n}`)].join("\n")
       : null,
-  ];
-  return sections.filter((s): s is string => s !== null).join("\n\n");
+  ]);
+  return { stable, dynamic };
+}
+
+export function buildSystemPrompt(input: SystemPromptInput): string {
+  const { stable, dynamic } = buildSystemPromptBlocks(input);
+  return `${stable}\n\n${dynamic}`;
 }
 
 // ---------------------------------------------------------------------------
