@@ -12,4 +12,3 @@ eval/reports/*
 !eval/reports/.gitkeep
 .DS_Store
 .pytest_cache/
-supabase/functions/app/bundle.ts
