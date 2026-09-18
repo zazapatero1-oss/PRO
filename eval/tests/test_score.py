@@ -39,16 +39,16 @@ def test_severity_exact_within_one_and_coverage(evasive_persona, evasive_profile
     assert by_id["appearance.lips"].exact and by_id["appearance.lips"].within_one
     assert by_id["appearance.cheeks"].exact is False and by_id["appearance.cheeks"].within_one is True
     assert by_id["appearance.skin"].exact is False and by_id["appearance.skin"].within_one is False
-    assert by_id["age.appraisal"].covered is True  # drill_down_done counts as covered
-    assert by_id["psychological.self_consciousness"].covered is False  # needs_clarification
-    assert by_id["distress.appearance"].covered is False  # untouched
+    assert by_id["aging.appraisal"].covered is True  # drill_down_done counts as covered
+    assert by_id["psych.self_confidence"].covered is False  # needs_clarification
+    assert by_id["distress.hiding"].covered is False  # untouched
     assert by_id["social.avoidance"].expected == "declined" and by_id["social.avoidance"].covered is False
 
-    # 10 non-declined GT constructs, 8 covered (all but self_consciousness + distress)
+    # 10 non-declined GT constructs, 8 covered (all but self_confidence + hiding)
     assert s.n_ground_truth == 10 and s.n_covered == 8
     assert s.coverage_rate == 0.8
     assert s.n_compared == 8
-    # exact: overall, lips, eyes, age, wellbeing, social.function = 6/8 ; within-one adds cheeks = 7/8
+    # exact: overall, lips, eyes, aging, mood, social.comfort = 6/8 ; within-one adds cheeks = 7/8
     assert s.severity_exact_rate == 6 / 8
     assert s.severity_within_one_rate == 7 / 8
     assert s.n_active == 11 and s.n_needs_clarification == 1

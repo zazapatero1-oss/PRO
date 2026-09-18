@@ -71,14 +71,14 @@ def evasive_profile() -> dict[str, Any]:
             "appearance.cheeks": {"severity": "mild"},  # off by one
             "appearance.skin": {"severity": "severe", "findings": [{"category": "triggers", "text": "Keeps the camera above eye level on video calls"}]},  # off by two
             "appearance.eyes": {"severity": "none"},
-            "age.appraisal": {"severity": "moderate", "status": "drill_down_done"},
-            "psychological.self_consciousness": {"severity": "unclear", "status": "needs_clarification", "confidence": 0.4},
-            "psychological.wellbeing": {"severity": "mild"},
-            "distress.appearance": {"severity": None, "status": "untouched"},
+            "aging.appraisal": {"severity": "moderate", "status": "drill_down_done"},
+            "psych.self_confidence": {"severity": "unclear", "status": "needs_clarification", "confidence": 0.4},
+            "psych.mood": {"severity": "mild"},
+            "distress.hiding": {"severity": None, "status": "untouched"},
             "social.avoidance": {"severity": "declined", "status": "declined"},
-            "social.function": {"severity": "mild"},
+            "social.comfort": {"severity": "mild"},
         },
-        needs_clarification=[{"construct_id": "psychological.self_consciousness", "reason": "hedged"}],
-        not_covered=["distress.appearance"],
+        needs_clarification=[{"construct_id": "psych.self_confidence", "reason": "hedged"}],
+        not_covered=["distress.hiding"],
         declined=["social.avoidance"],
     )

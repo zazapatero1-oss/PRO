@@ -15,7 +15,7 @@ timepoint: post-op-6w
 respondent: both
 clinician_note:
   note: "Please pay attention to how she is feeling about school and how the forehead looks to her now."
-  focus_constructs: [social.function, appearance.overall, adverse.swelling]
+  focus_constructs: [social.school, appearance.overall, adverse.swelling_bruising]
 personality:
   style: chatty
   description: >
@@ -39,33 +39,34 @@ ground_truth:
   constructs:
     appearance.overall: mild
     appearance.eyes: mild
-    psychological.self_consciousness: mild
-    psychological.wellbeing: none
-    social.function: none
+    psych.self_confidence: mild
+    psych.mood: none
+    social.comfort: none
+    social.school: none
     social.avoidance: mild
-    adverse.swelling: mild
-    adverse.numbness: mild
+    adverse.swelling_bruising: mild
+    adverse.numbness_sensation: mild
     adverse.scarring: none
     adverse.asymmetry: none
-    adverse.pain: none
-    recovery.early_life_impact: mild
-    outcome.satisfaction: none
+    adverse.pain_discomfort: none
+    recovery.daily_activities: mild
+    outcome.result: none
     outcome.decision: none
   narrative_facts:
     - text: "Left brow used to sit higher; now nearly level"
       construct_id: adverse.asymmetry
       match_any: ["brow", "eyebrow", "level", "higher", "even"]
     - text: "Puffiness around the left eye in the mornings"
-      construct_id: adverse.swelling
+      construct_id: adverse.swelling_bruising
       match_any: ["morning", "puffy", "puffiness", "left eye"]
     - text: "Numb patch on the scalp near the scar"
-      construct_id: adverse.numbness
+      construct_id: adverse.numbness_sensation
       match_any: ["scalp", "patch", "numb", "weird"]
     - text: "Skipped swim club because she does not want the scar seen wet"
       construct_id: social.avoidance
       match_any: ["swim", "pool", "wet", "hair"]
     - text: "Night headaches in the first two weeks, gone now"
-      construct_id: adverse.pain
+      construct_id: adverse.pain_discomfort
       match_any: ["headache", "first two weeks", "gone now", "at night"]
 expected_behaviours:
   declines: []

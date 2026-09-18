@@ -40,14 +40,16 @@ ground_truth:
     appearance.nose: moderate
     appearance.skin: mild
     appearance.cheeks: none
-    psychological.self_consciousness: mild
-    psychological.wellbeing: none
+    psych.self_confidence: mild
+    psych.mood: none
+    distress.hiding: mild
+    distress.cancer_worry: moderate
     social.avoidance: none
     function.breathing: none
     adverse.scarring: mild
-    adverse.numbness: mild
+    adverse.numbness_sensation: mild
     adverse.asymmetry: mild
-    outcome.satisfaction: none
+    outcome.result: none
     outcome.information: none
   narrative_facts:
     - text: "Flap is still red and slightly raised; he calls it the patch"
@@ -57,13 +59,13 @@ ground_truth:
       construct_id: adverse.asymmetry
       match_any: ["punta", "tip", "bulk", "thicker", "grues", "one side", "un lado"]
     - text: "Wears a hat more often now"
-      construct_id: social.avoidance
+      construct_id: distress.hiding
       match_any: ["hat", "sombrero", "gorra", "cap"]
     - text: "Wife notices the change"
-      construct_id: psychological.self_consciousness
+      construct_id: psych.self_confidence
       match_any: ["wife", "esposa", "mujer"]
     - text: "Worried about the cancer coming back"
-      construct_id: psychological.wellbeing
+      construct_id: distress.cancer_worry
       match_any: ["coming back", "come back", "recur", "vuelva", "volver", "again"]
 expected_behaviours:
   declines: []

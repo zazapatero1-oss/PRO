@@ -115,10 +115,13 @@ and each population. Columns:
 The "Details" section lists, per persona, every construct (expected vs observed)
 and every narrative fact with the phrase that matched.
 
-If the report lists **ground-truth construct ids not present in the fetched map**,
-rename those keys in `eval/personas/_construct_ids.yaml` and, in each persona,
-the corresponding `ground_truth.constructs` keys. The registry is the single
-reconciliation point; `validate` fails if a persona uses an id that is not in it.
+`eval/personas/_construct_ids.yaml` holds the ids of the seeded `face-q-adult`
+(33) and `face-q-pediatric` (31) maps, an explicit id list per population, and the
+post-op-only ids (`recovery.*`, `outcome.*`). `validate` (and the test suite) fail
+if a persona references an id outside its population's list, or carries a
+post-op-only construct at baseline/pre-op. If the report ever lists
+**ground-truth construct ids not present in the fetched map**, the seed map has
+changed: update the registry and the persona keys in one pass.
 
 ## Personas
 

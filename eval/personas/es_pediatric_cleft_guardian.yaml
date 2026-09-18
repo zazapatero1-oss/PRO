@@ -37,21 +37,23 @@ ground_truth:
     appearance.lips: severe
     appearance.nose: mild
     appearance.smile_teeth: mild
-    psychological.self_consciousness: moderate
-    psychological.wellbeing: mild
+    psych.self_confidence: moderate
+    psych.mood: mild
     social.avoidance: moderate
-    social.function: moderate
-    distress.appearance: moderate
+    social.comfort: moderate
+    social.school: moderate
+    social.teasing_comments: moderate
+    distress.hiding: moderate
     function.speaking: mild
     function.eating_drinking: mild
     function.breathing: none
     adverse.scarring: moderate
   narrative_facts:
     - text: "A classmate gave him a nickname about his lip this year"
-      construct_id: social.function
+      construct_id: social.teasing_comments
       match_any: ["apodo", "nickname", "compañero", "classmate", "burl", "teas", "se ríen", "molest"]
     - text: "Refuses to be in the class photo"
-      construct_id: social.avoidance
+      construct_id: distress.hiding
       match_any: ["foto", "photo"]
     - text: "Stopped wanting to go to birthday parties"
       construct_id: social.avoidance

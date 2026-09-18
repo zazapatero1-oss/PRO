@@ -122,6 +122,23 @@ class ConstructIdEntry(BaseModel):
 
 class ConstructRegistry(BaseModel):
     constructs: dict[str, ConstructIdEntry]
+    populations: dict[Literal["adult", "pediatric"], list[str]]
+    post_op_only: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _lists_reference_known_ids(self) -> "ConstructRegistry":
+        known = set(self.constructs)
+        for pop, ids in self.populations.items():
+            unknown = sorted(set(ids) - known)
+            if unknown:
+                raise ValueError(f"populations.{pop} lists ids without an entry: {unknown}")
+        unknown = sorted(set(self.post_op_only) - known)
+        if unknown:
+            raise ValueError(f"post_op_only lists ids without an entry: {unknown}")
+        return self
+
+    def ids_for(self, population: str) -> set[str]:
+        return set(self.populations.get(population, []))  # type: ignore[arg-type]
 
 
 # --------------------------------------------------------------------------- SSE events

@@ -35,32 +35,32 @@ ground_truth:
     appearance.chin_jawline: none
     appearance.cheeks: mild
     appearance.skin: none
-    age.appraisal: none
-    psychological.self_consciousness: none
-    psychological.wellbeing: none
-    social.function: none
-    adverse.swelling: mild
-    adverse.numbness: moderate
+    aging.appraisal: none
+    psych.self_confidence: none
+    psych.mood: none
+    social.comfort: none
+    adverse.swelling_bruising: mild
+    adverse.numbness_sensation: moderate
     adverse.scarring: none
     adverse.asymmetry: mild
-    outcome.satisfaction: none
+    outcome.result: none
     outcome.decision: none
     outcome.information: none
   narrative_facts:
     - text: "Left side of the face still feels numb, like after the dentist"
-      construct_id: adverse.numbness
+      construct_id: adverse.numbness_sensation
       match_any: ["dentist", "dentista", "dormid", "numb", "entumec", "sensib"]
     - text: "Left cheek looks fuller than the right in the mornings"
       construct_id: adverse.asymmetry
       match_any: ["mañana", "morning", "más llen", "fuller", "lado izquierdo", "left side", "left cheek", "mejilla izquierda"]
     - text: "Went back to her Thursday choir"
-      construct_id: social.function
+      construct_id: social.comfort
       match_any: ["coro", "choir", "jueves", "thursday", "cantar", "sing"]
     - text: "Still sleeps propped up on pillows"
-      construct_id: recovery.early_life_impact
+      construct_id: recovery.daily_activities
       match_any: ["almohada", "pillow", "propped", "dorm", "sleep"]
     - text: "Feels she looks like she did at fifty; sister says she looks rested"
-      construct_id: age.appraisal
+      construct_id: aging.appraisal
       match_any: ["cincuenta", "fifty", "50", "descansad", "rested", "hermana", "sister", "younger", "más joven"]
 expected_behaviours:
   declines: []

@@ -41,6 +41,55 @@ def test_ground_truth_ids_all_in_registry(personas, registry):
         assert set(p.ground_truth.constructs) <= set(registry.constructs), p.id
 
 
+def test_registry_matches_real_seed_maps(registry):
+    adult, pediatric = registry.ids_for("adult"), registry.ids_for("pediatric")
+    assert len(adult) == 33 and len(pediatric) == 31
+    assert {"aging.appraisal", "distress.cancer_worry", "function.swallowing_oral", "social.relationships"} <= adult
+    assert {"aging.appraisal", "distress.cancer_worry", "function.swallowing_oral", "social.relationships"}.isdisjoint(pediatric)
+    assert {"appearance.ears", "social.school"} <= pediatric and {"appearance.ears", "social.school"}.isdisjoint(adult)
+    assert set(registry.constructs) == adult | pediatric
+    assert set(registry.post_op_only) == {"recovery.daily_activities", "outcome.result", "outcome.decision", "outcome.information"}
+
+
+def test_personas_only_reference_ids_of_their_population(personas, registry):
+    for p in personas:
+        allowed = registry.ids_for(p.population)
+        referenced = set(p.ground_truth.constructs) | {f.construct_id for f in p.ground_truth.narrative_facts if f.construct_id}
+        referenced |= set(p.expected_behaviours.declines)
+        if p.clinician_note:
+            referenced |= set(p.clinician_note.focus_constructs)
+        assert referenced <= allowed, f"{p.id}: {sorted(referenced - allowed)}"
+
+
+def test_baseline_personas_have_no_post_op_only_constructs(personas, registry):
+    post_op = set(registry.post_op_only)
+    for p in personas:
+        if p.timepoint in ("baseline", "pre-op"):
+            assert not (set(p.ground_truth.constructs) & post_op), p.id
+        else:
+            # every post-op persona carries at least one outcome/recovery construct
+            assert set(p.ground_truth.constructs) & post_op, p.id
+
+
+def test_validate_persona_set_flags_population_and_timepoint_violations(personas, registry):
+    ped = next(p for p in personas if p.population == "pediatric").model_copy(deep=True)
+    ped.ground_truth.constructs["aging.appraisal"] = "mild"  # adult-only id
+    problems = validate_persona_set(personas + [ped], registry)
+    assert any("aging.appraisal" in x and "pediatric map" in x for x in problems)
+    base = next(p for p in personas if p.timepoint == "baseline" and p.population == "adult").model_copy(deep=True)
+    base.ground_truth.constructs["outcome.result"] = "none"
+    problems = validate_persona_set(personas + [base], registry)
+    assert any("post-op only" in x for x in problems)
+
+
+def test_registry_rejects_unknown_ids_in_lists(registry):
+    from faceq_eval.models import ConstructRegistry
+    raw = registry.model_dump()
+    raw["populations"]["adult"].append("nope.nothing")
+    with pytest.raises(ValueError, match="nope.nothing"):
+        ConstructRegistry.model_validate(raw)
+
+
 def test_load_personas_only_and_unknown(personas):
     assert [p.id for p in load_personas(only=["en_adult_rhinoplasty_terse"])] == ["en_adult_rhinoplasty_terse"]
     with pytest.raises(ValueError):
