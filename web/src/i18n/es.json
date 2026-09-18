@@ -119,6 +119,11 @@
         "unsupported": "La entrada por voz no está disponible en este navegador. Puede escribir.",
         "denied": "El acceso al micrófono fue bloqueado. Puede escribir.",
         "error": "La entrada por voz se detuvo. Puede intentarlo de nuevo o escribir."
+      },
+      "readAloud": {
+        "on": "Leer en voz alta",
+        "off": "Dejar de leer en voz alta",
+        "title": "Leer los mensajes en voz alta"
       }
     },
     "summary": {
@@ -264,7 +269,10 @@
     }
   },
   "enum": {
-    "language": { "en": "Inglés", "es": "Español" },
+    "language": {
+      "en": "Inglés",
+      "es": "Español"
+    },
     "ageBand": {
       "under-8": "Menos de 8",
       "8-12": "8–12",
@@ -279,7 +287,11 @@
       "comfortable": "Me siento cómodo leyendo mensajes largos",
       "prefer-voice": "Prefiero hablar a escribir"
     },
-    "respondent": { "self": "Paciente", "guardian": "Padre, madre o tutor", "both": "Paciente con tutor" },
+    "respondent": {
+      "self": "Paciente",
+      "guardian": "Padre, madre o tutor",
+      "both": "Paciente con tutor"
+    },
     "timepoint": {
       "baseline": "Inicial",
       "pre-op": "Preoperatorio",
@@ -317,9 +329,21 @@
       "patient_question": "Pregunta del paciente",
       "other": "Otro"
     },
-    "trigger": { "self_harm": "Autolesión", "abuse": "Abuso", "acute_distress": "Angustia aguda", "other": "Otro" },
-    "population": { "adult": "Adulto", "pediatric": "Pediátrico" },
-    "mapStatus": { "draft": "Borrador", "approved": "Aprobado", "retired": "Retirado" },
+    "trigger": {
+      "self_harm": "Autolesión",
+      "abuse": "Abuso",
+      "acute_distress": "Angustia aguda",
+      "other": "Otro"
+    },
+    "population": {
+      "adult": "Adulto",
+      "pediatric": "Pediátrico"
+    },
+    "mapStatus": {
+      "draft": "Borrador",
+      "approved": "Aprobado",
+      "retired": "Retirado"
+    },
     "constructStatus": {
       "untouched": "No tratado",
       "partial": "Parcial",

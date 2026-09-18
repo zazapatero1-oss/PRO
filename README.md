@@ -50,7 +50,7 @@ supabase db push
 psql "<DEV_DATABASE_URL>" -f supabase/seed/seed.sql -f supabase/seed/demo.sql
 
 # 4. Set function secrets
-supabase secrets set ANTHROPIC_API_KEY=sk-ant-... ANTHROPIC_MODEL=claude-sonnet-5 PROMPT_VERSION=1
+supabase secrets set ANTHROPIC_API_KEY=sk-ant-... ANTHROPIC_MODEL=claude-sonnet-5 SAFETY_MODEL=claude-haiku-4-5-20251001 PROMPT_VERSION=1
 
 # 5. Deploy functions
 supabase functions deploy
@@ -103,7 +103,9 @@ Produces `eval/reports/latest.md` with per-persona and aggregate accuracy.
 
 - No PHI: participants are pseudonymous; age stored as a band.
 - Self-harm / abuse / acute-distress language triggers a fixed, pre-translated
-  message and halts the session until a clinician reopens it.
+  message and halts the session until a clinician reopens it. Two independent
+  layers: language-blind patterns, then a small separate model.
+- Patient links expire after 14 days.
 - The model never gives medical advice; patient questions are routed to the
   clinician's review.
 - Every session records prompt version, construct-map version, and model id.

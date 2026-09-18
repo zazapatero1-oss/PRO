@@ -119,6 +119,11 @@
         "unsupported": "Voice input isn't available in this browser. You can type instead.",
         "denied": "Microphone access was blocked. You can type instead.",
         "error": "Voice input stopped. You can try again or type."
+      },
+      "readAloud": {
+        "on": "Read aloud",
+        "off": "Stop reading aloud",
+        "title": "Read messages aloud"
       }
     },
     "summary": {
@@ -264,7 +269,10 @@
     }
   },
   "enum": {
-    "language": { "en": "English", "es": "Spanish" },
+    "language": {
+      "en": "English",
+      "es": "Spanish"
+    },
     "ageBand": {
       "under-8": "Under 8",
       "8-12": "8–12",
@@ -279,7 +287,11 @@
       "comfortable": "I'm comfortable reading longer messages",
       "prefer-voice": "I'd rather talk than type"
     },
-    "respondent": { "self": "Patient", "guardian": "Parent / guardian", "both": "Patient with guardian" },
+    "respondent": {
+      "self": "Patient",
+      "guardian": "Parent / guardian",
+      "both": "Patient with guardian"
+    },
     "timepoint": {
       "baseline": "Baseline",
       "pre-op": "Pre-op",
@@ -317,9 +329,21 @@
       "patient_question": "Patient question",
       "other": "Other"
     },
-    "trigger": { "self_harm": "Self-harm", "abuse": "Abuse", "acute_distress": "Acute distress", "other": "Other" },
-    "population": { "adult": "Adult", "pediatric": "Pediatric" },
-    "mapStatus": { "draft": "Draft", "approved": "Approved", "retired": "Retired" },
+    "trigger": {
+      "self_harm": "Self-harm",
+      "abuse": "Abuse",
+      "acute_distress": "Acute distress",
+      "other": "Other"
+    },
+    "population": {
+      "adult": "Adult",
+      "pediatric": "Pediatric"
+    },
+    "mapStatus": {
+      "draft": "Draft",
+      "approved": "Approved",
+      "retired": "Retired"
+    },
     "constructStatus": {
       "untouched": "Not discussed",
       "partial": "Partial",

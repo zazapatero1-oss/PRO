@@ -107,8 +107,10 @@ face-q-conversation/
   - Clinicians: Supabase Auth email magic link. A `clinicians` table keyed by
     `auth.users.id` gates access.
   - Patients: **no account**. A session link carries a `resume_token` (random, 32
-    bytes, base64url). Edge functions validate the token and use the service role
-    internally. Patients never talk to the database directly.
+    bytes, base64url) that **expires 14 days** after creation
+    (`sessions.resume_token_expires_at`; error code `token_expired`). Edge functions
+    validate the token and use the service role internally. Patients never talk to
+    the database directly.
 - **RLS**: clinicians can read everything in the tables listed below and write
   `clinician_notes`, `audit_log` (via functions). Anon role has no direct table
   access. All patient-side mutations go through edge functions.
@@ -117,7 +119,8 @@ face-q-conversation/
 - **Environments**: two hosted Supabase projects, `dev` and `demo`. Web build reads
   `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_FUNCTIONS_URL`.
 - **Secrets** (Supabase function secrets): `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL`,
-  `SERVICE_ROLE_KEY` (auto), `PROMPT_VERSION`.
+  `SAFETY_MODEL` (second safety layer; default `claude-haiku-4-5-20251001`, `off` to
+  disable), `SERVICE_ROLE_KEY` (auto), `PROMPT_VERSION`.
 
 ## 5. Data model
 
@@ -347,6 +350,12 @@ Sections, in order:
    "Begin wrapping up; do not open new topics." At 100%: call `end_session`.
 8. Tool usage rules (below) and control-phrase handling.
 
+**Ordering for prompt caching.** Sections 1–5 and 8 are identical for every turn of
+a session and are sent as one cached system block; sections 6–7 (coverage, budget,
+per-turn notes) change every turn and are sent last as a separate uncached block.
+For `needs_clarification` constructs the guidance is to reflect back and check once
+more in conversation before leaving the item for the clinician.
+
 ### 7.3 Tools (Anthropic tool use)
 - `record_evidence({construct_id, patient_quote, quote_gloss_en, severity, confidence, interference[], note})`
   — call whenever a patient message provides evidence, possibly several times per turn.
@@ -361,8 +370,14 @@ Use a single Anthropic call per turn with tools + text; loop on tool results up 
 3 rounds.
 
 ### 7.4 Safety intercept
-`_shared/safety.ts`: language-aware keyword/regex lists (en, es) for self-harm,
-abuse, acute distress. Runs on every patient message **before** the model call.
+`_shared/safety.ts`: keyword/regex lists (en, es) for self-harm, abuse, acute
+distress. **Every language's patterns run on every message** regardless of the
+session language, so a mid-conversation language switch cannot dodge detection.
+Runs on every patient message **before** the model call. When the pattern layer is
+silent, a second independent layer (`_shared/safety_classifier.ts`, a small model
+configured by `SAFETY_MODEL`) screens the message with recent context; it fails open
+on any error so the pattern layer remains the floor. Flags record `detected_by`
+(`keyword` / `model`).
 On hit: insert `safety_flags` (detected_by `keyword`), set session status
 `safety-halted`, return the fixed message for that language from
 `_shared/safety_messages.ts` (reviewed static text, includes region-agnostic
@@ -432,8 +447,9 @@ You can correct anything." No severity labels shown to patients.
 - `/` — landing: two buttons: "I have a link" (patient) / "Clinician sign in".
 - `/p/:token` — patient flow: language picker (en/es) → consent → face page
   (prefilled if participant exists) → chat → summary review → thank-you.
-  Chat: text input, mic button (Web Speech API, language set from session), streaming
-  assistant bubbles, subtle coverage progress ("we've talked about 6 of 9 areas"),
+  Chat: text input, mic button (Web Speech API, language set from session), a
+  read-aloud toggle (browser speech synthesis, per-viewer preference) that speaks each
+  completed assistant message, streaming assistant bubbles, subtle coverage progress ("we've talked about 6 of 9 areas"),
   "skip" and "take a break" buttons, resume on reload.
 - `/clinician` — magic-link sign in. List of participants (study_id, diagnosis,
   timepoints completed, last session status, flags).

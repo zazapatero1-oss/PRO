@@ -1,4 +1,5 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { createSpeechOutput } from '../lib/tts'
 import { useT } from '../i18n'
 import type { InputMode, Language, SessionState } from '../types'
 import { ChatInput } from './ChatInput'
@@ -42,6 +43,7 @@ export function ChatView({
 }) {
   const { t } = useT()
   const logRef = useRef<HTMLDivElement>(null)
+  const { readAloud, toggleReadAloud, ttsSupported } = useReadAloud(state, language)
 
   useEffect(() => {
     const el = logRef.current
@@ -59,6 +61,17 @@ export function ChatView({
           <span className="chat__coverage" aria-live="polite">
             {t('patient.chat.coverage', { covered: state.coverage.covered, total: state.coverage.total_active })}
           </span>
+        )}
+        {ttsSupported && (
+          <button
+            type="button"
+            className="btn btn--sm"
+            aria-pressed={readAloud}
+            title={t('patient.chat.readAloud.title')}
+            onClick={toggleReadAloud}
+          >
+            {readAloud ? t('patient.chat.readAloud.off') : t('patient.chat.readAloud.on')}
+          </button>
         )}
       </header>
 
@@ -127,4 +140,43 @@ function lastIsBreakAck(state: ChatState): boolean {
   const last = patientMsgs[patientMsgs.length - 1]
   if (!last) return false
   return /break|pausa/i.test(last.content) && state.messages[state.messages.length - 1]?.role === 'assistant'
+}
+
+const READ_ALOUD_KEY = 'faceq.readAloud'
+
+/** Speaks each assistant (and safety) message once it has finished streaming, when enabled. */
+function useReadAloud(state: ChatState, language: Language) {
+  const tts = useMemo(() => createSpeechOutput(), [])
+  const [readAloud, setReadAloud] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(READ_ALOUD_KEY) === '1'
+    } catch {
+      return false
+    }
+  })
+  const spoken = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (!readAloud) return
+    const last = state.messages[state.messages.length - 1]
+    if (!last || last.streaming || last.role === 'patient' || spoken.current === last.id) return
+    spoken.current = last.id
+    tts.speak(last.content, language)
+  }, [state.messages, readAloud, language, tts])
+
+  useEffect(() => () => tts.cancel(), [tts])
+
+  const toggleReadAloud = () => {
+    setReadAloud((on) => {
+      const next = !on
+      if (!next) tts.cancel()
+      try {
+        localStorage.setItem(READ_ALOUD_KEY, next ? '1' : '0')
+      } catch {
+        /* per-viewer convenience only */
+      }
+      return next
+    })
+  }
+  return { readAloud, toggleReadAloud, ttsSupported: tts.supported }
 }
