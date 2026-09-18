@@ -544,3 +544,136 @@ Python 3.11+, `httpx`, `anthropic`, `pydantic`, `rich`. No framework.
 Workers A–D run in parallel against the contracts in this document. Column names,
 event names, tool names and JSON shapes in this spec are binding; if a worker must
 deviate, it documents the deviation at the top of its final report.
+
+---
+
+# v1.1 addendum — triage, depth, and speed (binding)
+
+Field tests showed three problems: the model picked topics with no signal about what
+matters to *this* patient; it left a topic after one exchange (asked about the eyes,
+never asked about shape, position, symmetry); and each turn was slow because evidence
+was filed through tool calls before any text was written. This addendum changes §6,
+§7 and §11 accordingly. Where it conflicts with earlier sections, this addendum wins.
+
+## A. Construct map additions (§6)
+
+Each construct gains `facets`: 5–8 short, clinician-relevant details that must be
+explored when the construct is a focus. Paraphrased; never item text.
+
+```json
+"facets": [
+  {"id": "shape", "label": "Shape of the eyes"},
+  {"id": "symmetry", "label": "Whether the two eyes match"},
+  {"id": "position", "label": "Where they sit on the face / spacing"},
+  {"id": "lids", "label": "Eyelids and under-eye area"},
+  {"id": "photos_vs_mirror", "label": "How they look in photos versus the mirror"},
+  {"id": "wanted_change", "label": "What specifically they would want different"},
+  {"id": "since_when", "label": "How long this has bothered them"}
+]
+```
+
+The map gains a top-level `triage` block: the stock screen asked at the start of every
+session, in order. Each item has an `intent` (what the model must find out, phrased in
+its own words and register) and `maps_to` (constructs the answer can feed).
+
+```json
+"triage": [
+  {"id": "overall", "intent": "How they feel overall about how their face looks right now", "maps_to": ["appearance.overall"]},
+  {"id": "features", "intent": "Which parts of their face are on their mind most (let them name features)", "maps_to": ["appearance.*"]},
+  {"id": "function", "intent": "Whether anything about the face makes everyday things harder: breathing, eating, speaking, expressions", "maps_to": ["function.*"]},
+  {"id": "impact", "intent": "How it affects how they feel about themselves and what they do socially", "maps_to": ["psych.*", "social.*", "distress.*"]},
+  {"id": "recovery", "intent": "How recovery is going: pain, swelling, numbness, scarring", "maps_to": ["adverse.*", "recovery.*"], "timepoints": ["post-op-2w", "post-op-6w", "post-op-6m", "post-op-12m", "follow-up"]}
+]
+```
+
+Pediatric maps phrase intents for school/friends/play and the guardian respondent.
+`coverage_rules` gains `focus_facet_threshold` (default 0.7: a focus construct counts as
+covered in depth once ≥70% of its facets have evidence or the patient declined it).
+
+## B. Session phases and focus (§7.1)
+
+`sessions.phase ∈ {triage, explore, wrap-up}`; `sessions.focus_constructs text[]`.
+
+- **triage**: the tracker tracks which triage items are answered (an item is answered
+  once any evidence row carries `triage_item = <id>` or the model marks it). The prompt
+  names the next unanswered item. When all applicable items are answered (or 6
+  assistant turns have passed), the tracker derives focus and moves to **explore**.
+- **Focus derivation**: constructs with any evidence severity ≥ `mild` or explicitly
+  named by the patient during triage, plus diagnosis `focus_constructs` that scored
+  ≥ mild, plus clinician `focus_constructs` (always). Cap 8; order: clinician focus →
+  severity desc → core first. Everything else is *light*: one pass, no facet
+  requirement, may be skipped if budget is short.
+- **explore**: one focus construct at a time. Status per focus construct:
+  `untouched → in_progress (facets covered / total) → confirmed`. The tracker exposes
+  `current_focus` (first non-confirmed focus construct) and its uncovered facets. The
+  model stays on `current_focus`, one facet per question, in the patient's words, until
+  the facet threshold is met, then **reflects back and confirms** ("so the main things
+  with your eyes are … — is that right?") and records `confirm_construct`. Only then
+  does the tracker advance. Declines skip the construct.
+- **wrap-up**: as before (§7.2 section 7).
+
+Defaults: `max_turns` 60, `target_minutes` 20.
+
+## C. Talk / extract split (§7.3, §7.6) — latency
+
+The conversational call **has no tools** and streams immediately. Its system prompt is
+the §7.2 prompt plus phase guidance (§B). Sequence per patient turn:
+
+1. Insert patient message. Deterministic safety patterns and control phrases (unchanged).
+2. Start **concurrently**: (a) the model safety screen (`SAFETY_MODEL`), (b) the
+   conversational stream (`ANTHROPIC_MODEL`).
+3. Stream `token` events as they arrive. If (a) flags, finish the stream, then emit
+   `safety` and halt (message shown after the reply; flag stored).
+4. After the reply: run **extraction** with `EXTRACT_MODEL` (default
+   `claude-haiku-4-5-20251001`) over the last patient message + the assistant's
+   previous question + the active construct list with facets. One non-streaming JSON
+   call returning `{evidence: [...], findings: [...], declined: [...], triage_answered:
+   [...], confirmed: [...], patient_questions: [...]}`. Evidence rows include
+   `facets: string[]` and optional `triage_item`. Persist; emit `evidence` events;
+   recompute the tracker; emit `status` (now with `phase`, `current_focus`,
+   `focus_progress: {confirmed, total}`).
+5. Session end is decided by the tracker (coverage complete, budget, patient stop),
+   not by a tool; the prompt tells the model when to say goodbye and the handler emits
+   `ended`.
+
+The opening message and the confirm/reflect step are ordinary conversational turns.
+Prompt caching stays (stable prefix first). `MAX_OUTPUT_TOKENS` for the talk call: 400.
+
+`status` event data: `{coverage: {covered, total_active}, phase, current_focus: string|null,
+focus_progress: {confirmed, total}, turns_used, max_turns}`.
+
+## D. Schema (§5)
+
+- `construct_evidence.facets text[] not null default '{}'`, `construct_evidence.triage_item text null`.
+- `sessions.phase text not null default 'triage'` (check), `sessions.focus_constructs text[] not null default '{}'`.
+- `session_profiles.profile` constructs gain `facets_covered: string[]`, `facets_missing: string[]`, `confirmed: boolean`.
+
+## E. Ingestion (§11) — from questionnaire text to facets
+
+`ingest-instrument` now **merges** into the latest approved map for the given
+population instead of replacing it: the extraction prompt receives the current map and
+the pasted text and returns (1) new facets per existing construct, (2) new constructs
+only where nothing in the map covers the item, (3) suggested triage intents. All
+paraphrased; the prompt forbids copying item wording and the handler rejects any facet
+label that appears verbatim (≥ 8-word overlap) in the input. Result is a `draft` map
+(version + 1) and a diff summary `{facets_added: n, constructs_added: [...], triage_added: n}`
+for the clinician to review and approve. The pasted text is never stored.
+
+## F. Web (§9) and eval (§12)
+
+- Chat header: phase-aware progress ("Getting the picture" → "Going deeper: 2 of 5
+  areas" → "Wrapping up"). `evidence` events may arrive *after* the reply text.
+- Instruments page: shows the merge diff (facets added per construct, new constructs,
+  triage intents) before Approve.
+- Eval: facet recall per focus construct (ground truth lists facets the persona can
+  speak to), triage compliance (first assistant turns address the screen items),
+  time-to-first-token and full-turn latency per turn, and confirm step observed.
+
+## G. Workstreams (v1.1)
+
+| # | Workstream | Deliverables |
+|---|---|---|
+| A2 | Maps + schema | facets for every construct in both seed maps, triage blocks, migration §D, regenerate seed.sql, schema test, update demo profiles minimally |
+| B2 | Engine | tracker phases/focus/facets, prompt, talk/extract split, concurrent safety, ingestion merge, tests |
+| C2 | Web | phase-aware progress, late-evidence handling, ingestion diff view, tests |
+| D2 | Eval | facet recall, triage compliance, latency metrics, persona facets, tests |
