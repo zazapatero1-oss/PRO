@@ -20,6 +20,14 @@ intercept, profile + summary generation, FHIR/CSV exports and the ingest stub. S
 persisted in `localStorage` so reload-to-resume works; "Reset demo data" on the
 participants page clears it.
 
+The scripted conversation follows the v1.1 phases: four triage answers, then one focus
+construct at a time with a reflect-and-confirm turn before the tracker moves on, then
+wrap-up. `status` events carry `phase`, `current_focus` and `focus_progress`, and `evidence`
+events are emitted *after* the reply text (extraction runs post-reply, SPEC v1.1 §C) — the
+chat reducer accepts them in any phase without disturbing the streaming bubble. The mock
+`ingest-instrument` merges into the latest approved map for the population and returns
+`{construct_map, diff}`; the instruments page renders that merge as a readable list.
+
 Mock shortcuts:
 
 - `/p/demo-es` — a seeded Spanish post-op intake session (SPEC §14 step 2).

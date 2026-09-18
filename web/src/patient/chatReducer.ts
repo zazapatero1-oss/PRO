@@ -1,4 +1,4 @@
-import type { ChatEvent, InputMode, SessionState, Severity } from '../types'
+import type { ChatEvent, FocusProgress, InputMode, SessionPhase, SessionState, Severity } from '../types'
 
 export type ChatRole = 'assistant' | 'patient' | 'system' | 'safety'
 
@@ -14,6 +14,10 @@ export type ChatPhase = 'idle' | 'sending' | 'streaming' | 'retrying' | 'ended' 
 export interface ChatState {
   messages: ChatMessage[]
   coverage: { covered: number; total_active: number } | null
+  /** Conversation phase from the tracker (v1.1 §B); distinct from `phase`, the turn state. */
+  sessionPhase: SessionPhase
+  currentFocus: string | null
+  focusProgress: FocusProgress | null
   turnsUsed: number
   maxTurns: number
   phase: ChatPhase
@@ -36,6 +40,9 @@ export type ChatAction =
 export const initialChatState: ChatState = {
   messages: [],
   coverage: null,
+  sessionPhase: 'triage',
+  currentFocus: null,
+  focusProgress: null,
   turnsUsed: 0,
   maxTurns: 40,
   phase: 'idle',
@@ -71,6 +78,11 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
         ...initialChatState,
         messages,
         coverage: s.coverage,
+        // A backend that has not shipped the v1.1 fields yet leaves the header on the
+        // triage wording rather than crashing.
+        sessionPhase: s.phase ?? 'triage',
+        currentFocus: s.current_focus ?? null,
+        focusProgress: s.focus_progress ?? null,
         turnsUsed: s.turns_used,
         maxTurns: s.max_turns,
         phase,
@@ -100,9 +112,19 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
           }
         }
         case 'evidence':
+          // Extraction runs after the reply (v1.1 §C), so this can land mid-stream, after the
+          // last token, or after `ended`. It must never touch messages or the turn phase.
           return { ...state, lastEvidence: ev.data }
         case 'status':
-          return { ...state, coverage: ev.data.coverage, turnsUsed: ev.data.turns_used, maxTurns: ev.data.max_turns }
+          return {
+            ...state,
+            coverage: ev.data.coverage,
+            sessionPhase: ev.data.phase ?? state.sessionPhase,
+            currentFocus: ev.data.current_focus ?? null,
+            focusProgress: ev.data.focus_progress ?? state.focusProgress,
+            turnsUsed: ev.data.turns_used,
+            maxTurns: ev.data.max_turns,
+          }
         case 'safety':
           return {
             ...state,

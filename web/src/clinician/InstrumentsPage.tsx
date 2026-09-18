@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { api } from '../api'
 import { ErrorBox, Loading } from '../components/ui'
 import { useT } from '../i18n'
-import type { ConstructMapRow, InstrumentRow } from '../types'
+import { diffConstructMaps, type MapDiffDetail } from '../lib/mapDiff'
+import type { ConstructMapRow, IngestDiff, InstrumentRow } from '../types'
 
 export function InstrumentsPage() {
   const { t } = useT()
@@ -15,6 +16,7 @@ export function InstrumentsPage() {
   const [text, setText] = useState('')
   const [busy, setBusy] = useState<'propose' | 'approve' | null>(null)
   const [proposed, setProposed] = useState<ConstructMapRow | null>(null)
+  const [diff, setDiff] = useState<IngestDiff | null>(null)
 
   const load = useCallback(() => {
     setError(null)
@@ -33,7 +35,9 @@ export function InstrumentsPage() {
     setBusy('propose')
     setError(null)
     try {
-      setProposed(await api.ingestInstrument({ instrument_slug: slug, text, population }))
+      const result = await api.ingestInstrument({ instrument_slug: slug, text, population })
+      setProposed(result.construct_map)
+      setDiff(result.diff)
       load()
     } catch (err) {
       setError(err)
@@ -56,6 +60,16 @@ export function InstrumentsPage() {
   }
 
   const count = (m: ConstructMapRow) => m.map.domains.reduce((n, d) => n + d.constructs.length, 0)
+
+  // The draft was merged into the highest approved version of the same map (v1.1 §E).
+  const base =
+    proposed && maps
+      ? maps
+          .filter((m) => m.slug === proposed.slug && m.status === 'approved' && m.version < proposed.version)
+          .sort((a, b) => a.version - b.version)
+          .slice(-1)[0] ?? null
+      : null
+  const detail: MapDiffDetail | null = proposed ? diffConstructMaps(base?.map ?? null, proposed.map) : null
 
   return (
     <main className="page page--wide" id="main">
@@ -169,11 +183,124 @@ export function InstrumentsPage() {
               <span className="badge">{t('clinician.instruments.approved')}</span>
             )}
           </div>
-          <pre className="json" style={{ marginTop: 12 }}>
-            {JSON.stringify(proposed.map, null, 2)}
-          </pre>
+          {detail && (
+            <IngestDiffView
+              detail={detail}
+              diff={diff}
+              baseLabel={base ? `${base.slug} v${base.version}` : proposed.slug}
+              baseVersion={base?.version ?? 0}
+              version={proposed.version}
+              slug={proposed.slug}
+            />
+          )}
+          <details style={{ marginTop: 12 }}>
+            <summary className="small">{t('clinician.instruments.showJson')}</summary>
+            <pre className="json" style={{ marginTop: 12 }}>
+              {JSON.stringify(proposed.map, null, 2)}
+            </pre>
+          </details>
         </section>
       )}
     </main>
+  )
+}
+
+/** Human-readable render of the ingestion merge diff (v1.1 §E/§F), shown before Approve. */
+export function IngestDiffView({
+  detail,
+  diff,
+  baseLabel,
+  baseVersion,
+  version,
+  slug,
+}: {
+  detail: MapDiffDetail
+  diff: IngestDiff | null
+  baseLabel: string
+  baseVersion: number
+  version: number
+  slug: string
+}) {
+  const { t } = useT()
+  const totals = diff ?? {
+    facets_added: detail.totals.facets_added,
+    constructs_added: detail.constructs.map((c) => c.id),
+    triage_added: detail.totals.triage_added,
+  }
+  return (
+    <div style={{ marginTop: 12 }}>
+      <h3>{t('clinician.instruments.diff.title')}</h3>
+      <p className="small muted">
+        {t('clinician.instruments.diff.summary', {
+          slug,
+          base: baseVersion,
+          version,
+          facets: totals.facets_added,
+          constructs: totals.constructs_added.length,
+          triage: totals.triage_added,
+        })}
+      </p>
+      <p className="small muted">
+        {t('clinician.instruments.diff.mergedInto')}: {baseLabel}
+      </p>
+
+      <div className="diff__group">
+        <h4>{t('clinician.instruments.diff.facetsAdded')}</h4>
+        {detail.facets.length === 0 ? (
+          <p className="muted small">{t('clinician.instruments.diff.none')}</p>
+        ) : (
+          detail.facets.map((f) => (
+            <div key={f.construct_id} className="diff__construct">
+              <strong>{f.label}</strong>
+              <div className="facets__group" style={{ marginTop: 4 }}>
+                {f.facets.map((x) => (
+                  <span key={x.id} className="chip chip--covered">
+                    {x.label}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      <div className="diff__group">
+        <h4>{t('clinician.instruments.diff.constructsAdded')}</h4>
+        {detail.constructs.length === 0 ? (
+          <p className="muted small">{t('clinician.instruments.diff.none')}</p>
+        ) : (
+          detail.constructs.map((c) => (
+            <div key={c.id} className="diff__construct">
+              <strong>{c.label}</strong> <span className="small muted">{c.id}</span>
+              <p className="small" style={{ margin: '2px 0 0' }}>
+                {c.description}
+              </p>
+              <div className="facets__group" style={{ marginTop: 4 }}>
+                {c.facets.map((x) => (
+                  <span key={x.id} className="chip chip--covered">
+                    {x.label}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      <div className="diff__group">
+        <h4>{t('clinician.instruments.diff.triageAdded')}</h4>
+        {detail.triage.length === 0 ? (
+          <p className="muted small">{t('clinician.instruments.diff.none')}</p>
+        ) : (
+          <ul>
+            {detail.triage.map((x) => (
+              <li key={x.id}>
+                {x.intent} <span className="small muted">→ {x.maps_to.join(', ')}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
   )
 }

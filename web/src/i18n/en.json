@@ -102,6 +102,52 @@
       "break": "Take a break",
       "breakPhrase": "I need a break",
       "coverage": "We've talked about {covered} of {total} areas",
+      "progress": {
+        "triage": "Getting the picture",
+        "explore": "Going deeper: {confirmed} of {total} areas",
+        "wrapUp": "Wrapping up"
+      },
+      "focus": {
+        "appearance": {
+          "overall": "how your face looks",
+          "nose": "your nose",
+          "eyes": "your eyes",
+          "lips": "your lips",
+          "cheeks": "your cheeks",
+          "jawline": "your chin and jawline",
+          "skin": "your skin"
+        },
+        "psych": {
+          "self_consciousness": "how often it is on your mind",
+          "distress": "how it makes you feel"
+        },
+        "social": {
+          "confidence": "being around other people",
+          "school": "school and friends"
+        },
+        "function": {
+          "breathing": "your breathing",
+          "eating": "eating and drinking",
+          "speaking": "being understood",
+          "expression": "your expressions"
+        },
+        "adverse": {
+          "swelling_bruising": "swelling and bruising",
+          "numbness": "numbness",
+          "scarring": "your scars",
+          "pain": "pain or discomfort"
+        },
+        "recovery": {
+          "early_life": "getting back to normal"
+        },
+        "outcome": {
+          "decision": "the decision to have treatment",
+          "information": "what you were told to expect"
+        },
+        "age": {
+          "appraisal": "how old your face looks to you"
+        }
+      },
       "assistant": "Assistant",
       "you": "You",
       "oneMoment": "One moment…",
@@ -210,6 +256,14 @@
       "worst": "worst",
       "confidence": "confidence",
       "constructs": "Constructs and quotes",
+      "firstImpressions": "First impressions",
+      "firstImpressionsIntro": "What the patient said during the opening screen, before any topic was explored in depth.",
+      "facetsCovered": "Covered",
+      "facetsMissing": "Still open",
+      "facetsNone": "No facets defined for this construct in the map.",
+      "confirmedWithPatient": "confirmed with patient",
+      "notConfirmed": "not confirmed",
+      "unconfirmedReason": "Explored but not confirmed back with the patient",
       "gloss": "English gloss",
       "findings": "Drill-down findings",
       "needsClarification": "Needs clarification",
@@ -260,6 +314,16 @@
       "propose": "Propose construct map",
       "proposing": "Proposing…",
       "proposed": "Proposed map",
+      "diff": {
+        "title": "What this proposal would change",
+        "summary": "Merged into {slug} v{base} → draft v{version}. New facets: {facets} · new constructs: {constructs} · new opening questions: {triage}.",
+        "facetsAdded": "New facets on existing constructs",
+        "constructsAdded": "New constructs",
+        "triageAdded": "New opening-screen questions",
+        "none": "Nothing added in this section.",
+        "mergedInto": "Merged into"
+      },
+      "showJson": "Show the full map JSON",
       "approve": "Approve",
       "approving": "Approving…",
       "approved": "Approved",

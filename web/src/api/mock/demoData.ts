@@ -6,6 +6,7 @@ import type {
   ProbeFindingRow,
   Profile,
   SafetyFlagRow,
+  SessionPhase,
   SessionProfileRow,
   SessionRow,
   Severity,
@@ -29,6 +30,14 @@ export interface MockStore {
   /** mock engine state: next scripted turn per session, and constructs the last assistant message asked about */
   scriptPos: Record<string, number>
   lastAsks: Record<string, string[]>
+  /** mock tracker state (v1.1 §B): phase, the construct being explored, and confirmed focuses */
+  convo: Record<string, ConvoState>
+}
+
+export interface ConvoState {
+  phase: SessionPhase
+  current_focus: string | null
+  confirmed: string[]
 }
 
 const DISCLAIMER = 'AI-assisted inferred profile. Not a validated FACE-Q score.'
@@ -98,6 +107,8 @@ const ev = (
   confidence: number,
   interference: ConstructEvidenceRow['interference'] = [],
   note: string | null = null,
+  facets: string[] = [],
+  triage_item: string | null = null,
 ): ConstructEvidenceRow => ({
   id: `${session_id}-ev-${construct_id}-${Math.round(confidence * 100)}`,
   session_id,
@@ -108,6 +119,8 @@ const ev = (
   severity,
   confidence,
   interference,
+  facets,
+  triage_item,
   note,
   superseded_by: null,
   created_at: '2026-09-01T10:05:00Z',
@@ -187,11 +200,12 @@ const S1m = [
   msg(S1.id, 'patient', 'A straight profile, and to actually breathe. I am not expecting a movie-star nose.', 'text'),
 ]
 const S1ev = [
-  ev(S1.id, 'appearance.nose', S1m[1].id, 'the bump on the side profile makes me hate photos', 'the bump on the side profile makes me hate photos', 'severe', 0.9, ['social'], 'Long-standing, profile-specific'),
-  ev(S1.id, 'appearance.overall', S1m[1].id, 'From the front it\'s fine', 'From the front it\'s fine', 'mild', 0.7),
-  ev(S1.id, 'social.confidence', S1m[3].id, "I ducked out of most of the group shots", "I ducked out of most of the group shots", 'moderate', 0.85, ['social', 'relationships']),
-  ev(S1.id, 'psych.self_consciousness', S1m[5].id, "I catch myself wondering if they're looking at it", "I catch myself wondering if they're looking at it", 'moderate', 0.8, ['social']),
-  ev(S1.id, 'function.breathing', S1m[7].id, 'Left side is blocked most of the time', 'Left side is blocked most of the time', 'severe', 0.9, ['sleep']),
+  ev(S1.id, 'appearance.nose', S1m[1].id, 'the bump on the side profile makes me hate photos', 'the bump on the side profile makes me hate photos', 'severe', 0.9, ['social'], 'Long-standing, profile-specific', ['profile', 'photos_vs_mirror', 'since_when']),
+  ev(S1.id, 'appearance.overall', S1m[1].id, 'From the front it\'s fine', 'From the front it\'s fine', 'mild', 0.7, [], null, ['features'], 'overall'),
+  ev(S1.id, 'appearance.nose', S1m[1].id, 'the nose is the whole reason I\'m here', 'the nose is the whole reason I\'m here', 'severe', 0.8, [], 'named during the opening screen', [], 'features'),
+  ev(S1.id, 'social.confidence', S1m[3].id, "I ducked out of most of the group shots", "I ducked out of most of the group shots", 'moderate', 0.85, ['social', 'relationships'], null, [], 'impact'),
+  ev(S1.id, 'psych.self_consciousness', S1m[5].id, "I catch myself wondering if they're looking at it", "I catch myself wondering if they're looking at it", 'moderate', 0.8, ['social'], null, ['when_strongest', 'frequency']),
+  ev(S1.id, 'function.breathing', S1m[7].id, 'Left side is blocked most of the time', 'Left side is blocked most of the time', 'severe', 0.9, ['sleep'], null, ['which_side', 'daytime', 'sleep'], 'function'),
 ]
 const S1pf = [
   pf(S1.id, 'appearance.nose', 'onset', 'Since teenage years', S1m[1].id),
@@ -207,9 +221,11 @@ const S1profile: Profile = {
       summary_en: 'Strong, long-standing dissatisfaction with the nasal profile; otherwise broadly content with facial appearance.',
       constructs: [
         { id: 'appearance.nose', severity: 'severe', confidence: 0.9, status: 'drill_down_done',
+          facets_covered: ['profile', 'photos_vs_mirror', 'since_when', 'wanted_change'], facets_missing: ['shape', 'symmetry', 'others_comments'], confirmed: true,
           quotes: [{ text: 'the bump on the side profile makes me hate photos', lang: 'en', gloss_en: 'the bump on the side profile makes me hate photos' }],
           findings: [{ category: 'onset', text: 'Since teenage years' }, { category: 'triggers', text: 'Side-profile photos; group photos' }, { category: 'expectation', text: 'Straight profile; realistic expectations stated' }] },
         { id: 'appearance.overall', severity: 'mild', confidence: 0.7, status: 'covered',
+          facets_covered: ['features'], facets_missing: ['mirror_vs_photos', 'age_fit', 'since_when', 'wanted_change'], confirmed: false,
           quotes: [{ text: "From the front it's fine", lang: 'en', gloss_en: "From the front it's fine" }], findings: [] },
       ],
     },
@@ -218,6 +234,7 @@ const S1profile: Profile = {
       summary_en: 'Frequent self-consciousness when meeting new people.',
       constructs: [
         { id: 'psych.self_consciousness', severity: 'moderate', confidence: 0.8, status: 'covered',
+          facets_covered: ['when_strongest', 'frequency'], facets_missing: ['avoidance', 'since_when', 'what_helps'], confirmed: false,
           quotes: [{ text: "I catch myself wondering if they're looking at it", lang: 'en', gloss_en: "I catch myself wondering if they're looking at it" }], findings: [] },
       ],
     },
@@ -234,6 +251,7 @@ const S1profile: Profile = {
       summary_en: 'Left-sided nasal obstruction with nocturnal mouth breathing.',
       constructs: [
         { id: 'function.breathing', severity: 'severe', confidence: 0.9, status: 'drill_down_done',
+          facets_covered: ['which_side', 'daytime', 'sleep', 'since_when'], facets_missing: ['exercise', 'what_helps'], confirmed: true,
           quotes: [{ text: 'Left side is blocked most of the time', lang: 'en', gloss_en: 'Left side is blocked most of the time' }],
           findings: [{ category: 'impact', text: 'Mouth breathing at night; partner reports snoring' }] },
       ],
@@ -352,10 +370,10 @@ const S3m = [
   msg(S3.id, 'patient', 'Verme descansada. No quiero parecer otra persona, solo yo con menos cansancio.', 'voice'),
 ]
 const S3ev = [
-  ev(S3.id, 'appearance.cheeks', S3m[1].id, 'Las mejillas se me han caído', 'My cheeks have dropped', 'moderate', 0.8),
+  ev(S3.id, 'appearance.cheeks', S3m[1].id, 'Las mejillas se me han caído', 'My cheeks have dropped', 'moderate', 0.8, [], null, [], 'features'),
   ev(S3.id, 'appearance.jawline', S3m[1].id, 'el cuello no me gusta nada', "I don't like my neck at all", 'severe', 0.85),
-  ev(S3.id, 'appearance.overall', S3m[3].id, 'Ya casi no me dejo hacer fotos', 'I hardly let anyone take photos of me any more', 'moderate', 0.85, ['social', 'relationships']),
-  ev(S3.id, 'social.confidence', S3m[5].id, 'Con gente nueva me pongo un pañuelo al cuello, siempre', 'With new people I always wear a scarf around my neck', 'moderate', 0.8, ['social']),
+  ev(S3.id, 'appearance.overall', S3m[3].id, 'Ya casi no me dejo hacer fotos', 'I hardly let anyone take photos of me any more', 'moderate', 0.85, ['social', 'relationships'], null, ['mirror_vs_photos'], 'overall'),
+  ev(S3.id, 'social.confidence', S3m[5].id, 'Con gente nueva me pongo un pañuelo al cuello, siempre', 'With new people I always wear a scarf around my neck', 'moderate', 0.8, ['social'], null, [], 'impact'),
   ev(S3.id, 'age.appraisal', S3m[7].id, 'Mayor. Diez años más, por lo menos.', 'Older. Ten years more, at least.', 'severe', 0.9),
   ev(S3.id, 'psych.distress', S3m[7].id, 'eso me pone triste, no se lo voy a negar', "that makes me sad, I won't deny it", 'moderate', 0.8),
   ev(S3.id, 'appearance.skin', S3m[9].id, 'Prefiero no hablar de eso ahora.', "I'd rather not talk about that right now.", 'declined', 1),
@@ -522,5 +540,6 @@ export function buildDemoStore(): MockStore {
     draftMaps: [],
     scriptPos: {},
     lastAsks: {},
+    convo: {},
   }
 }

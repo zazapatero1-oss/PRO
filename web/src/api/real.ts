@@ -6,6 +6,7 @@ import type {
   ConstructEvidenceRow,
   ConstructMapRow,
   DiagnosisCatalogEntry,
+  IngestResult,
   InstrumentRow,
   MessageRow,
   Participant,
@@ -272,7 +273,7 @@ export function createRealApi(): Api {
     async reopenSession(session_id) {
       await callFn('reopen-session', { session_id })
     },
-    ingestInstrument: (input) => callFn('ingest-instrument', input),
+    ingestInstrument: (input) => callFn<IngestResult>('ingest-instrument', input),
     approveConstructMap: (construct_map_id) =>
       callFn('ingest-instrument', { action: 'approve', construct_map_id }),
   }

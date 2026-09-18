@@ -4,6 +4,7 @@ import { useT } from '../i18n'
 import type { InputMode, Language, SessionState } from '../types'
 import { ChatInput } from './ChatInput'
 import type { ChatState } from './chatReducer'
+import { chatProgress } from './progress'
 import { useChat } from './useChat'
 
 interface Props {
@@ -50,6 +51,7 @@ export function ChatView({
     if (el) el.scrollTop = el.scrollHeight
   }, [state.messages, state.phase])
 
+  const progress = chatProgress(t, state)
   const inputDisabled = state.phase !== 'idle' && state.phase !== 'error'
   const showBreakHint = state.messages.length > 0 && state.phase === 'idle' && lastIsBreakAck(state)
 
@@ -57,11 +59,14 @@ export function ChatView({
     <div className="chat" id="main">
       <header className="chat__header">
         <h1 style={{ fontSize: '1.05rem', margin: 0 }}>{t('patient.chat.title')}</h1>
-        {state.coverage && state.coverage.total_active > 0 && (
-          <span className="chat__coverage" aria-live="polite">
-            {t('patient.chat.coverage', { covered: state.coverage.covered, total: state.coverage.total_active })}
-          </span>
-        )}
+        <span className="chat__coverage" aria-live="polite">
+          {progress && (
+            <>
+              {progress.text}
+              {progress.focus && <span className="chat__focus"> · {progress.focus}</span>}
+            </>
+          )}
+        </span>
         {ttsSupported && (
           <button
             type="button"
