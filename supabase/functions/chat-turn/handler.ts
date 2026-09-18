@@ -1,0 +1,440 @@
+// chat-turn handler (SPEC §7 end to end). All dependencies are injected so the whole turn
+// can be exercised in unit tests with fakes; index.ts only wires real clients.
+
+import type Anthropic from "@anthropic-ai/sdk";
+import type {
+  AnthropicClientLike,
+  ChatTurnRequest,
+  Db,
+  EndReason,
+  Language,
+  MessageRow,
+  RaiseSafetyFlagInput,
+  SessionRow,
+  Severity,
+  SseEvent,
+} from "../_shared/types.ts";
+import { badRequest, conflict, errorResponse } from "../_shared/errors.ts";
+import { requireSessionToken } from "../_shared/auth.ts";
+import { AsyncQueue, sseResponse } from "../_shared/sse.ts";
+import { detectSafety } from "../_shared/safety.ts";
+import { PAUSE_MESSAGES, safetyMessageFor, STOP_MESSAGES } from "../_shared/safety_messages.ts";
+import { detectControlPhrase } from "../_shared/control.ts";
+import { computeCoverage, prioritisedOpen } from "../_shared/tracker.ts";
+import {
+  budgetFraction,
+  buildSystemPrompt,
+  buildToolDefinitions,
+  renderPriorBrief,
+  type TurnBudget,
+} from "../_shared/prompt.ts";
+import { isRetryableAnthropicError, streamTurn } from "../_shared/anthropic.ts";
+import { estimateCostUsd, MAX_OUTPUT_TOKENS } from "../_shared/config.ts";
+import { writeAudit } from "../_shared/db.ts";
+import {
+  countAssistantTurns,
+  diagnosisLabel,
+  loadSessionContext,
+  nextSeq,
+  priorCompletedProfile,
+  type SessionContext,
+} from "../_shared/session_context.ts";
+import { executeTool } from "./tools.ts";
+
+export interface ChatTurnDeps {
+  db: Db;
+  anthropic: AnthropicClientLike;
+  model: string;
+  origin?: string;
+  now?: () => Date;
+}
+
+const SESSION_START_USER_MESSAGE =
+  "[The session has just started. Greet the patient and open the conversation.]";
+
+function validateBody(raw: unknown): ChatTurnRequest {
+  const b = (raw ?? {}) as Record<string, unknown>;
+  if (typeof b.session_id !== "string" || !b.session_id) throw badRequest("session_id is required");
+  if (typeof b.resume_token !== "string" || !b.resume_token) {
+    throw badRequest("resume_token is required");
+  }
+  if (b.text !== null && b.text !== undefined && typeof b.text !== "string") {
+    throw badRequest("text must be a string or null");
+  }
+  const text = typeof b.text === "string" ? b.text.trim() : null;
+  if (text !== null && text.length === 0) throw badRequest("text must not be empty");
+  if (text !== null && text.length > 4000) throw badRequest("text is too long (max 4000 chars)");
+  const mode = b.input_mode === "voice" ? "voice" : b.input_mode === "text" ? "text" : null;
+  return { session_id: b.session_id, resume_token: b.resume_token, text, input_mode: mode };
+}
+
+export async function handleChatTurn(deps: ChatTurnDeps, raw: unknown): Promise<Response> {
+  const origin = deps.origin ?? "*";
+  let body: ChatTurnRequest;
+  let session: SessionRow;
+  let ctx: SessionContext;
+  try {
+    body = validateBody(raw);
+    session = await requireSessionToken(deps.db, body);
+    switch (session.status) {
+      case "safety-halted":
+        throw conflict(
+          "This conversation is paused until the care team reopens it.",
+          "safety_halted",
+        );
+      case "intake":
+        throw conflict(
+          "Consent is required before the conversation can start.",
+          "consent_required",
+        );
+      case "wrapping-up":
+      case "summary-review":
+      case "completed":
+      case "abandoned":
+        throw conflict("This conversation has ended.", "session_closed");
+    }
+    ctx = await loadSessionContext(deps.db, session);
+    if (body.text === null && countAssistantTurns(ctx.messages) > 0) {
+      throw badRequest("The opening message was already sent.", "opening_already_sent");
+    }
+  } catch (err) {
+    return errorResponse(err, origin);
+  }
+  return sseResponse(runTurn(deps, body, ctx), origin);
+}
+
+async function* runTurn(
+  deps: ChatTurnDeps,
+  body: ChatTurnRequest,
+  ctx: SessionContext,
+): AsyncGenerator<SseEvent> {
+  const now = deps.now ?? (() => new Date());
+  const { db } = deps;
+  let session = ctx.session;
+  const language: Language = session.language;
+  const startedAt = now();
+
+  if (session.status === "consented") {
+    session = await db.updateSession(session.id, {
+      status: "active",
+      started_at: session.started_at ?? startedAt.toISOString(),
+    });
+  }
+
+  // ---- patient message, safety, control phrases (deterministic, before any model call) ----
+  let patientMessage: MessageRow | null = null;
+  const turnNotes: string[] = [];
+  if (body.text !== null) {
+    patientMessage = await insertPatientMessageIdempotent(db, ctx, body);
+
+    const safety = detectSafety(body.text, language);
+    if (safety) {
+      const message = safetyMessageFor(language, ctx.participant.age_band);
+      await db.insertSafetyFlag({
+        session_id: session.id,
+        message_id: patientMessage.id,
+        trigger: safety.trigger,
+        detected_by: "keyword",
+        action_taken:
+          `session halted; fixed ${language} message shown; matched "${safety.matched}"`,
+        reviewed_by: null,
+        reviewed_at: null,
+      });
+      await db.updateSession(session.id, { status: "safety-halted" });
+      await insertAssistantMessage(db, ctx, message, null);
+      await writeAudit(db, {
+        actor_type: "system",
+        actor_id: "safety",
+        action: "session.safety_halt",
+        target_type: "session",
+        target_id: session.id,
+        metadata: { trigger: safety.trigger, detected_by: "keyword" },
+      });
+      yield { event: "safety", data: { message } };
+      return;
+    }
+
+    const control = detectControlPhrase(body.text, language);
+    if (control?.kind === "stop") {
+      const text = STOP_MESSAGES[language] ?? STOP_MESSAGES.en;
+      await insertAssistantMessage(db, ctx, text, null);
+      await db.updateSession(session.id, { status: "wrapping-up" });
+      await writeAudit(db, {
+        actor_type: "participant",
+        actor_id: session.id,
+        action: "session.stop_requested",
+        target_type: "session",
+        target_id: session.id,
+      });
+      yield { event: "token", data: { t: text } };
+      yield { event: "ended", data: { reason: "patient_requested" } };
+      return;
+    }
+    if (control?.kind === "pause") {
+      const text = PAUSE_MESSAGES[language] ?? PAUSE_MESSAGES.en;
+      await insertAssistantMessage(db, ctx, text, null);
+      yield { event: "token", data: { t: text } };
+      yield statusEvent(ctx, session);
+      return;
+    }
+    if (control?.kind === "skip" || control?.kind === "rather_not") {
+      // Deterministic: the topic the assistant was steered to is the top open construct.
+      const current = prioritisedOpen(ctx.coverage)[0];
+      if (current) {
+        const row = await db.insertEvidence({
+          session_id: session.id,
+          construct_id: current.construct_id,
+          message_id: patientMessage.id,
+          patient_quote: body.text,
+          quote_gloss_en: body.text,
+          severity: "declined",
+          confidence: 1,
+          interference: [],
+          note: `declined via control phrase (${control.kind})`,
+          superseded_by: null,
+        });
+        ctx.evidence.push(row);
+        ctx.coverage = computeCoverage(
+          ctx.mapRow.map,
+          ctx.activeConstructs,
+          ctx.evidence,
+          ctx.findings,
+        );
+        turnNotes.push(
+          `The patient declined the current topic (${current.construct_id}); it is already recorded as declined. If your last message was about a different construct, call mark_declined for that one too. Acknowledge briefly without apology overload and move to the next topic.`,
+        );
+      } else {
+        turnNotes.push("The patient declined the current topic. Acknowledge briefly and move on.");
+      }
+    }
+  }
+
+  // ---- budget ----
+  const turnsUsed = countAssistantTurns(ctx.messages);
+  const started = session.started_at ? new Date(session.started_at) : startedAt;
+  const budget: TurnBudget = {
+    turnsUsed,
+    maxTurns: session.max_turns,
+    minutesElapsed: Math.max(0, (now().getTime() - started.getTime()) / 60000),
+    targetMinutes: session.target_minutes,
+  };
+  const forcedEnd = budgetFraction(budget) >= 1;
+  if (forcedEnd) {
+    turnNotes.push(
+      'This is the final message of the session: thank the patient, close warmly in one or two sentences, do not ask anything new, and call end_session with reason "turn_budget".',
+    );
+  }
+
+  // ---- prompt ----
+  let priorBrief: string | null = null;
+  if (session.timepoint !== "baseline") {
+    const prior = await priorCompletedProfile(db, session);
+    if (prior) priorBrief = renderPriorBrief(prior.profile, prior.session.timepoint);
+  }
+  const note = ctx.notes.length
+    ? {
+      note: ctx.notes.map((n) => n.note).filter(Boolean).join("\n"),
+      focus_constructs: [...new Set(ctx.notes.flatMap((n) => n.focus_constructs ?? []))],
+    }
+    : null;
+  const system = buildSystemPrompt({
+    language,
+    ageBand: ctx.participant.age_band,
+    readingComfort: ctx.participant.reading_comfort,
+    respondent: session.respondent,
+    displayName: ctx.participant.display_name,
+    diagnosisLabel: diagnosisLabel(ctx.diagnosis, ctx.participant, language),
+    timepoint: session.timepoint,
+    priorBrief,
+    clinicianNote: note,
+    population: ctx.mapRow.population,
+    activeConstructs: ctx.activeConstructs,
+    coverage: ctx.coverage,
+    budget,
+    turnNotes,
+  });
+  const history = toApiMessages(ctx.messages);
+
+  // ---- model turn (streamed) ----
+  const queue = new AsyncQueue<SseEvent>();
+  // Holder object: assignments inside tool callbacks are invisible to TS narrowing on plain lets.
+  const turn = {
+    endReason: null as EndReason | null,
+    modelFlag: null as RaiseSafetyFlagInput | null,
+  };
+  const t0 = Date.now();
+  const run = streamTurn({
+    client: deps.anthropic,
+    model: deps.model,
+    system,
+    messages: history,
+    tools: buildToolDefinitions(),
+    maxTokens: MAX_OUTPUT_TOKENS,
+    onText: (delta) => queue.push({ event: "token", data: { t: delta } }),
+    onToolUse: (name, input) =>
+      executeTool(
+        {
+          db,
+          sessionId: session.id,
+          messageId: patientMessage?.id ?? null,
+          activeConstructs: ctx.activeConstructs,
+          onEvidence: (e: { construct_id: string; severity: Severity; confidence: number }) =>
+            queue.push({ event: "evidence", data: e }),
+          onEndSession: (reason) => {
+            turn.endReason = reason;
+          },
+          onSafetyFlag: (flag) => {
+            turn.modelFlag = flag;
+          },
+        },
+        name,
+        input,
+      ),
+  })
+    .then(
+      (result) => ({ ok: true as const, result }),
+      (error: unknown) => ({ ok: false as const, error }),
+    )
+    .finally(() => queue.close());
+
+  for await (const ev of queue) yield ev;
+  const outcome = await run;
+  if (!outcome.ok) {
+    console.error("chat-turn model call failed", outcome.error);
+    yield {
+      event: "error",
+      data: {
+        retryable: isRetryableAnthropicError(outcome.error),
+        message: "One moment… the assistant could not reply. Please try again.",
+      },
+    };
+    return;
+  }
+  const { result } = outcome;
+  const latency = Date.now() - t0;
+
+  // ---- persist ----
+  if (result.text.trim()) {
+    await insertAssistantMessage(db, ctx, result.text.trim(), {
+      tokens_in: result.usage.input_tokens,
+      tokens_out: result.usage.output_tokens,
+      latency_ms: latency,
+    });
+  }
+  const inputTokens = session.input_tokens + result.usage.input_tokens;
+  const outputTokens = session.output_tokens + result.usage.output_tokens;
+  const sessionPatch: Partial<SessionRow> = {
+    input_tokens: inputTokens,
+    output_tokens: outputTokens,
+    cost_usd_estimate: estimateCostUsd(deps.model, inputTokens, outputTokens),
+  };
+
+  // Refresh coverage after tool execution.
+  ctx.evidence = await db.listEvidence(session.id);
+  ctx.findings = await db.listFindings(session.id);
+  ctx.coverage = computeCoverage(ctx.mapRow.map, ctx.activeConstructs, ctx.evidence, ctx.findings);
+
+  if (turn.modelFlag) {
+    const flag = turn.modelFlag;
+    const message = safetyMessageFor(language, ctx.participant.age_band);
+    await db.insertSafetyFlag({
+      session_id: session.id,
+      message_id: patientMessage?.id ?? null,
+      trigger: flag.trigger,
+      detected_by: "model",
+      action_taken: `session halted after model turn; ${flag.rationale}`,
+      reviewed_by: null,
+      reviewed_at: null,
+    });
+    await db.updateSession(session.id, { ...sessionPatch, status: "safety-halted" });
+    await insertAssistantMessage(db, ctx, message, null);
+    await writeAudit(db, {
+      actor_type: "system",
+      actor_id: "safety",
+      action: "session.safety_halt",
+      target_type: "session",
+      target_id: session.id,
+      metadata: { trigger: flag.trigger, detected_by: "model" },
+    });
+    yield { event: "safety", data: { message } };
+    return;
+  }
+
+  const finalReason: EndReason | null = turn.endReason ?? (forcedEnd ? "turn_budget" : null);
+  if (finalReason) {
+    await db.updateSession(session.id, { ...sessionPatch, status: "wrapping-up" });
+    yield statusEvent(ctx, session);
+    yield { event: "ended", data: { reason: finalReason } };
+    return;
+  }
+
+  await db.updateSession(session.id, sessionPatch);
+  yield statusEvent(ctx, session);
+}
+
+// ---------------------------------------------------------------------------
+// helpers
+// ---------------------------------------------------------------------------
+
+function statusEvent(ctx: SessionContext, session: SessionRow): SseEvent {
+  return {
+    event: "status",
+    data: {
+      coverage: { covered: ctx.coverage.covered, total_active: ctx.coverage.total_active },
+      turns_used: countAssistantTurns(ctx.messages),
+      max_turns: session.max_turns,
+    },
+  };
+}
+
+/** A retried turn re-sends the same text; reuse the dangling patient message instead of duplicating. */
+async function insertPatientMessageIdempotent(
+  db: Db,
+  ctx: SessionContext,
+  body: ChatTurnRequest,
+): Promise<MessageRow> {
+  const last = ctx.messages[ctx.messages.length - 1];
+  if (last && last.role === "patient" && last.content === body.text) return last;
+  const row = await db.insertMessage({
+    session_id: ctx.session.id,
+    seq: nextSeq(ctx.messages),
+    role: "patient",
+    content: body.text ?? "",
+    input_mode: body.input_mode,
+    tokens_in: null,
+    tokens_out: null,
+    latency_ms: null,
+  });
+  ctx.messages.push(row);
+  return row;
+}
+
+async function insertAssistantMessage(
+  db: Db,
+  ctx: SessionContext,
+  content: string,
+  usage: { tokens_in: number; tokens_out: number; latency_ms: number } | null,
+): Promise<MessageRow> {
+  const row = await db.insertMessage({
+    session_id: ctx.session.id,
+    seq: nextSeq(ctx.messages),
+    role: "assistant",
+    content,
+    input_mode: null,
+    tokens_in: usage?.tokens_in ?? null,
+    tokens_out: usage?.tokens_out ?? null,
+    latency_ms: usage?.latency_ms ?? null,
+  });
+  ctx.messages.push(row);
+  return row;
+}
+
+/** Patient → user, assistant → assistant; system events are server-side only. */
+export function toApiMessages(messages: MessageRow[]): Anthropic.MessageParam[] {
+  const out: Anthropic.MessageParam[] = [{ role: "user", content: SESSION_START_USER_MESSAGE }];
+  for (const m of messages) {
+    if (m.role === "patient") out.push({ role: "user", content: m.content });
+    else if (m.role === "assistant") out.push({ role: "assistant", content: m.content });
+  }
+  return out;
+}
