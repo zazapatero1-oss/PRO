@@ -7,6 +7,9 @@ patient's language at an age- and literacy-appropriate level, and the result is 
 **AI-assisted inferred profile** for the clinician — never a validated instrument
 score.
 
+**Live demo:** <https://zazapatero1-oss.github.io/PRO/> (web on GitHub Pages; backend on
+Supabase project `jtxbuvcslrggosrjxqjz`).
+
 Read [`SPEC.md`](SPEC.md) for the full design. Read this file to get it running.
 
 ## What's in the repo
@@ -78,6 +81,9 @@ cd web && VITE_MOCK=1 npm run dev
 
 ## Deploying
 
+- **Why not host the web app on Supabase?** Both edge functions and Storage rewrite
+  HTML responses to `text/plain` with a sandboxing CSP, so browsers will not render
+  pages from `*.supabase.co`. A static host is required.
 - **Web → GitHub Pages**: enable Pages (Settings → Pages → Source: GitHub Actions).
   Add repository *variables* `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`,
   `VITE_FUNCTIONS_URL`. Pushes to `main` that touch `web/` deploy automatically.
