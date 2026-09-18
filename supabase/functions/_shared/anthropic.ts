@@ -120,6 +120,25 @@ export async function streamTurn(opts: StreamTurnOptions): Promise<StreamTurnRes
   // Every round was tool calls, or the output cap cut a tool call off before any text:
   // ask once more with tools off so the patient always gets a reply. Only meaningful when
   // tools were sent at all; a tool-free call has nothing to turn off.
+  // A tool-free call that came back empty (rare) gets one plain retry.
+  if (!hasTools && !text.trim()) {
+    console.error("streamTurn: empty reply; retrying once");
+    rounds++;
+    const stream = opts.client.messages.stream({
+      model: opts.model,
+      max_tokens: opts.maxTokens,
+      system: opts.system,
+      messages,
+    });
+    stream.on("text", (delta) => {
+      text += delta;
+      opts.onText(delta);
+    });
+    const message = await stream.finalMessage();
+    usage.input_tokens += message.usage.input_tokens;
+    usage.output_tokens += message.usage.output_tokens;
+    stopReason = message.stop_reason;
+  }
   if (hasTools && !text.trim() && (stopReason === "tool_use" || stopReason === "max_tokens")) {
     rounds++;
     const stream = opts.client.messages.stream({

@@ -37,6 +37,7 @@ import {
 import {
   cachedSystem,
   completeJson,
+  type CompleteJsonResult,
   isRetryableAnthropicError,
   streamTurn,
 } from "../_shared/anthropic.ts";
@@ -287,6 +288,36 @@ async function* runTurn(
     )
     .finally(() => queue.close());
 
+  // Extraction only needs the patient's message and the previous question, so it runs
+  // concurrently with the reply instead of after it (§C step 4). Failure must not break the turn.
+  const extractionRun: Promise<CompleteJsonResult<ExtractionResult> | null> =
+    patientMessage && body.text !== null
+      ? (() => {
+        const text = body.text;
+        const { system, user } = buildExtractionPrompt({
+          lastAssistantMessage: priorAssistant?.content ?? null,
+          patientMessage: text,
+          activeConstructs: ctx.activeConstructs,
+          population: ctx.mapRow.population,
+          triage: tracker.triage.items,
+          language,
+          // In explore, only the focus areas need detail tags; triage tags everything.
+          facetsFor: tracker.phase === "explore" ? new Set(session.focus_constructs) : null,
+        });
+        return completeJson<ExtractionResult>({
+          client: deps.anthropic,
+          model: deps.extractModel ?? DEFAULT_EXTRACT_MODEL,
+          system,
+          user,
+          maxTokens: EXTRACT_MAX_OUTPUT_TOKENS,
+          validate: (v) => validateExtraction(v, ctx.activeConstructs, tracker.triage.items, text),
+        }).catch((err: unknown) => {
+          console.error("chat-turn extraction failed; the turn continues", err);
+          return null;
+        });
+      })()
+      : Promise.resolve(null);
+
   for await (const ev of queue) yield ev;
   const outcome = await run;
   if (!outcome.ok) {
@@ -332,28 +363,10 @@ async function* runTurn(
     return;
   }
 
-  // ---- §C step 4: extraction. A failure must not break the turn. ----
-  if (patientMessage && body.text !== null) {
+  // ---- §C step 4: extraction result (started alongside the reply). ----
+  const extraction = await extractionRun;
+  if (extraction && patientMessage && body.text !== null) {
     try {
-      const { system, user } = buildExtractionPrompt({
-        lastAssistantMessage: priorAssistant?.content ?? null,
-        patientMessage: body.text,
-        activeConstructs: ctx.activeConstructs,
-        population: ctx.mapRow.population,
-        triage: tracker.triage.items,
-        language,
-        // In explore, only the focus areas need detail tags; triage tags everything.
-        facetsFor: tracker.phase === "explore" ? new Set(session.focus_constructs) : null,
-      });
-      const extraction = await completeJson<ExtractionResult>({
-        client: deps.anthropic,
-        model: deps.extractModel ?? DEFAULT_EXTRACT_MODEL,
-        system,
-        user,
-        maxTokens: EXTRACT_MAX_OUTPUT_TOKENS,
-        validate: (v) =>
-          validateExtraction(v, ctx.activeConstructs, tracker.triage.items, body.text ?? ""),
-      });
       inputTokens += extraction.usage.input_tokens;
       outputTokens += extraction.usage.output_tokens;
       const events = await persistExtraction({
@@ -371,7 +384,7 @@ async function* runTurn(
       });
       for (const e of events) yield { event: "evidence", data: e };
     } catch (err) {
-      console.error("chat-turn extraction failed; the turn continues", err);
+      console.error("chat-turn extraction persist failed; the turn continues", err);
     }
   }
 

@@ -370,10 +370,12 @@ Deno.test("chat-turn: keyword safety intercept halts before any model call (es, 
 
 Deno.test("chat-turn: the safety screen runs beside the stream and halts after the reply", async () => {
   const s = await seedSession({ status: "active", startedAt: new Date().toISOString() });
-  // Scripts: [safety create (flags), stream reply]. No extraction: the turn halts first.
+  // Scripts: [safety create (flags), stream reply, extraction create]. Extraction runs beside
+  // the reply; its result is discarded because the turn halts.
   const anthropic = new FakeAnthropic([
     { text: '{"trigger":"self_harm","rationale":"passive ideation"}' },
     { text: "I hear you. Thank you for telling me." },
+    extraction({}),
   ]);
   const { events } = await turn(
     s,
@@ -383,7 +385,7 @@ Deno.test("chat-turn: the safety screen runs beside the stream and halts after t
   );
   // The patient still gets the reply; the fixed message follows it.
   assertEquals(events.map((e) => e.event), ["token", "token", "safety"]);
-  assertEquals(anthropic.calls.map((c) => c.kind), ["create", "stream"]);
+  assertEquals(anthropic.calls.map((c) => c.kind), ["create", "stream", "create"]);
   assertEquals(s.db.flags[0].detected_by, "model");
   assertEquals(s.db.sessions[0].status, "safety-halted");
   assertEquals(s.db.evidence.length, 0);
@@ -491,8 +493,10 @@ Deno.test("chat-turn: 80% budget by time adds the wrap-up instruction", async ()
 
 Deno.test("chat-turn: model failure yields a retryable error event; retry reuses the patient message", async () => {
   const s = await seedSession({ status: "active", startedAt: new Date().toISOString() });
+  // Per attempt: [stream, extraction create]; the first stream fails.
   const anthropic = new FakeAnthropic([
     new Error("network"),
+    extraction({}),
     { text: "Back now." },
     extraction({}),
   ]);
