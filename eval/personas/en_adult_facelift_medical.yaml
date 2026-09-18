@@ -33,6 +33,7 @@ backstory: >
   numbness lasts was vague. She avoids nothing socially. Mood is good. When
   shown the summary she will correct that the tightness is in front of BOTH
   ears, not just one.
+expected_focus: [adverse.numbness_sensation, adverse.pain_discomfort, adverse.scarring]
 ground_truth:
   constructs:
     appearance.overall: none
@@ -43,9 +44,32 @@ ground_truth:
     psych.mood: none
     social.avoidance: none
     adverse.swelling_bruising: none
-    adverse.numbness_sensation: moderate
-    adverse.scarring: mild
-    adverse.pain_discomfort: mild
+    adverse.numbness_sensation:
+      severity: moderate
+      facets:
+        location: "both earlobes are completely numb"
+        quality: "like they belong to someone else, no feeling at all"
+        change_over_time: "no better than it was at three weeks, as far as I can tell"
+        effect_on_daily_things: "I catch them with my earrings and don't feel it"
+        noticing_it: "most when I put my glasses on or wash my hair"
+    adverse.scarring:
+      severity: mild
+      facets:
+        location: "behind both ears, up into the hairline"
+        visibility: "nobody can see them, my hair covers it"
+        texture_raised: "there is a small ridge behind the right ear I can feel"
+        colour: "still pink but fading"
+        itching_tightness: "itchy behind the right ear in the evening"
+        change_over_time: "flatter than they were a month ago"
+    adverse.pain_discomfort:
+      severity: mild
+      facets:
+        location: "in front of both ears, the tight pulling"
+        quality: "tight and pulling rather than sharp"
+        timing_of_day: "worse in the evening, by about six o'clock"
+        severity_scale: "two or three out of ten, never more"
+        relief: "it eases if I lie down or stop talking for a while"
+        effect_on_activities: "it doesn't stop me doing anything"
     function.facial_expression: mild
     recovery.daily_activities: none
     outcome.result: none

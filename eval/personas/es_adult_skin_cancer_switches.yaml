@@ -34,19 +34,44 @@ backstory: >
   more, partly for the sun. He was worried about the cancer coming back and
   wants to know if the redness is normal. He is satisfied overall and felt
   the surgeon explained things well.
+expected_focus: [appearance.nose, distress.cancer_worry, adverse.scarring]
 ground_truth:
   constructs:
     appearance.overall: mild
-    appearance.nose: moderate
+    appearance.nose:
+      severity: moderate
+      facets:
+        bridge: "el puente está bien, no lo tocaron"
+        tip: "the tip is thicker on that side now, more bulky"
+        width: "ese lado se ve más ancho que el otro"
+        profile_vs_front: "de frente se nota más; de perfil casi nada"
+        breathing: "I breathe fine, no problem with that"
+        wanted_change: "that the patch settles down and matches the rest"
     appearance.skin: mild
     appearance.cheeks: none
     psych.self_confidence: mild
     psych.mood: none
     distress.hiding: mild
-    distress.cancer_worry: moderate
+    distress.cancer_worry:
+      severity: moderate
+      facets:
+        recurrence_worry: "I worry it comes back, that is the honest answer"
+        check_ups: "I have a check every three months and I count the days"
+        triggers: "any new mark on my skin and I am at the mirror"
+        effect_on_sleep: "the night before an appointment I do not sleep well"
+        talking_about_it: "I do not talk to my wife about it, she worries enough"
+        reassurance: "when the doctor says it is clear I am fine for a month or two"
     social.avoidance: none
     function.breathing: none
-    adverse.scarring: mild
+    adverse.scarring:
+      severity: mild
+      facets:
+        location: "on the side of the nose, and a line down the cheek"
+        visibility: "el parche se ve rojo, la línea de la mejilla no se ve"
+        texture_raised: "it is a little raised, like a small cushion"
+        colour: "rojo, bastante rojo todavía"
+        itching_tightness: "it itches sometimes in the sun"
+        change_over_time: "less red than a month ago, but still red"
     adverse.numbness_sensation: mild
     adverse.asymmetry: mild
     outcome.result: none

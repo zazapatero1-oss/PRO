@@ -23,7 +23,7 @@ ENV = {
 
 def test_config_defaults_and_required():
     cfg = EvalConfig.from_env(ENV)
-    assert cfg.patient_model == "claude-sonnet-5" and cfg.max_turns == 40 and cfg.anthropic_api_key is None
+    assert cfg.patient_model == "claude-sonnet-5" and cfg.max_turns == 60 and cfg.anthropic_api_key is None
     with pytest.raises(ConfigError, match="EVAL_CLINICIAN_PASSWORD"):
         EvalConfig.from_env({k: v for k, v in ENV.items() if k != "EVAL_CLINICIAN_PASSWORD"})
     cfg = EvalConfig.from_env({**ENV, "EVAL_MAX_TURNS": "12", "EVAL_PATIENT_MODEL": "claude-haiku-5", "FUNCTIONS_URL": ENV["FUNCTIONS_URL"] + "/"})
@@ -53,6 +53,46 @@ def test_render_markdown_and_write_report(personas, registry, evasive_persona, e
     data = json.loads(json_path.read_text(encoding="utf-8"))
     assert data["n_personas"] == 1 and data["personas"][0]["persona_id"] == evasive_persona.id
     assert (run_dir / "report.md").exists() and (run_dir / "scores.json").exists()
+
+
+def test_report_has_the_v11_columns_and_sections(personas, registry, evasive_persona, tmp_path):
+    profile = make_profile(
+        {
+            "appearance.lips": {
+                "severity": "severe",
+                "facets_covered": ["shape", "fullness"],
+                "facets_missing": ["symmetry"],
+                "confirmed": True,
+            }
+        }
+    )
+    turns = [
+        (None, "How do you feel about your face overall?", []),
+        ("fine", "Which parts of your face are on your mind - lips, cheeks?", []),
+    ]
+    records = [
+        make_record(
+            evasive_persona.id,
+            profile,
+            turns,
+            latencies=[(420.0, 2100.0), (380.0, 1900.0)],
+            session_row={"status": "completed", "focus_constructs": ["appearance.lips", "appearance.cheeks"]},
+        )
+    ]
+    cmap = {"adult": {"map": {"domains": [{"id": "appearance", "constructs": [
+        {"id": "appearance.lips", "label": "Lips", "facets": [{"id": "shape"}, {"id": "fullness"}, {"id": "symmetry"}]},
+    ]}]}}, "pediatric": None}
+    scores = score_run(personas, records, registry, cmap, "run-v11")
+    md = render_markdown(scores)
+    for header in ("facet recall", "triage", "focus P/R", "confirm", "TTFT ms med/p90", "turn ms med/p90"):
+        assert header in md
+    assert "Triage screen (first" in md
+    assert "Facets of the focus constructs" in md
+    assert "Latency: TTFT median 400 ms / p90 416 ms" in md  # median of 420/380
+    assert "`appearance.lips`" in md
+    # facets the map does not have are surfaced the same way unknown construct ids are
+    assert "not present in the fetched construct map" in md
+    assert "aging.appraisal.perceived_age" in md
 
 
 def test_offline_end_to_end_run_score_report(personas, registry, tmp_path, monkeypatch, capsys):

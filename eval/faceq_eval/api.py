@@ -103,14 +103,24 @@ class HttpFaceQApi:
         rows = self._rest_get("session_profiles", {"session_id": f"eq.{session_id}", "select": "*"})
         return rows[0] if rows else None
 
+    # `phase` / `focus_constructs` are v1.1 §D columns; fall back to the v1 column
+    # list so a run against an engine that has not migrated yet still scores.
+    SESSION_SELECT = (
+        "id,status,language,input_tokens,output_tokens,cost_usd_estimate,model_id,prompt_version,"
+        "max_turns,started_at,ended_at,phase,focus_constructs"
+    )
+    SESSION_SELECT_V1 = (
+        "id,status,language,input_tokens,output_tokens,cost_usd_estimate,model_id,prompt_version,"
+        "max_turns,started_at,ended_at"
+    )
+
     def get_session_row(self, session_id: str) -> dict[str, Any] | None:
-        rows = self._rest_get(
-            "sessions",
-            {
-                "id": f"eq.{session_id}",
-                "select": "id,status,language,input_tokens,output_tokens,cost_usd_estimate,model_id,prompt_version,max_turns,started_at,ended_at",
-            },
-        )
+        try:
+            rows = self._rest_get("sessions", {"id": f"eq.{session_id}", "select": self.SESSION_SELECT})
+        except ApiError as exc:
+            if exc.status != 400:
+                raise
+            rows = self._rest_get("sessions", {"id": f"eq.{session_id}", "select": self.SESSION_SELECT_V1})
         return rows[0] if rows else None
 
     # ----------------------------------------------------------------- functions

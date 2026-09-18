@@ -25,7 +25,7 @@ class EvalConfig(BaseModel):
     clinician_password: str
     anthropic_api_key: str | None = None
     patient_model: str = "claude-sonnet-5"
-    max_turns: int = 40
+    max_turns: int = 60  # SPEC v1.1 §B default; the server's sessions.max_turns also applies
     construct_map_slug: str = "face-q-adult"
     pediatric_map_slug: str = "face-q-pediatric"
     request_timeout_s: float = 120.0
@@ -55,7 +55,7 @@ class EvalConfig(BaseModel):
             clinician_password=env["EVAL_CLINICIAN_PASSWORD"],
             anthropic_api_key=env.get("ANTHROPIC_API_KEY") or None,
             patient_model=env.get("EVAL_PATIENT_MODEL") or "claude-sonnet-5",
-            max_turns=int(env.get("EVAL_MAX_TURNS") or 40),
+            max_turns=int(env.get("EVAL_MAX_TURNS") or 60),
             construct_map_slug=env.get("EVAL_CONSTRUCT_MAP_SLUG") or "face-q-adult",
             pediatric_map_slug=env.get("EVAL_PEDIATRIC_MAP_SLUG") or "face-q-pediatric",
             allow_demo=env.get("EVAL_ALLOW_DEMO") == "1",

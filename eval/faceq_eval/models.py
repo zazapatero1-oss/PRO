@@ -46,9 +46,41 @@ class NarrativeFact(BaseModel):
     match_any: list[str] = Field(min_length=1)
 
 
+class GroundTruthConstruct(BaseModel):
+    """One ground-truth construct: its severity and, for focus constructs, its facets.
+
+    `facets` maps a facet id (see `personas/_facet_ids.yaml`) to what this persona
+    would say about that detail if the interviewer drills into it (SPEC v1.1 §A/§F).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    severity: GroundTruthSeverity
+    facets: dict[str, str] = Field(default_factory=dict)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _accept_bare_severity(cls, value: Any) -> Any:
+        return {"severity": value} if isinstance(value, str) else value
+
+    @model_validator(mode="after")
+    def _declined_has_no_facets(self) -> "GroundTruthConstruct":
+        if self.severity == "declined" and self.facets:
+            raise ValueError("a declined construct cannot carry facets")
+        return self
+
+
 class GroundTruth(BaseModel):
-    constructs: dict[str, GroundTruthSeverity]
+    constructs: dict[str, GroundTruthConstruct]
     narrative_facts: list[NarrativeFact]
+
+    @property
+    def severities(self) -> dict[str, str]:
+        return {cid: c.severity for cid, c in self.constructs.items()}
+
+    def facets_for(self, construct_id: str) -> dict[str, str]:
+        c = self.constructs.get(construct_id)
+        return dict(c.facets) if c else {}
 
 
 class SummaryCorrection(BaseModel):
@@ -83,6 +115,8 @@ class Persona(BaseModel):
     backstory: str
     safety: SafetySpec | None = None
     ground_truth: GroundTruth
+    # What triage should surface as this session's focus constructs (SPEC v1.1 §B).
+    expected_focus: list[str] = Field(default_factory=list)
     expected_behaviours: ExpectedBehaviours
 
     @model_validator(mode="after")
@@ -97,12 +131,27 @@ class Persona(BaseModel):
             raise ValueError(f"{self.id}: adult persona with a pediatric age band")
         if self.expected_behaviours.safety_intercept_expected != (self.safety is not None):
             raise ValueError(f"{self.id}: safety block must be present iff safety_intercept_expected")
+        severities = self.ground_truth.severities
         for cid in self.expected_behaviours.declines:
-            if self.ground_truth.constructs.get(cid) != "declined":
+            if severities.get(cid) != "declined":
                 raise ValueError(f"{self.id}: declined construct {cid} must be 'declined' in ground truth")
-        for cid, sev in self.ground_truth.constructs.items():
+        for cid, sev in severities.items():
             if sev == "declined" and cid not in self.expected_behaviours.declines:
                 raise ValueError(f"{self.id}: {cid} is 'declined' in ground truth but not in declines")
+        if not 2 <= len(self.expected_focus) <= 4:
+            raise ValueError(f"{self.id}: expected_focus must list 2-4 constructs, got {len(self.expected_focus)}")
+        if len(set(self.expected_focus)) != len(self.expected_focus):
+            raise ValueError(f"{self.id}: expected_focus has duplicates")
+        for cid in self.expected_focus:
+            if cid not in severities:
+                raise ValueError(f"{self.id}: expected_focus construct {cid} is not in ground truth")
+            if severities[cid] == "declined":
+                raise ValueError(f"{self.id}: expected_focus construct {cid} is declined")
+            if not self.ground_truth.constructs[cid].facets:
+                raise ValueError(f"{self.id}: expected_focus construct {cid} must list facets")
+        for cid, c in self.ground_truth.constructs.items():
+            if c.facets and cid not in self.expected_focus:
+                raise ValueError(f"{self.id}: {cid} lists facets but is not in expected_focus")
         n = len(self.ground_truth.constructs)
         if not 8 <= n <= 16:
             raise ValueError(f"{self.id}: expected 8-16 ground-truth constructs, got {n}")
@@ -141,6 +190,18 @@ class ConstructRegistry(BaseModel):
         return set(self.populations.get(population, []))  # type: ignore[arg-type]
 
 
+class FacetRegistry(BaseModel):
+    """`personas/_facet_ids.yaml`: facet id -> label, per construct id."""
+
+    constructs: dict[str, dict[str, str]]
+
+    def facets_for(self, construct_id: str) -> set[str]:
+        return set(self.constructs.get(construct_id, {}))
+
+    def label(self, construct_id: str, facet_id: str) -> str:
+        return self.constructs.get(construct_id, {}).get(facet_id, facet_id)
+
+
 # --------------------------------------------------------------------------- SSE events
 
 
@@ -154,6 +215,9 @@ class EvidenceEvent(BaseModel):
     construct_id: str
     severity: str
     confidence: float | None = None
+    # v1.1: extraction runs after the reply, so these arrive late in the stream.
+    facets: list[str] = Field(default_factory=list)
+    triage_item: str | None = None
 
 
 class Coverage(BaseModel):
@@ -161,11 +225,20 @@ class Coverage(BaseModel):
     total_active: int
 
 
+class FocusProgress(BaseModel):
+    confirmed: int
+    total: int
+
+
 class StatusEvent(BaseModel):
     event: Literal["status"] = "status"
     coverage: Coverage
     turns_used: int
     max_turns: int
+    # v1.1 §C; optional so a pre-v1.1 engine still parses.
+    phase: Literal["triage", "explore", "wrap-up"] | None = None
+    current_focus: str | None = None
+    focus_progress: FocusProgress | None = None
 
 
 class SafetyEvent(BaseModel):
@@ -240,6 +313,13 @@ class TurnRecord(BaseModel):
     events: list[dict[str, Any]]
     retried: bool = False
     latency_s: float = 0.0
+    # v1.1 §F latency: request start -> first `token` event / -> `status` event.
+    time_to_first_token_ms: float | None = None
+    turn_ms: float | None = None
+    # From the last `status` event of this turn (SPEC v1.1 §C).
+    phase: str | None = None
+    current_focus: str | None = None
+    focus_progress: dict[str, int] | None = None
     patient_input_tokens: int = 0
     patient_output_tokens: int = 0
 

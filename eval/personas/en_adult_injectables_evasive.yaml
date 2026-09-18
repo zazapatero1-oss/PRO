@@ -29,15 +29,44 @@ backstory: >
   self-conscious and her mood dips when she sees photos of herself, though she
   would never call it distress. She has started to avoid after-work drinks and
   turned down a friend's wedding-party role, but she will not discuss that.
+expected_focus: [appearance.lips, appearance.cheeks, aging.appraisal, psych.self_confidence]
 ground_truth:
   constructs:
     appearance.overall: moderate
-    appearance.lips: severe
-    appearance.cheeks: moderate
+    appearance.lips:
+      severity: severe
+      facets:
+        shape: "the top lip basically disappears when I smile"
+        fullness: "they've always been thin, that's the main thing"
+        symmetry: "they're even enough, I suppose"
+        smile_movement: "when I smile it just vanishes, that's the bit I hate"
+        wanted_change: "a bit more there, nothing dramatic, I don't want the duck look"
+        since_when: "since my twenties, honestly since always"
+    appearance.cheeks:
+      severity: moderate
+      facets:
+        fullness: "they've gone flat, like the air's been let out"
+        contour_change: "it happened over the last three or four years"
+        photos_vs_mirror: "in photos they look hollow, in the mirror it's not as bad"
+        wanted_change: "just a bit of lift back where it used to be"
     appearance.skin: mild
     appearance.eyes: none
-    aging.appraisal: moderate
-    psych.self_confidence: moderate
+    aging.appraisal:
+      severity: moderate
+      facets:
+        perceived_age: "in photos I look older than I am, easily mid-forties"
+        compared_to_peers: "my friends the same age look fresher, or they're just better at photos"
+        which_features_age: "the forehead lines and the flat cheeks"
+        photos_vs_mirror: "the mirror is fine, photos are the problem"
+        comments_from_others: "nobody's said anything, it's just me"
+    psych.self_confidence:
+      severity: moderate
+      facets:
+        with_strangers: "fine with strangers, they don't know what I looked like"
+        at_work_or_school: "video calls are the worst part of my week"
+        in_photos: "I hate being photographed, I'll take the picture instead"
+        getting_ready: "more make-up than I used to, takes longer"
+        what_helps: "good lighting, honestly"
     psych.mood: mild
     distress.hiding: moderate
     social.avoidance: declined

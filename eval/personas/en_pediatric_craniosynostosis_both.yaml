@@ -35,17 +35,50 @@ backstory: >
   want the scar seen wet. Headaches at night the first two weeks, gone now. Sam
   thinks she is more confident; Nia says she was already fine. Both are happy
   with the decision and felt well informed.
+# The clinician note weights school, overall appearance and swelling, so triage
+# should surface those plus the numbness she keeps mentioning.
+expected_focus: [appearance.overall, social.school, adverse.swelling_bruising, adverse.numbness_sensation]
 ground_truth:
   constructs:
-    appearance.overall: mild
+    appearance.overall:
+      severity: mild
+      facets:
+        overall_feel: "Nia says it finally looks normal to her"
+        main_feature: "it was always the brow, the left one sat higher"
+        photos_vs_mirror: "she says photos are fine now, she didn't like side-on ones before"
+        situations: "tying her hair back used to be the worst"
+        wanted_change: "[Nia] nothing now, it's fine"
+        since_when: "she's felt like that since she was about eleven"
     appearance.eyes: mild
     psych.self_confidence: mild
     psych.mood: none
     social.comfort: none
-    social.school: none
-    social.avoidance: mild
-    adverse.swelling_bruising: mild
-    adverse.numbness_sensation: mild
+    social.school:
+      severity: none
+      facets:
+        classmates: "she went back two weeks ago, her friends were great about it"
+        lessons_participation: "no problem in lessons, she's caught up already"
+        break_times: "she's with the same group at lunch as always"
+        activities_clubs: "she's skipped swim club, that's the one thing"
+        teachers_support: "school were good, they let her sit out PE"
+        absence: "four weeks off in total"
+    adverse.swelling_bruising:
+      severity: mild
+      facets:
+        location: "around the left eye, the lower lid mostly"
+        timing_of_day: "puffy in the mornings, gone by lunchtime"
+        change_over_time: "much less than it was, it was both eyes at first"
+        colour_bruising: "the bruising went yellow then faded weeks ago"
+        effect_on_appearance: "[Nia] only I notice it"
+        what_helps: "sleeping on an extra pillow"
+    adverse.numbness_sensation:
+      severity: mild
+      facets:
+        location: "a patch on the scalp near the scar"
+        quality: "[Nia] weird, not bad, like it's not mine"
+        change_over_time: "smaller than it was"
+        effect_on_daily_things: "brushing her hair feels odd over that bit"
+        noticing_it: "mostly when she washes her hair"
     adverse.scarring: none
     adverse.asymmetry: none
     adverse.pain_discomfort: none

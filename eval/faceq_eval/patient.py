@@ -12,7 +12,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Protocol
 
-from faceq_eval.models import ConstructRegistry, Persona
+from faceq_eval.models import ConstructRegistry, FacetRegistry, Persona
 
 LANG_NAME = {"en": "English", "es": "Spanish"}
 
@@ -63,7 +63,9 @@ def _topic(registry: ConstructRegistry, construct_id: str, language: str) -> str
     return entry.patient_topic
 
 
-def build_system_prompt(persona: Persona, registry: ConstructRegistry) -> str:
+def build_system_prompt(
+    persona: Persona, registry: ConstructRegistry, facet_registry: FacetRegistry | None = None
+) -> str:
     p = persona
     lang = LANG_NAME[p.language]
     who = {
@@ -106,12 +108,33 @@ def build_system_prompt(persona: Persona, registry: ConstructRegistry) -> str:
         + ("; 'you/your' here means the child" if p.speaker != "self" else "")
         + "):",
     ]
-    for cid, sev in p.ground_truth.constructs.items():
+    for cid, sev in p.ground_truth.severities.items():
         topic = _topic(registry, cid, p.language)
         if sev == "declined":
             lines.append(f"- {topic}: you decline to discuss this (see rules below)")
         else:
             lines.append(f"- {topic}: {sev}")
+
+    # Focus constructs: the details the interviewer is supposed to dig out one at a
+    # time (SPEC v1.1 §B). Each is a separate answer, given only when asked for.
+    focus_lines: list[str] = []
+    for cid in p.expected_focus:
+        facets = p.ground_truth.facets_for(cid)
+        if not facets:
+            continue
+        focus_lines.append(f"About {_topic(registry, cid, p.language)}:")
+        for fid, detail in facets.items():
+            label = facet_registry.label(cid, fid) if facet_registry else fid
+            focus_lines.append(f"  - {label}: {detail}")
+    if focus_lines:
+        lines += [
+            "",
+            "These are the areas you care most about. If the interviewer asks about one of these details, answer it "
+            "with the matching point below, in your own words and your own register. Give ONE detail per reply, only "
+            "the one asked about; never list them:",
+            *focus_lines,
+        ]
+
     lines += ["", "Specific facts you can mention when the conversation naturally reaches them (do not dump them all "
               "at once; wait for a relevant question):"]
     for fact in p.ground_truth.narrative_facts:
@@ -128,8 +151,10 @@ def build_system_prompt(persona: Persona, registry: ConstructRegistry) -> str:
         "around your whole reply, no 'Patient:' prefix.",
         "5. Do not ask the interviewer questions unless your personality says so.",
         "6. Never mention real names of other people beyond first names, and no addresses, dates of birth or contact details.",
+        "7. If the interviewer reflects back a summary of what you said about one area and asks whether they got it "
+        "right, answer briefly and honestly: confirm it if it matches, or correct the one part that is wrong.",
     ]
-    n = 7
+    n = 8
     for cid in p.expected_behaviours.declines:
         topic = _topic(registry, cid, p.language)
         rules.append(
@@ -164,14 +189,15 @@ class SimulatedPatient:
     persona: Persona
     registry: ConstructRegistry
     client: PatientClient
-    max_turns: int = 40
+    max_turns: int = 60
+    facet_registry: FacetRegistry | None = None
     history: list[dict[str, str]] = field(default_factory=list)
     system: str = ""
     input_tokens: int = 0
     output_tokens: int = 0
 
     def __post_init__(self) -> None:
-        self.system = build_system_prompt(self.persona, self.registry)
+        self.system = build_system_prompt(self.persona, self.registry, self.facet_registry)
 
     @property
     def reply_number(self) -> int:

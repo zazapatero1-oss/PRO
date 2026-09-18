@@ -26,18 +26,42 @@ backstory: >
   breathe fine. They are not depressed but they do notice the nose in every
   photo and turn their head for selfies. They avoid nothing socially. They hope
   the surgery makes the profile "straight and normal", nothing dramatic.
+expected_focus: [appearance.nose, distress.preoccupation, distress.hiding]
 ground_truth:
   constructs:
     appearance.overall: mild
-    appearance.nose: severe
+    appearance.nose:
+      severity: severe
+      facets:
+        bridge: "there's a bump on the bridge, you can see it from the side"
+        tip: "the tip is alright, it's not the tip that bothers me"
+        width: "not fussed about the width"
+        nostrils: "one nostril looks a bit smaller, I only noticed in photos"
+        profile_vs_front: "side on is the bad one, front on it's not too bad"
+        breathing: "breathing is fine, never had an issue"
+        wanted_change: "just straight and normal, nothing dramatic"
+        since_when: "since school, got worse after I broke it at 16"
     appearance.eyes: none
     appearance.chin_jawline: none
     appearance.skin: none
     psych.mood: none
     social.comfort: none
     social.avoidance: none
-    distress.preoccupation: moderate
-    distress.hiding: mild
+    distress.preoccupation:
+      severity: moderate
+      facets:
+        time_spent_thinking: "think about it most days, not all day though"
+        checking_behaviour: "check it in the mirror when I'm out, shop windows too"
+        triggers: "photos at work dos, group pictures"
+        effect_on_day: "doesn't stop me doing stuff, just annoying"
+        since_when: "years now"
+    distress.hiding:
+      severity: mild
+      facets:
+        what_is_used: "just turn my head, keep the good side to the camera"
+        situations: "selfies, group photos"
+        photos_and_video: "never post photos of myself"
+        frequency: "every time there's a camera out"
     function.breathing: none
   narrative_facts:
     - text: "Nose has a bump on the bridge and leans to the left"

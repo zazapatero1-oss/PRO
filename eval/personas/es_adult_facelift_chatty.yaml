@@ -29,20 +29,44 @@ backstory: >
   behind the ears that she does not mind. She sleeps propped on pillows still.
   She feels more confident, went back to her Thursday choir, and her sister says
   she looks rested. She is glad she did it, and felt well informed beforehand.
+expected_focus: [adverse.numbness_sensation, adverse.asymmetry, appearance.cheeks]
 ground_truth:
   constructs:
     appearance.overall: none
     appearance.chin_jawline: none
-    appearance.cheeks: mild
+    appearance.cheeks:
+      severity: mild
+      facets:
+        fullness: "la izquierda se ve más llena, sobre todo al despertarme"
+        symmetry: "no están iguales, la derecha ya está normal"
+        contour_change: "va mejorando poco a poco, cada semana un poquito"
+        photos_vs_mirror: "en las fotos no se nota, en el espejo sí"
+        wanted_change: "que se igualen las dos, nada más"
     appearance.skin: none
     aging.appraisal: none
     psych.self_confidence: none
     psych.mood: none
     social.comfort: none
     adverse.swelling_bruising: mild
-    adverse.numbness_sensation: moderate
+    adverse.numbness_sensation:
+      severity: moderate
+      facets:
+        location: "todo el lado izquierdo, desde la oreja hasta la mejilla"
+        quality: "como después del dentista, dormido"
+        change_over_time: "sigue igual desde hace tres semanas, ahí se quedó"
+        effect_on_daily_things: "me pongo la crema y no me entero de si me la he puesto"
+        tingling_pain: "a veces un hormigueo por la noche"
+        noticing_it: "cuando me lavo la cara es cuando más lo noto"
     adverse.scarring: none
-    adverse.asymmetry: mild
+    adverse.asymmetry:
+      severity: mild
+      facets:
+        where_uneven: "la mejilla izquierda, más llena que la derecha"
+        when_noticed: "por las mañanas, al levantarme"
+        photos_vs_mirror: "en el espejo lo veo yo, en las fotos no"
+        movement_vs_rest: "al sonreír casi no se nota"
+        others_notice: "mi hermana dice que no ve nada"
+        bother_level: "me fijo, pero no me quita el sueño"
     outcome.result: none
     outcome.decision: none
     outcome.information: none

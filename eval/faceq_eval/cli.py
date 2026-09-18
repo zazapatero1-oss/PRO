@@ -8,7 +8,7 @@ import logging
 import sys
 from pathlib import Path
 
-from faceq_eval.personas import load_personas, load_registry, validate_persona_set
+from faceq_eval.personas import load_facet_registry, load_personas, load_registry, validate_persona_set
 from faceq_eval.report import REPORTS_DIR, print_console, write_report
 from faceq_eval.score import load_run_dir, score_run
 
@@ -36,10 +36,15 @@ def _parser() -> argparse.ArgumentParser:
 
 def _validate() -> int:
     registry = load_registry()
+    facet_registry = load_facet_registry()
     personas = load_personas()
-    problems = validate_persona_set(personas, registry)
+    problems = validate_persona_set(personas, registry, facet_registry)
     for p in personas:
-        print(f"ok  {p.id:40s} {p.language} {p.population:9s} {p.intake.diagnosis_code:18s} {p.personality.style}")
+        n_facets = sum(len(c.facets) for c in p.ground_truth.constructs.values())
+        print(
+            f"ok  {p.id:40s} {p.language} {p.population:9s} {p.intake.diagnosis_code:18s} "
+            f"{p.personality.style:22s} focus={len(p.expected_focus)} facets={n_facets}"
+        )
     for problem in problems:
         print(f"ERR {problem}")
     return 1 if problems else 0
@@ -80,9 +85,10 @@ def _run(args: argparse.Namespace) -> int:
         return 2
 
     registry = load_registry()
+    facet_registry = load_facet_registry()
     only = [s.strip() for s in args.personas.split(",")] if args.personas else None
     personas = load_personas(only=only)
-    problems = validate_persona_set(load_personas(), registry)
+    problems = validate_persona_set(load_personas(), registry, facet_registry)
     if problems:
         for problem in problems:
             print(f"persona error: {problem}", file=sys.stderr)
@@ -107,6 +113,7 @@ def _run(args: argparse.Namespace) -> int:
         registry,
         max_turns=args.max_turns or cfg.max_turns,
         patient_model=cfg.patient_model,
+        facet_registry=facet_registry,
     )
     run_dir = Path(args.run_dir) if args.run_dir else new_run_dir(REPORTS_DIR)
     run_dir.mkdir(parents=True, exist_ok=True)

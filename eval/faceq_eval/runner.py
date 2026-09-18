@@ -23,10 +23,12 @@ from faceq_eval.models import (
     ConstructRegistry,
     EndedEvent,
     ErrorEvent,
+    FacetRegistry,
     Persona,
     RunRecord,
     SafetyEvent,
     SSEEvent,
+    StatusEvent,
     TokenEvent,
     TurnRecord,
 )
@@ -47,6 +49,15 @@ class TurnResult:
     events: list[SSEEvent]
     retried: bool
     latency_s: float
+    # v1.1 §F: request start -> first `token` event, and request start -> `status`
+    # event (the point at which the engine has finished extracting and the turn is
+    # really over). Both None when the stream never produced that event.
+    time_to_first_token_ms: float | None = None
+    turn_ms: float | None = None
+
+    @property
+    def last_status(self) -> StatusEvent | None:
+        return next((ev for ev in reversed(self.events) if isinstance(ev, StatusEvent)), None)
 
     @property
     def terminal(self) -> str | None:
@@ -86,10 +97,12 @@ class PersonaRunner:
         patient_client_factory: Callable[[Persona], PatientClient],
         registry: ConstructRegistry,
         *,
-        max_turns: int = 40,
+        max_turns: int = 60,
         retry_delay_s: float = 2.0,
         sleep: Callable[[float], None] = time.sleep,
         patient_model: str | None = None,
+        facet_registry: FacetRegistry | None = None,
+        clock: Callable[[], float] = time.monotonic,
     ) -> None:
         self.api = api
         self.patient_client_factory = patient_client_factory
@@ -98,14 +111,34 @@ class PersonaRunner:
         self.retry_delay_s = retry_delay_s
         self.sleep = sleep
         self.patient_model = patient_model
+        self.facet_registry = facet_registry
+        self.clock = clock
 
     # ------------------------------------------------------------------ one turn
 
     def _collect(self, session_id: str, token: str, text: str | None, input_mode: str | None) -> TurnResult:
-        t0 = time.monotonic()
-        events = list(self.api.chat_turn(session_id, token, text, input_mode))
+        """Consume the stream lazily so the timestamps are the arrival times."""
+        t0 = self.clock()
+        events: list[SSEEvent] = []
+        first_token_at: float | None = None
+        status_at: float | None = None
+        for ev in self.api.chat_turn(session_id, token, text, input_mode):
+            now = self.clock()
+            if first_token_at is None and isinstance(ev, TokenEvent):
+                first_token_at = now
+            if isinstance(ev, StatusEvent):
+                status_at = now  # the last status of the turn closes it
+            events.append(ev)
+        done = self.clock()
         assistant_text = "".join(ev.t for ev in events if isinstance(ev, TokenEvent))
-        return TurnResult(assistant_text, events, retried=False, latency_s=time.monotonic() - t0)
+        return TurnResult(
+            assistant_text,
+            events,
+            retried=False,
+            latency_s=done - t0,
+            time_to_first_token_ms=None if first_token_at is None else round((first_token_at - t0) * 1000, 1),
+            turn_ms=None if status_at is None else round((status_at - t0) * 1000, 1),
+        )
 
     def turn(self, session_id: str, token: str, text: str | None, input_mode: str | None) -> TurnResult:
         """One chat-turn with a single retry on a retryable error (SPEC §7.6)."""
@@ -166,7 +199,13 @@ class PersonaRunner:
             record.consent_variant = variant
         max_turns = min(self.max_turns, state.max_turns or self.max_turns)
 
-        patient = SimulatedPatient(persona, self.registry, self.patient_client_factory(persona), max_turns=max_turns)
+        patient = SimulatedPatient(
+            persona,
+            self.registry,
+            self.patient_client_factory(persona),
+            max_turns=max_turns,
+            facet_registry=self.facet_registry,
+        )
 
         result = self.turn(started.session_id, token, None, None)
         self._record_turn(record, 1, None, None, result)
@@ -213,6 +252,7 @@ class PersonaRunner:
         input_mode: str | None,
         result: TurnResult,
     ) -> None:
+        status = result.last_status
         record.turns.append(
             TurnRecord(
                 turn=turn_no,
@@ -222,6 +262,11 @@ class PersonaRunner:
                 events=[ev.model_dump() for ev in result.events],
                 retried=result.retried,
                 latency_s=round(result.latency_s, 3),
+                time_to_first_token_ms=result.time_to_first_token_ms,
+                turn_ms=result.turn_ms,
+                phase=status.phase if status else None,
+                current_focus=status.current_focus if status else None,
+                focus_progress=(status.focus_progress.model_dump() if status and status.focus_progress else None),
             )
         )
 
