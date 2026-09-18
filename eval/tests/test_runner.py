@@ -150,7 +150,7 @@ def test_start_session_body_and_consent_variant(personas, evasive_persona):
     assert "clinician_note" not in body
     both = next(p for p in personas if p.id == "en_pediatric_craniosynostosis_both")
     body = start_session_body(both)
-    assert body["clinician_note"]["focus_constructs"] == ["social.function", "appearance.overall", "adverse.swelling"]
+    assert body["clinician_note"]["focus_constructs"] == ["social.school", "appearance.overall", "adverse.swelling_bruising"]
     assert consent_variant_for(both) == "minor-assent"
     assert consent_variant_for(next(p for p in personas if p.id == "es_pediatric_cleft_guardian")) == "guardian"
     assert consent_variant_for(evasive_persona) == "adult"
@@ -231,8 +231,8 @@ def test_summary_correction_is_submitted(personas, registry):
     api = FakeApi([tokens("Hi") + [EndedEvent(reason="coverage_complete")]])
     record = make_runner(api, FakePatientClient(), registry).run_persona(persona)
     corrections = next(c[1] for c in api.calls if c[0] == "confirm_summary")
-    assert corrections == [{"construct_id": "adverse.pain", "patient_text": persona.expected_behaviours.summary_correction.patient_text}]
-    assert record.correction_submitted["construct_id"] == "adverse.pain"
+    assert corrections == [{"construct_id": "adverse.pain_discomfort", "patient_text": persona.expected_behaviours.summary_correction.patient_text}]
+    assert record.correction_submitted["construct_id"] == "adverse.pain_discomfort"
 
 
 def test_run_all_writes_files_sequential_and_parallel(personas, registry, tmp_path):

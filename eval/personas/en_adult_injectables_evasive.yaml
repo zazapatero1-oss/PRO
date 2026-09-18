@@ -36,15 +36,15 @@ ground_truth:
     appearance.cheeks: moderate
     appearance.skin: mild
     appearance.eyes: none
-    age.appraisal: moderate
-    psychological.self_consciousness: moderate
-    psychological.wellbeing: mild
-    distress.appearance: mild
+    aging.appraisal: moderate
+    psych.self_confidence: moderate
+    psych.mood: mild
+    distress.hiding: moderate
     social.avoidance: declined
-    social.function: mild
+    social.comfort: mild
   narrative_facts:
     - text: "Keeps the camera above eye level on video calls to hide forehead lines"
-      construct_id: appearance.skin
+      construct_id: distress.hiding
       match_any: ["camera", "video call", "video calls", "angle", "above eye"]
     - text: "Has always disliked her thin lips"
       construct_id: appearance.lips
@@ -53,7 +53,7 @@ ground_truth:
       construct_id: appearance.cheeks
       match_any: ["flat", "cheek", "volume", "sunken"]
     - text: "Feels older than her age in photos"
-      construct_id: age.appraisal
+      construct_id: aging.appraisal
       match_any: ["older", "photo", "her age", "look my age"]
 expected_behaviours:
   declines: [social.avoidance]

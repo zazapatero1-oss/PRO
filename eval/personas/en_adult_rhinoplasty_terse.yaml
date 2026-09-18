@@ -33,11 +33,11 @@ ground_truth:
     appearance.eyes: none
     appearance.chin_jawline: none
     appearance.skin: none
-    psychological.self_consciousness: moderate
-    psychological.wellbeing: none
+    psych.mood: none
+    social.comfort: none
     social.avoidance: none
-    social.function: none
-    distress.appearance: mild
+    distress.preoccupation: moderate
+    distress.hiding: mild
     function.breathing: none
   narrative_facts:
     - text: "Nose has a bump on the bridge and leans to the left"
@@ -47,7 +47,7 @@ ground_truth:
       construct_id: appearance.nose
       match_any: ["football", "soccer", "knock", "injur", "when they were 16", "at 16", "sixteen"]
     - text: "Turns head to hide the profile in selfies and photos"
-      construct_id: psychological.self_consciousness
+      construct_id: distress.hiding
       match_any: ["selfie", "photo", "profile", "turn"]
     - text: "Has disliked the nose since secondary school"
       construct_id: appearance.nose

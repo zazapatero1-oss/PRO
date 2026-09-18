@@ -38,37 +38,37 @@ ground_truth:
     appearance.overall: none
     appearance.chin_jawline: none
     appearance.skin: none
-    age.appraisal: none
-    psychological.self_consciousness: none
-    psychological.wellbeing: none
+    aging.appraisal: none
+    psych.self_confidence: none
+    psych.mood: none
     social.avoidance: none
-    adverse.swelling: none
-    adverse.numbness: moderate
+    adverse.swelling_bruising: none
+    adverse.numbness_sensation: moderate
     adverse.scarring: mild
-    adverse.pain: mild
-    function.expression: mild
-    recovery.early_life_impact: none
-    outcome.satisfaction: none
+    adverse.pain_discomfort: mild
+    function.facial_expression: mild
+    recovery.daily_activities: none
+    outcome.result: none
     outcome.decision: none
     outcome.information: mild
   narrative_facts:
     - text: "Tight, pulling feeling in front of both ears, worse in the evening"
-      construct_id: adverse.pain
+      construct_id: adverse.pain_discomfort
       match_any: ["tight", "pull", "evening", "in front of"]
     - text: "Numb earlobes"
-      construct_id: adverse.numbness
+      construct_id: adverse.numbness_sensation
       match_any: ["earlobe", "ear lobe", "lobe", "ears"]
     - text: "Small ridge in the scar behind the right ear"
       construct_id: adverse.scarring
       match_any: ["ridge", "behind", "right ear", "lump", "bump"]
     - text: "Smile slightly stiff on the left when tired"
-      construct_id: function.expression
+      construct_id: function.facial_expression
       match_any: ["smile", "stiff", "tired"]
     - text: "Written information on how long numbness lasts was vague"
       construct_id: outcome.information
       match_any: ["vague", "leaflet", "written", "information", "how long"]
     - text: "Back at work for three weeks"
-      construct_id: recovery.early_life_impact
+      construct_id: recovery.daily_activities
       match_any: ["work", "three weeks"]
 expected_behaviours:
   declines: []
@@ -77,5 +77,5 @@ expected_behaviours:
   medical_question_keywords: ["tight", "numb", "normal"]
   safety_intercept_expected: false
   summary_correction:
-    construct_id: adverse.pain
+    construct_id: adverse.pain_discomfort
     patient_text: "The tight pulling feeling is in front of both ears, not just one side."

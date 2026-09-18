@@ -45,20 +45,21 @@ ground_truth:
     appearance.overall: severe
     appearance.chin_jawline: severe
     appearance.lips: moderate
-    psychological.self_consciousness: severe
-    psychological.wellbeing: severe
+    psych.mood: severe
     social.avoidance: severe
-    social.function: severe
-    distress.appearance: severe
+    social.comfort: severe
+    distress.preoccupation: severe
+    distress.hiding: severe
     function.eating_drinking: severe
+    function.swallowing_oral: moderate
     function.speaking: severe
-    function.expression: moderate
-    adverse.numbness: moderate
-    adverse.pain: mild
+    function.facial_expression: moderate
+    adverse.numbness_sensation: moderate
+    adverse.pain_discomfort: mild
     outcome.decision: mild
   narrative_facts:
     - text: "Eats only soft food, mostly soups; drools when drinking"
-      construct_id: function.eating_drinking
+      construct_id: function.swallowing_oral
       match_any: ["soup", "soft food", "drool", "dribble"]
     - text: "Daughter answers the phone for him because speech is slurred"
       construct_id: function.speaking

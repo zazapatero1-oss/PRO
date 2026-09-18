@@ -19,9 +19,9 @@ personality:
   description: >
     The speaker is Theo's dad, Ben, typing on his phone during a lunch break.
     Short, practical sentences. Answers for Theo, occasionally adding what Theo
-    says ("he says it's fine"). When asked how HE feels or whether he is upset
-    about Theo's appearance, he says he'd rather not go into that, and moves
-    on. Does not raise it again.
+    says ("he says it's fine"). When asked how much the lip is on his or Theo's
+    mind, or whether it upsets or worries him, he says he'd rather not go into
+    that, and moves on. Does not raise it again.
 backstory: >
   Theo is 6 and just started school. His lip has a visible notch and the
   nostril on that side is flatter. Theo himself seems unbothered and is a
@@ -29,24 +29,27 @@ backstory: >
   in the first week of school and answered "I was born like that". He has
   speech therapy and says some sounds unclearly (s and sh); strangers sometimes
   do not understand him. He eats and drinks normally. No breathing problems.
-  Ben finds it hard to watch other children stare, but will not discuss that.
+  Ben finds it hard to watch other children stare and thinks about the lip
+  more than he lets on, but will not discuss any of that.
 ground_truth:
   constructs:
     appearance.overall: mild
     appearance.lips: moderate
     appearance.nose: moderate
-    psychological.self_consciousness: none
-    psychological.wellbeing: none
+    psych.self_confidence: none
+    psych.mood: none
     social.avoidance: none
-    social.function: mild
-    distress.appearance: declined
+    social.comfort: mild
+    social.school: none
+    social.teasing_comments: mild
+    distress.preoccupation: declined
     function.speaking: moderate
     function.eating_drinking: none
     function.breathing: none
     adverse.scarring: mild
   narrative_facts:
     - text: "Children at school asked what happened to his lip; he said he was born like that"
-      construct_id: social.function
+      construct_id: social.teasing_comments
       match_any: ["born like that", "what happened", "asked", "school"]
     - text: "Some sounds (s and sh) are unclear; strangers sometimes do not understand him"
       construct_id: function.speaking
@@ -55,10 +58,10 @@ ground_truth:
       construct_id: appearance.nose
       match_any: ["nostril", "flat", "one side"]
     - text: "Theo himself seems unbothered; confident and loud"
-      construct_id: psychological.self_consciousness
+      construct_id: psych.self_confidence
       match_any: ["unbothered", "not bothered", "confident", "loud", "doesn't care", "does not care", "fine"]
 expected_behaviours:
-  declines: [distress.appearance]
-  decline_keywords: ["upset", "distress", "hard for you", "how you feel", "how do you feel", "for you as a parent", "affects you"]
+  declines: [distress.preoccupation]
+  decline_keywords: ["upset", "distress", "on your mind", "on his mind", "worry", "worried", "bother", "hard for you", "how you feel", "how do you feel", "for you as a parent", "affects you"]
   asks_medical_question: false
   safety_intercept_expected: false

@@ -44,7 +44,21 @@ def validate_persona_set(personas: list[Persona], registry: ConstructRegistry) -
     """Return a list of problems (empty when the set is consistent)."""
     problems: list[str] = []
     known = set(registry.constructs)
+    post_op_only = set(registry.post_op_only)
     for p in personas:
+        allowed = registry.ids_for(p.population)
+        referenced = (
+            set(p.ground_truth.constructs)
+            | {f.construct_id for f in p.ground_truth.narrative_facts if f.construct_id}
+            | set(p.expected_behaviours.declines)
+            | set(p.clinician_note.focus_constructs if p.clinician_note else [])
+        )
+        for cid in sorted(referenced & known):
+            if cid not in allowed:
+                problems.append(f"{p.id}: construct '{cid}' is not in the {p.population} map")
+        if p.timepoint in ("baseline", "pre-op"):
+            for cid in sorted(set(p.ground_truth.constructs) & post_op_only):
+                problems.append(f"{p.id}: '{cid}' is post-op only but the persona timepoint is {p.timepoint}")
         for cid in p.ground_truth.constructs:
             if cid not in known:
                 problems.append(f"{p.id}: ground-truth construct '{cid}' not in {REGISTRY_FILE}")
