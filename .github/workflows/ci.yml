@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  functions:
+    name: Edge functions (Deno)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: supabase/functions
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: deno task check
+      - run: deno task test
+
+  web:
+    name: Web app (Vite)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test -- --run
+      - run: npm run build
+        env:
+          VITE_MOCK: "1"
+
+  eval:
+    name: Eval harness (pytest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv run --project eval pytest -q
+
+  sql:
+    name: Migrations (syntax)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Parse every SQL file with pglast
+        run: |
+          uv run --python 3.12 --with pglast python - <<'PY'
+          import glob, sys
+          from pglast import parse_sql
+          bad = 0
+          for f in sorted(glob.glob("supabase/**/*.sql", recursive=True)):
+              try:
+                  parse_sql(open(f).read()); print("ok ", f)
+              except Exception as e:
+                  bad += 1; print("ERR", f, e)
+          sys.exit(1 if bad else 0)
+          PY
