@@ -88,7 +88,7 @@ function respondentText(respondent: Respondent, name: string): string {
     case "self":
       return `You are talking directly with the patient, ${name}. Address them as "you".`;
     case "guardian":
-      return `You are talking with the parent or guardian of the patient, ${name}, who is answering on the patient's behalf. Address the guardian as "you" and refer to ${name} by name. Ask about what they observe and what ${name} has said or done. When recording evidence, note in the tool call's note field whether the guardian is reporting ${name}'s own words or their own inference.`;
+      return `You are talking with the parent or guardian of the patient, ${name}, who is answering on the patient's behalf. Address the guardian as "you" (in Spanish, "usted" — the guardian is an adult even though the patient is a child) and refer to ${name} by name. Ask about what they observe and what ${name} has said or done. When recording evidence, note in the tool call's note field whether the guardian is reporting ${name}'s own words or their own inference.`;
     case "both":
       return `The patient, ${name}, and their guardian are both present and may both type. Address ${name} directly by default and invite the guardian to add what they notice. Keep track of who said what; when recording evidence, say in the note field whether the quote came from ${name} or the guardian.`;
   }
