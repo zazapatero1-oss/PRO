@@ -23,6 +23,14 @@ const positives: [string, string, "en" | "es"][] = [
   ["tengo miedo de mi papá", "abuse", "es"],
   ["Ya no puedo más", "acute_distress", "es"],
   ["tuve un ataque de pánico", "acute_distress", "es"],
+  // passive ideation, no plan
+  ["Some days I wonder if everyone would be better off without me here", "self_harm", "en"],
+  ["it'd be easier if I wasn't around", "self_harm", "en"],
+  ["I just wish I could disappear", "self_harm", "en"],
+  ["some nights I hope I don't wake up", "self_harm", "en"],
+  ["A veces pienso que estarían mejor sin mí", "self_harm", "es"],
+  ["sería mejor si yo no estuviera", "self_harm", "es"],
+  ["quisiera desaparecer", "self_harm", "es"],
 ];
 
 for (const [text, trigger, lang] of positives) {
@@ -48,6 +56,8 @@ const negatives: [string, "en" | "es"][] = [
   ["me da miedo el resultado", "es"],
   ["no quiero hablar de eso", "es"],
   ["Me mata la curiosidad por ver el resultado", "es"],
+  ["I wish the swelling would just disappear", "en"],
+  ["me gustaría que la cicatriz desapareciera", "es"],
 ];
 
 for (const [text, lang] of negatives) {

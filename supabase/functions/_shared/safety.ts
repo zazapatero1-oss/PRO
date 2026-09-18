@@ -37,6 +37,29 @@ const PATTERNS: { language: Language; trigger: SafetyTrigger; re: RegExp }[] = [
   { language: "en", trigger: "self_harm", re: /\bwant(?:ed)? to die\b/ },
   { language: "en", trigger: "self_harm", re: /\bwish(?:ed)? i (?:was|were) dead\b/ },
   { language: "en", trigger: "self_harm", re: /\bbetter off dead\b/ },
+  // Passive ideation: no method or intent, but still a hard stop.
+  {
+    language: "en",
+    trigger: "self_harm",
+    re:
+      /\b(?:better off|easier) (?:without me|if i (?:wasn't|weren't|was not|were not) (?:here|around|alive))\b/,
+  },
+  {
+    language: "en",
+    trigger: "self_harm",
+    re: /\b(?:wish|wished) i (?:could|would) (?:just )?disappear\b/,
+  },
+  {
+    language: "en",
+    trigger: "self_harm",
+    re:
+      /\b(?:hope|hoping|wish|wished|wishing) i (?:don't|do not|dont|never|wouldn't|would not|didn't) wake up\b/,
+  },
+  {
+    language: "en",
+    trigger: "self_harm",
+    re: /\bno point (?:in )?(?:going on|living|carrying on)\b/,
+  },
   {
     language: "en",
     trigger: "self_harm",
@@ -114,6 +137,15 @@ const PATTERNS: { language: Language; trigger: SafetyTrigger; re: RegExp }[] = [
   { language: "es", trigger: "self_harm", re: /\bmejor (?:estar )?muert[oa]\b/ },
   { language: "es", trigger: "self_harm", re: /\bacabar con (?:todo|mi vida)\b/ },
   { language: "es", trigger: "self_harm", re: /\bno vale la pena vivir\b/ },
+  // Passive ideation.
+  {
+    language: "es",
+    trigger: "self_harm",
+    re: /\b(?:estarian|estaria|estarias) mejor sin mi\b/,
+  },
+  { language: "es", trigger: "self_harm", re: /\bmejor si (?:yo )?no (?:estuviera|existiera)\b/ },
+  { language: "es", trigger: "self_harm", re: /\b(?:quisiera|quiero) desaparecer\b/ },
+  { language: "es", trigger: "self_harm", re: /\bno (?:tiene|le veo) sentido seguir\b/ },
   // ---- Spanish: abuse ----
   {
     language: "es",
