@@ -38,7 +38,7 @@ ground_truth:
         width: "not fussed about the width"
         nostrils: "one nostril looks a bit smaller, I only noticed in photos"
         profile_vs_front: "side on is the bad one, front on it's not too bad"
-        breathing: "breathing is fine, never had an issue"
+        breathing_link: "breathing is fine, never had an issue"
         wanted_change: "just straight and normal, nothing dramatic"
         since_when: "since school, got worse after I broke it at 16"
     appearance.eyes: none
@@ -50,18 +50,16 @@ ground_truth:
     distress.preoccupation:
       severity: moderate
       facets:
-        time_spent_thinking: "think about it most days, not all day though"
-        checking_behaviour: "check it in the mirror when I'm out, shop windows too"
-        triggers: "photos at work dos, group pictures"
-        effect_on_day: "doesn't stop me doing stuff, just annoying"
-        since_when: "years now"
+        time_occupied: "think about it most days, not all day though"
+        checking: "check it in the mirror when I'm out, shop windows too"
+        interference: "doesn't stop me doing stuff, just annoying"
+        onset: "years now"
     distress.hiding:
       severity: mild
       facets:
-        what_is_used: "just turn my head, keep the good side to the camera"
+        methods: "just turn my head, keep the good side to the camera"
         situations: "selfies, group photos"
-        photos_and_video: "never post photos of myself"
-        frequency: "every time there's a camera out"
+        photos_angles: "never post photos of myself"
     function.breathing: none
   narrative_facts:
     - text: "Nose has a bump on the bridge and leans to the left"

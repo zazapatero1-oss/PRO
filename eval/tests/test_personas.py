@@ -1,9 +1,49 @@
+import json
+
 import pytest
 import yaml
 
 from faceq_eval.models import Persona
 from faceq_eval.personas import PERSONA_DIR, load_personas, validate_persona_set
 from faceq_eval.patient import build_system_prompt
+
+import os
+import pathlib
+
+# `FACEQ_SEED_MAP_DIR` lets CI (or a worktree that is behind the maps) point these
+# checks at the real maps without moving files around.
+SEED_MAP_DIR = pathlib.Path(
+    os.environ.get("FACEQ_SEED_MAP_DIR") or PERSONA_DIR.parent.parent / "supabase" / "seed" / "construct_maps"
+)
+
+
+def _seed_maps() -> dict[str, dict] | None:
+    """The seeded maps, or None when they are absent or still pre-v1.1 (no facets).
+
+    The harness is developed on a branch that can be behind the maps, so these
+    checks skip rather than fail when the maps do not carry facets yet.
+    """
+    maps = {}
+    for population, slug in (("adult", "face-q-adult"), ("pediatric", "face-q-pediatric")):
+        path = SEED_MAP_DIR / f"{slug}.json"
+        if not path.exists():
+            return None
+        maps[population] = json.loads(path.read_text(encoding="utf-8"))
+    has_facets = any(
+        c.get("facets")
+        for m in maps.values()
+        for d in m.get("domains", [])
+        for c in d.get("constructs", [])
+    )
+    return maps if has_facets else None
+
+
+def _map_facets(m: dict) -> dict[str, list[str]]:
+    return {
+        c["id"]: [f["id"] for f in c.get("facets", [])]
+        for d in m.get("domains", [])
+        for c in d.get("constructs", [])
+    }
 
 
 def test_all_personas_load_and_are_consistent(personas, registry):
@@ -141,9 +181,71 @@ def test_persona_facet_ids_are_in_the_facet_registry(personas, registry, facet_r
 def test_facet_registry_covers_every_construct_id(registry, facet_registry):
     assert set(facet_registry.constructs) == set(registry.constructs)
     for cid, facets in facet_registry.constructs.items():
-        assert 5 <= len(facets) <= 8, f"{cid} has {len(facets)} facets"
+        # the union of both populations, so wider than any single map's 5-8
+        assert 5 <= len(facets) <= 14, f"{cid} has {len(facets)} facets"
         assert all(fid == fid.lower() and " " not in fid for fid in facets), cid
         assert all(label.strip() for label in facets.values()), cid
+    for population in ("adult", "pediatric"):
+        ids = registry.ids_for(population)
+        split = facet_registry.populations[population]
+        assert set(split) == ids, population
+        for cid, fids in split.items():
+            assert 5 <= len(fids) <= 8, f"{population}:{cid} has {len(fids)} facets"
+
+
+def test_facet_registry_matches_the_seeded_maps_exactly():
+    """`_facet_ids.yaml` is generated from the maps; fail on any drift."""
+    maps = _seed_maps()
+    if maps is None:
+        pytest.skip(f"no v1.1 construct maps with facets at {SEED_MAP_DIR}")
+    reg = yaml.safe_load((PERSONA_DIR / "_facet_ids.yaml").read_text(encoding="utf-8"))
+
+    union: dict[str, list[str]] = {}
+    labels: dict[tuple[str, str], str] = {}
+    for population in ("adult", "pediatric"):
+        real = {
+            c["id"]: c.get("facets", [])
+            for d in maps[population].get("domains", [])
+            for c in d.get("constructs", [])
+        }
+        assert reg["populations"][population] == {cid: [f["id"] for f in fs] for cid, fs in real.items()}, population
+        for cid, facets in real.items():
+            for f in facets:
+                if f["id"] not in union.setdefault(cid, []):
+                    union[cid].append(f["id"])
+                labels.setdefault((cid, f["id"]), f["label"])  # adult label wins
+
+    assert set(reg["constructs"]) == set(union)
+    for cid, fids in union.items():
+        assert list(reg["constructs"][cid]) == fids, cid
+        for fid in fids:
+            assert reg["constructs"][cid][fid] == labels[(cid, fid)], f"{cid}.{fid}"
+
+
+def test_persona_facets_are_valid_for_their_population_in_the_real_maps(personas):
+    maps = _seed_maps()
+    if maps is None:
+        pytest.skip(f"no v1.1 construct maps with facets at {SEED_MAP_DIR}")
+    for p in personas:
+        real = _map_facets(maps[p.population])
+        for cid, c in p.ground_truth.constructs.items():
+            if not c.facets:
+                continue
+            assert cid in real, f"{p.id}: {cid} is not in the {p.population} map"
+            unknown = sorted(set(c.facets) - set(real[cid]))
+            assert not unknown, f"{p.id}: {cid} -> {unknown} not in the {p.population} map"
+
+
+def test_triage_ids_of_the_real_maps_all_have_keyword_rules():
+    maps = _seed_maps()
+    if maps is None:
+        pytest.skip(f"no v1.1 construct maps with facets at {SEED_MAP_DIR}")
+    from faceq_eval.score import TRIAGE_KEYWORDS
+
+    for population, m in maps.items():
+        ids = [t["id"] for t in m.get("triage", [])]
+        assert ids, population
+        assert not set(ids) - set(TRIAGE_KEYWORDS), f"{population}: no keyword rule for {set(ids) - set(TRIAGE_KEYWORDS)}"
 
 
 def test_validate_flags_unknown_facet_id(personas, registry, facet_registry):

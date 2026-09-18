@@ -202,13 +202,13 @@ def _facet_profile():
             "appearance.lips": {
                 "severity": "severe",
                 "facets_covered": ["shape", "fullness", "symmetry"],
-                "facets_missing": ["smile_movement", "wanted_change", "since_when"],
+                "facets_missing": ["movement", "wanted_change"],
                 "confirmed": True,
             },
-            "appearance.cheeks": {"severity": "moderate", "facets_covered": ["fullness", "contour_change"]},
+            "appearance.cheeks": {"severity": "moderate", "facets_covered": ["volume", "change_over_time"]},
             "aging.appraisal": {"severity": "moderate", "facets_covered": []},
             # `extra` is not in the persona's ground truth and must not inflate recall
-            "psych.self_confidence": {"severity": "moderate", "facets_covered": ["in_photos", "extra"]},
+            "psych.self_confidence": {"severity": "moderate", "facets_covered": ["work_study", "extra"]},
         }
     )
 
@@ -217,25 +217,26 @@ def test_facet_recall_unions_profile_and_evidence_events(evasive_persona, regist
     turns = [
         (None, "How is your face treating you?", []),
         # a late `evidence` event contributes a facet the profile does not list
-        ("my lips vanish when I smile", "I see.", [evidence_event("appearance.lips", ["smile_movement"])]),
+        ("my lips vanish when I smile", "I see.", [evidence_event("appearance.lips", ["movement"])]),
     ]
     s = score_persona(evasive_persona, make_record(evasive_persona.id, _facet_profile(), turns), registry)
     by_id = {f.construct_id: f for f in s.facets}
     assert set(by_id) == set(evasive_persona.expected_focus)
 
     lips = by_id["appearance.lips"]
-    assert lips.covered == ["fullness", "shape", "smile_movement", "symmetry"]
-    assert lips.from_evidence == ["smile_movement"]
-    assert lips.missing == ["since_when", "wanted_change"]
-    assert lips.recall == 4 / 6 and lips.confirmed is True
+    assert lips.covered == ["fullness", "movement", "shape", "symmetry"]
+    assert lips.from_evidence == ["movement"]
+    assert lips.missing == ["wanted_change"]
+    assert lips.recall == 4 / 5 and lips.confirmed is True
 
-    assert by_id["appearance.cheeks"].recall == 2 / 4
+    assert by_id["appearance.cheeks"].recall == 2 / 3
     assert by_id["aging.appraisal"].recall == 0.0
     # "extra" is dropped: only ground-truth facets count
-    assert by_id["psych.self_confidence"].covered == ["in_photos"]
+    assert by_id["psych.self_confidence"].covered == ["work_study"]
 
-    assert s.n_facets_expected == 20 and s.n_facets_covered == 7
-    assert s.facet_recall == 7 / 20
+    # 5 + 3 + 4 + 3 ground-truth facets across the four focus constructs
+    assert s.n_facets_expected == 15 and s.n_facets_covered == 7
+    assert s.facet_recall == 7 / 15
 
 
 def test_facet_recall_is_none_without_a_profile(evasive_persona, registry):
@@ -262,7 +263,7 @@ def test_unknown_facet_ids_reported_against_the_map(evasive_persona, registry):
     s = score_persona(evasive_persona, make_record(evasive_persona.id, _facet_profile()), registry, cmap)
     assert "appearance.lips.symmetry" in s.unknown_facet_ids
     assert "appearance.lips.shape" not in s.unknown_facet_ids
-    assert "appearance.cheeks.fullness" in s.unknown_facet_ids
+    assert "appearance.cheeks.volume" in s.unknown_facet_ids
     assert map_facets(None) is None
 
 
@@ -417,8 +418,8 @@ def test_aggregate_pools_latency_and_averages_the_new_rates(evasive_persona, eva
     # pooled over all 5 turns: [100, 100, 100, 100, 500]
     assert agg.ttft_median_ms == 100.0 and agg.ttft_p90_ms == 340.0
     assert agg.turn_median_ms == 1000.0 and agg.turn_p90_ms == 3400.0
-    # 6/20 for the facet profile (no late evidence event here) and 0 for the plain one
-    assert agg.facet_recall == round((6 / 20 + 0.0) / 2, 4)
+    # 6/15 for the facet profile (no late evidence event here) and 0 for the plain one
+    assert agg.facet_recall == round((6 / 15 + 0.0) / 2, 4)
     assert agg.triage_compliance_rate == 0.5  # one compliant, one not
     assert agg.triage_item_rate == round((4 + 1) / 8, 4)
     assert agg.focus_recall == 0.5 and agg.focus_precision == 1.0  # empty observed -> precision None, skipped

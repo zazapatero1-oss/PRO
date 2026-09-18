@@ -93,9 +93,16 @@ def validate_persona_set(
             for cid, c in p.ground_truth.constructs.items():
                 if not c.facets:
                     continue
-                unknown_facets = sorted(set(c.facets) - facet_registry.facets_for(cid))
-                for fid in unknown_facets:
-                    problems.append(f"{p.id}: facet '{cid}.{fid}' not in {FACET_REGISTRY_FILE}")
+                # Facets are population-specific: the same construct has different
+                # facets in the adult and pediatric maps.
+                allowed_facets = facet_registry.facets_for(cid, p.population)
+                for fid in sorted(set(c.facets) - allowed_facets):
+                    where = (
+                        "is not in the {} map".format(p.population)
+                        if fid in facet_registry.facets_for(cid)
+                        else f"not in {FACET_REGISTRY_FILE}"
+                    )
+                    problems.append(f"{p.id}: facet '{cid}.{fid}' {where}")
         if p.clinician_note:
             for cid in p.clinician_note.focus_constructs:
                 if cid not in known:

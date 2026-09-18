@@ -39,27 +39,25 @@ ground_truth:
       severity: moderate
       facets:
         shape: "there's a notch in the top lip, you see it straight away"
-        symmetry: "left side sits lower than the right"
-        scar_line: "the scar is pale, goes up towards the nose"
-        smile_movement: "when he smiles it pulls the notch wider"
-        wanted_change: "just make the notch less obvious"
-        since_when: "he's had it since the first repair as a baby"
+        evenness: "left side sits lower than the right"
+        above_lip: "the scar is pale, goes up towards the nose"
+        movement: "when he smiles it pulls the notch wider"
     appearance.nose:
       severity: moderate
       facets:
-        tip: "the tip points off to the left a bit"
-        width: "that side looks wider"
+        shape: "the tip points off to the left a bit"
+        size: "that side looks wider"
         nostrils: "the nostril on that side is flatter, more spread out"
         profile_vs_front: "you notice it from the front, not so much side on"
         wanted_change: "make the two nostrils match"
     function.speaking:
       severity: moderate
       facets:
-        sounds_affected: "s and sh sounds come out wrong"
-        being_understood: "we understand him, other people ask him to repeat it"
-        strangers_vs_family: "strangers struggle, his teacher is used to him"
+        hard_sounds: "s and sh sounds come out wrong"
+        clarity: "we understand him, other people ask him to repeat it"
+        listeners: "strangers struggle, his teacher is used to him"
         therapy: "speech therapy, he's been going about a year"
-        effort: "he doesn't seem bothered, he just says it again louder"
+        holding_back: "he doesn't seem bothered, he just says it again louder"
     psych.self_confidence: none
     psych.mood: none
     social.avoidance: none

@@ -191,12 +191,34 @@ class ConstructRegistry(BaseModel):
 
 
 class FacetRegistry(BaseModel):
-    """`personas/_facet_ids.yaml`: facet id -> label, per construct id."""
+    """`personas/_facet_ids.yaml`, generated from the seeded maps.
+
+    `constructs` is the union of both maps' facet ids (id -> label). `populations`
+    is the authoritative split, because the two maps give the same construct
+    different facets; validation checks a persona against its own population.
+    """
 
     constructs: dict[str, dict[str, str]]
+    populations: dict[Literal["adult", "pediatric"], dict[str, list[str]]]
 
-    def facets_for(self, construct_id: str) -> set[str]:
-        return set(self.constructs.get(construct_id, {}))
+    @model_validator(mode="after")
+    def _population_ids_are_known(self) -> "FacetRegistry":
+        for pop, per_construct in self.populations.items():
+            for cid, fids in per_construct.items():
+                known = set(self.constructs.get(cid, {}))
+                unknown = sorted(set(fids) - known)
+                if unknown:
+                    raise ValueError(f"populations.{pop}.{cid} lists facets without a label: {unknown}")
+        union = {(cid, fid) for per in self.populations.values() for cid, fids in per.items() for fid in fids}
+        orphans = sorted(f"{cid}.{fid}" for cid, fids in self.constructs.items() for fid in fids if (cid, fid) not in union)
+        if orphans:
+            raise ValueError(f"constructs lists facets no population has: {orphans}")
+        return self
+
+    def facets_for(self, construct_id: str, population: str | None = None) -> set[str]:
+        if population is None:
+            return set(self.constructs.get(construct_id, {}))
+        return set(self.populations.get(population, {}).get(construct_id, []))  # type: ignore[arg-type]
 
     def label(self, construct_id: str, facet_id: str) -> str:
         return self.constructs.get(construct_id, {}).get(facet_id, facet_id)

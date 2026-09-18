@@ -61,7 +61,7 @@ def test_report_has_the_v11_columns_and_sections(personas, registry, evasive_per
             "appearance.lips": {
                 "severity": "severe",
                 "facets_covered": ["shape", "fullness"],
-                "facets_missing": ["symmetry"],
+                "facets_missing": ["movement"],
                 "confirmed": True,
             }
         }
@@ -92,7 +92,7 @@ def test_report_has_the_v11_columns_and_sections(personas, registry, evasive_per
     assert "`appearance.lips`" in md
     # facets the map does not have are surfaced the same way unknown construct ids are
     assert "not present in the fetched construct map" in md
-    assert "aging.appraisal.perceived_age" in md
+    assert "aging.appraisal.perceived_vs_actual" in md
 
 
 def test_offline_end_to_end_run_score_report(personas, registry, tmp_path, monkeypatch, capsys):
