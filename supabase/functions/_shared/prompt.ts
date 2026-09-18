@@ -1,16 +1,18 @@
-// PROMPT_VERSION_HEADER: face-q-conversation prompt set, file version 2026-09-18.1
+// PROMPT_VERSION_HEADER: face-q-conversation prompt set, file version 2026-09-18.2
 // The runtime PROMPT_VERSION env string is what gets stamped on sessions; bump this header
 // comment and PROMPT_FILE_VERSION whenever the wording below changes.
 //
-// System prompt composition per SPEC §7.2 (sections 1–8, in order), tool definitions per
-// §7.3, and the non-streaming prompts for §8 (profile + patient summary) and §11 (ingest).
+// System prompt composition per SPEC §7.2 with the v1.1 §B phase guidance, and the
+// non-streaming prompts for §C (extraction), §8 (profile + patient summary) and §E (ingest).
+// v1.1: the conversational call carries NO tools, so nothing here mentions any.
 
-import type Anthropic from "@anthropic-ai/sdk";
 import type {
   ActiveConstruct,
   AgeBand,
   ConstructEvidenceRow,
+  ConstructMap,
   CoverageState,
+  Facet,
   Language,
   Population,
   ProbeFindingRow,
@@ -18,10 +20,12 @@ import type {
   ReadingComfort,
   Respondent,
   Timepoint,
+  TrackerState,
+  TriageItem,
 } from "./types.ts";
-import { prioritisedOpen } from "./tracker.ts";
+import { facetsOf, prioritisedOpen } from "./tracker.ts";
 
-export const PROMPT_FILE_VERSION = "2026-09-18.1";
+export const PROMPT_FILE_VERSION = "2026-09-18.2";
 
 export const PRIORITY_GUIDANCE =
   "Prioritise: FOCUS → needs_clarification → drill_down_pending → untouched core → untouched standard. " +
@@ -30,33 +34,38 @@ export const PRIORITY_GUIDANCE =
   "only if it is still unclear leave it for the clinician.";
 export const WRAP_UP_80 = "Begin wrapping up; do not open new topics.";
 export const WRAP_UP_100 =
-  'The budget is used up: thank them, close warmly in one or two sentences, and call `end_session` with reason "turn_budget" now.';
+  "The budget is used up: thank them and close warmly in one or two sentences. Do not ask anything new.";
+/** v1.1 §B phase guidance, verbatim; the handler only fills in the item / focus / facets. */
+export const TRIAGE_GUIDANCE_SUFFIX =
+  "— in your own words, in the patient's register; one item per message; do not explore yet.";
+export const EXPLORE_GUIDANCE =
+  "Stay on this topic, one detail per question, in the patient's words. When the list is covered (or they decline), " +
+  "reflect back what you heard in one or two sentences and ask if that's right; wait for their answer before moving on.";
 
 // ---------------------------------------------------------------------------
 // Section 1: role and principles (fixed)
 // ---------------------------------------------------------------------------
 
 const ROLE_AND_PRINCIPLES = `# Role
-You are a warm, attentive conversational companion helping a clinical team understand how a person is doing after (or before) treatment affecting their face. You talk with the person naturally and, from what they say, record structured evidence with the tools provided. You are not a clinician and you never diagnose, treat, or reassure clinically.
+You are a warm, attentive conversational companion helping a clinical team understand how a person is doing after (or before) treatment affecting their face. You talk with the person naturally; a separate system reads the conversation afterwards and files what it hears. Your only job is the conversation itself. You are not a clinician and you never diagnose, treat, or reassure clinically.
 
 # Principles (non-negotiable)
 1. Never administer questionnaire items. The construct map tells you WHAT matters, never HOW to word it. Ask like a thoughtful person would, in your own words, following the thread of what they say.
-2. Honest claims. What you record is an inferred profile, never a score. Never mention scores, scales, or instrument names to the person.
-3. No medical advice. If asked "is this normal?", "should I worry?", "what should I do?", acknowledge warmly, say their care team will see the question, record it with record_probe_finding (category "patient_question"), and do not answer clinically.
-4. Safety. If the person mentions wanting to hurt themselves, being hurt by someone, or being in crisis, call raise_safety_flag immediately and respond only with brief, warm acknowledgement; the system will take over.
-5. Autonomy. If they skip, decline, or want to stop, honour it at once with mark_declined or end_session and never circle back to that topic unprompted.
+2. Honest claims. What the team receives is an inferred profile, never a score. Never mention scores, scales, or instrument names to the person.
+3. No medical advice. If asked "is this normal?", "should I worry?", "what should I do?", acknowledge warmly, say their care team will see the question, and do not answer clinically.
+4. Safety. If the person mentions wanting to hurt themselves, being hurt by someone, or being in crisis, respond only with brief, warm acknowledgement; the system detects this separately and takes over.
+5. Autonomy. If they skip, decline, or want to stop, honour it at once and never circle back to that topic unprompted.
 6. Privacy. Do not ask for names, dates of birth, addresses, or contact details. Refer to the person only by the display name given.
-7. Provenance. Every record_evidence call carries the person's verbatim words (patient_quote) in their language and an English gloss.`;
+7. Their words matter. Ask in a way that invites them to say things in their own words: what the team sees are their sentences, not your paraphrase.`;
 
 // ---------------------------------------------------------------------------
 // Section 2: register profile
 // ---------------------------------------------------------------------------
 
 const LANGUAGE_TEXT: Record<Language, string> = {
-  en:
-    "Conduct the whole conversation in English. Record patient_quote verbatim in English; quote_gloss_en is then the same text.",
+  en: "Conduct the whole conversation in English.",
   es:
-    'Conduct the whole conversation in Spanish (español), including the greeting and any wrap-up. Use neutral, widely understood Spanish. Use "tú" with children and teenagers and "usted" with adults unless they invite informality. Record patient_quote verbatim in Spanish and give a faithful English gloss in quote_gloss_en.',
+    'Conduct the whole conversation in Spanish (español), including the greeting and any wrap-up. Use neutral, widely understood Spanish. Use "tú" with children and teenagers and "usted" with adults unless they invite informality.',
 };
 
 const AGE_TEXT: Record<AgeBand, string> = {
@@ -90,9 +99,9 @@ function respondentText(respondent: Respondent, name: string): string {
     case "self":
       return `You are talking directly with the patient, ${name}. Address them as "you".`;
     case "guardian":
-      return `You are talking with the parent or guardian of the patient, ${name}, who is answering on the patient's behalf. Address the guardian as "you" (in Spanish, "usted" — the guardian is an adult even though the patient is a child) and refer to ${name} by name. Ask about what they observe and what ${name} has said or done. When recording evidence, note in the tool call's note field whether the guardian is reporting ${name}'s own words or their own inference.`;
+      return `You are talking with the parent or guardian of the patient, ${name}, who is answering on the patient's behalf. Address the guardian as "you" (in Spanish, "usted" — the guardian is an adult even though the patient is a child) and refer to ${name} by name. Ask about what they observe and what ${name} has said or done, and make it clear in your questions which of the two you are asking about.`;
     case "both":
-      return `The patient, ${name}, and their guardian are both present and may both type. Address ${name} directly by default and invite the guardian to add what they notice. Keep track of who said what; when recording evidence, say in the note field whether the quote came from ${name} or the guardian.`;
+      return `The patient, ${name}, and their guardian are both present and may both type. Address ${name} directly by default and invite the guardian to add what they notice. When it is not obvious who just answered, ask lightly so the record stays clear.`;
   }
 }
 
@@ -214,11 +223,13 @@ export function renderConstruct(c: ActiveConstruct, population: Population): str
   const drill = variant?.drill_down ?? c.drill_down;
   const s = c.severity_signals;
   const focus = c.focus ? " [FOCUS]" : "";
+  const facets = facetsOf(c);
   return [
     `- ${c.id}${focus} (${c.priority}) — ${label}`,
     `  what: ${description}`,
     `  severity: none=${s.none} | mild=${s.mild} | moderate=${s.moderate} | severe=${s.severe}`,
     drill.length ? `  drill-down: ${drill.join("; ")}` : null,
+    facets.length ? `  details: ${facets.map((f) => `${f.id}=${f.label}`).join("; ")}` : null,
   ].filter((l): l is string => l !== null).join("\n");
 }
 
@@ -244,7 +255,8 @@ function renderConstructMap(active: ActiveConstruct[], population: Population): 
 // Section 6: coverage status
 // ---------------------------------------------------------------------------
 
-export function renderCoverage(state: CoverageState): string {
+export function renderCoverage(tracker: TrackerState): string {
+  const state = tracker.coverage;
   const lines = ["# Coverage status (computed by the system, trust it over your memory)"];
   for (const c of state.constructs) {
     const focus = c.focus ? " [FOCUS]" : "";
@@ -255,11 +267,72 @@ export function renderCoverage(state: CoverageState): string {
   const next = prioritisedOpen(state).slice(0, 3).map((c) => c.construct_id);
   if (next.length) lines.push(`Suggested next: ${next.join(", ")}.`);
   lines.push(PRIORITY_GUIDANCE);
-  if (state.complete) {
+  return lines.join("\n");
+}
+
+// ---------------------------------------------------------------------------
+// v1.1 §B: phase guidance (dynamic block, right before the budget)
+// ---------------------------------------------------------------------------
+
+function facetLabels(construct: ActiveConstruct | undefined, ids: string[]): string[] {
+  const byId = new Map(facetsOf(construct ?? { facets: [] }).map((f: Facet) => [f.id, f.label]));
+  return ids.map((id) => byId.get(id) ?? id);
+}
+
+/**
+ * The one instruction that drives the turn: which triage item to ask, or which focus construct
+ * to stay on and which of its details are still missing. Wrap-up keeps the §7.2 section-7 text.
+ */
+export function renderPhaseGuidance(
+  tracker: TrackerState,
+  active: ActiveConstruct[],
+): string {
+  const lines = ["# This phase"];
+  if (tracker.phase === "triage") {
     lines.push(
-      'Coverage is complete. Unless the patient has raised something new, thank them and call `end_session` with reason "coverage_complete".',
+      "You are getting the overall picture first. Do not go deep on anything yet; a later phase does that.",
     );
+    const next = tracker.triage.next;
+    if (next) lines.push(`Ask about: ${next.intent} ${TRIAGE_GUIDANCE_SUFFIX}`);
+    else lines.push("The opening screen is answered; follow up on what they just said.");
+    if (tracker.triage.items.length) {
+      lines.push(
+        `Opening screen: ${tracker.triage.answered.length} of ${tracker.triage.items.length} answered.`,
+      );
+    }
+    return lines.join("\n");
   }
+
+  if (tracker.phase === "explore") {
+    const current = tracker.current_focus;
+    if (!current) {
+      lines.push(
+        "Every area you needed to go into is closed. Ask if there is anything else on their mind, then begin closing.",
+      );
+      return lines.join("\n");
+    }
+    const construct = active.find((c) => c.id === current.construct_id);
+    const missing = facetLabels(construct, current.facets_missing);
+    lines.push(
+      `Current focus: ${current.label}. Still to cover: ${
+        missing.length ? missing.join(", ") : "nothing — the list is covered"
+      }.`,
+    );
+    lines.push(EXPLORE_GUIDANCE);
+    if (current.ready_to_confirm) {
+      lines.push(
+        "You have enough on this area: reflect it back in one or two sentences now and ask if that is right. Do not open the next area in the same message.",
+      );
+    }
+    lines.push(
+      `Areas closed so far: ${tracker.focus_progress.confirmed} of ${tracker.focus_progress.total}.`,
+    );
+    return lines.join("\n");
+  }
+
+  lines.push(
+    "You are closing the conversation. Thank them warmly in one or two sentences, mention that their care team will read this, and do not open anything new.",
+  );
   return lines.join("\n");
 }
 
@@ -294,16 +367,13 @@ export function renderTurnBudget(b: TurnBudget): string {
 }
 
 // ---------------------------------------------------------------------------
-// Section 8: tool usage + control phrases
+// Section 8: how to talk + control phrases (v1.1: no tools are sent with this call)
 // ---------------------------------------------------------------------------
 
-const TOOL_RULES = `# Tools and how to use them
-- record_evidence: call it whenever a patient message tells you something about a construct, possibly several times per turn. Quote their exact words. Rate severity with the construct's signals; use "unclear" when you heard something but cannot rate it. Confidence 0–1 reflects how directly the words support the rating. Re-record a construct when new information changes the picture.
-- record_probe_finding: when a construct is moderate or severe, dig deeper (onset, trajectory, triggers, relief, impact, expectation) and record each finding. Record any medical question as category "patient_question".
-- mark_declined: when they skip, deflect, or say they would rather not, record it and move on. Do not return to it.
-- raise_safety_flag: at the first sign of self-harm, abuse, or acute distress.
-- end_session: when coverage is complete, when the budget block tells you to, or when the patient asks to stop. Say a short goodbye in the same message.
-Call the tools first, then write your reply. Never mention tools, records, or constructs to the patient.
+const CONVERSATION_RULES = `# How to talk
+Write one message: warm, in the patient's register, no lists, no headings, no labels. Never mention constructs, ids, phases, records, or the system to the patient.
+Ask about one thing at a time and let their answer choose your next question. When they give you something thin ("it's fine, I guess"), ask once more in a gentler, more concrete way before moving on.
+When someone asks you a medical question, acknowledge it warmly, say their care team will see it, and carry on; never answer it clinically.
 
 # Control phrases
 "Skip", "next", "I'd rather not say", "stop", "take a break" (and their Spanish equivalents) are handled by the system before you see them, but if the patient declines in other words, respect it immediately. Never pressure, never repeat a declined topic.
@@ -327,7 +397,7 @@ export interface SystemPromptInput {
   clinicianNote: { note: string; focus_constructs: string[] } | null;
   population: Population;
   activeConstructs: ActiveConstruct[];
-  coverage: CoverageState;
+  tracker: TrackerState;
   budget: TurnBudget;
   /** Per-turn instructions injected by the handler (e.g. deterministic skip handling). */
   turnNotes?: string[];
@@ -350,10 +420,11 @@ export function buildSystemPromptBlocks(input: SystemPromptInput): SystemPromptB
     renderPatientContext(input),
     renderClinicianNote(input.clinicianNote),
     renderConstructMap(input.activeConstructs, input.population),
-    TOOL_RULES,
+    CONVERSATION_RULES,
   ]);
   const dynamic = joinSections([
-    renderCoverage(input.coverage),
+    renderPhaseGuidance(input.tracker, input.activeConstructs),
+    renderCoverage(input.tracker),
     renderTurnBudget(input.budget),
     input.turnNotes && input.turnNotes.length
       ? ["# This turn", ...input.turnNotes.map((n) => `- ${n}`)].join("\n")
@@ -368,7 +439,7 @@ export function buildSystemPrompt(input: SystemPromptInput): string {
 }
 
 // ---------------------------------------------------------------------------
-// §7.3 Tool definitions
+// v1.1 §C: extraction prompt (one non-streaming JSON call after the reply)
 // ---------------------------------------------------------------------------
 
 const SEVERITIES = ["none", "mild", "moderate", "severe", "unclear"];
@@ -384,102 +455,78 @@ const CATEGORIES = [
   "other",
 ];
 
-export function buildToolDefinitions(): Anthropic.Tool[] {
-  return [
-    {
-      name: "record_evidence",
-      description:
-        "Record what the patient's own words reveal about one construct. Call once per construct per message that provides evidence.",
-      input_schema: {
-        type: "object",
-        properties: {
-          construct_id: { type: "string", description: "Construct id from the active list." },
-          patient_quote: {
-            type: "string",
-            description: "Verbatim words from the patient message, in their language.",
-          },
-          quote_gloss_en: {
-            type: "string",
-            description: "English gloss of the quote (identical if already English).",
-          },
-          severity: { type: "string", enum: SEVERITIES },
-          confidence: { type: "number", minimum: 0, maximum: 1 },
-          interference: {
-            type: "array",
-            items: { type: "string", enum: INTERFERENCE },
-            description: "Life areas the patient says are affected.",
-          },
-          note: { type: "string", description: "Short rationale for the rating." },
-        },
-        required: [
-          "construct_id",
-          "patient_quote",
-          "quote_gloss_en",
-          "severity",
-          "confidence",
-          "interference",
-        ],
-        additionalProperties: false,
-      },
-    },
-    {
-      name: "record_probe_finding",
-      description:
-        "Record a qualitative drill-down finding for a construct (onset, trajectory, triggers, relief, impact, expectation), or a medical question the patient asked (patient_question).",
-      input_schema: {
-        type: "object",
-        properties: {
-          construct_id: { type: "string" },
-          category: { type: "string", enum: CATEGORIES },
-          finding: { type: "string", description: "One sentence, in English." },
-        },
-        required: ["construct_id", "category", "finding"],
-        additionalProperties: false,
-      },
-    },
-    {
-      name: "mark_declined",
-      description: "Record that the patient chose not to discuss a construct. Never return to it.",
-      input_schema: {
-        type: "object",
-        properties: {
-          construct_id: { type: "string" },
-          reason: { type: "string", description: "Their words or a short paraphrase." },
-        },
-        required: ["construct_id", "reason"],
-        additionalProperties: false,
-      },
-    },
-    {
-      name: "raise_safety_flag",
-      description:
-        "Flag self-harm, abuse, or acute distress. The system halts the session and shows a fixed support message; you only need a brief warm acknowledgement.",
-      input_schema: {
-        type: "object",
-        properties: {
-          trigger: { type: "string", enum: ["self_harm", "abuse", "acute_distress", "other"] },
-          rationale: { type: "string" },
-        },
-        required: ["trigger", "rationale"],
-        additionalProperties: false,
-      },
-    },
-    {
-      name: "end_session",
-      description: "End the conversation. Include a short goodbye in the same message.",
-      input_schema: {
-        type: "object",
-        properties: {
-          reason: {
-            type: "string",
-            enum: ["coverage_complete", "turn_budget", "patient_requested"],
-          },
-        },
-        required: ["reason"],
-        additionalProperties: false,
-      },
-    },
-  ];
+export interface ExtractionPromptInput {
+  /** The assistant message the patient was answering (null on the first patient message). */
+  lastAssistantMessage: string | null;
+  patientMessage: string;
+  activeConstructs: ActiveConstruct[];
+  population: Population;
+  triage: TriageItem[];
+  language: Language;
+}
+
+const EXTRACTION_SHAPE = {
+  evidence: [{
+    construct_id: "id from the list",
+    patient_quote: "verbatim substring of the patient message",
+    quote_gloss_en: "English gloss (same text when the message is already English)",
+    severity: "none|mild|moderate|severe|unclear|declined",
+    confidence: 0.0,
+    interference: ["social"],
+    facets: ["facet id from that construct"],
+    triage_item: "triage item id or null",
+    note: "short rationale or null",
+  }],
+  findings: [{ construct_id: "id", category: "impact", finding: "one sentence, English" }],
+  declined: ["construct id the patient refused or deflected"],
+  triage_answered: ["triage item id this message answered"],
+  confirmed: ["construct id the patient just confirmed when it was reflected back"],
+  patient_questions: ["a medical question the patient asked, verbatim"],
+};
+
+/**
+ * Reads one patient message against the question it answered and files it. This is the only
+ * place evidence is created during a session, so its rules are strict: quotes must be real
+ * substrings, ids must come from the list, and nothing may be inferred beyond what was said.
+ */
+export function buildExtractionPrompt(
+  input: ExtractionPromptInput,
+): { system: string; user: string } {
+  const system = [
+    "You file what a patient said in a conversation about how their face looks and works, for a clinical team. You never talk to the patient and you never invent anything.",
+    "Rules:",
+    "1. patient_quote MUST be a verbatim substring of the patient message, copied character for character, in the patient's own language. Never paraphrase, never merge two parts of the message, never quote the assistant. Drop any item you cannot quote this way.",
+    "2. Use only construct ids from the list below, and only facet ids belonging to that construct. Drop anything you cannot map.",
+    '3. severity follows the construct\'s own signals. Use "unclear" when something was said but cannot be rated, and "none" when they say that area is fine. Put a construct in `declined` (not in evidence) when they skip it, deflect, or say they would rather not.',
+    "4. confidence 0–1 is how directly their words support the rating. Be conservative: hedged or second-hand statements are below 0.6.",
+    "5. `facets` lists the details of that construct the quote actually speaks to; an empty list is fine.",
+    "6. `triage_item` / `triage_answered` are set when the message answers one of the opening-screen items below.",
+    '7. `confirmed` lists constructs the patient just agreed with when the assistant reflected an area back to them ("yes, that\'s right"). Never guess this.',
+    "8. `findings` are short qualitative notes (onset, trajectory, triggers, relief, impact, expectation); medical questions go in `patient_questions` as well as a `patient_question` finding.",
+    "9. Say nothing else. Output ONLY the JSON object, no prose, no code fences. Every array may be empty.",
+    "",
+    "Shape:",
+    JSON.stringify(EXTRACTION_SHAPE, null, 2),
+    `severity ∈ ${SEVERITIES.join("|")}|declined. interference ⊆ ${INTERFERENCE.join(", ")}.`,
+    `finding category ∈ ${CATEGORIES.join("|")}.`,
+  ].join("\n");
+
+  const triage = input.triage.length
+    ? input.triage.map((t) => `- ${t.id}: ${t.intent}`).join("\n")
+    : "(none)";
+  const user = [
+    `Conversation language: ${input.language}.`,
+    "",
+    "Constructs (id, what it captures, severity signals, details):",
+    ...input.activeConstructs.map((c) => renderConstruct(c, input.population)),
+    "",
+    "Opening-screen items:",
+    triage,
+    "",
+    `Assistant asked: ${input.lastAssistantMessage ?? "(nothing yet — this is the first message)"}`,
+    `Patient replied: ${input.patientMessage}`,
+  ].join("\n");
+  return { system, user };
 }
 
 // ---------------------------------------------------------------------------
@@ -597,53 +644,76 @@ export function buildPatientSummaryPrompt(
 }
 
 // ---------------------------------------------------------------------------
-// §11 Ingestion extraction prompt (stub pipeline)
+// v1.1 §E Ingestion: merge a pasted instrument into the approved map
 // ---------------------------------------------------------------------------
 
-export function buildIngestPrompt(input: {
+export interface IngestMergePromptInput {
   instrumentSlug: string;
   population: Population;
+  /** The approved map being merged into: ids, labels and the facets already present. */
+  currentMap: ConstructMap;
   text: string;
-}): { system: string; user: string } {
+}
+
+function renderMapForMerge(map: ConstructMap): string {
+  const lines: string[] = [];
+  for (const d of map.domains) {
+    lines.push(`## ${d.id}: ${d.label}`);
+    for (const c of d.constructs) {
+      const facets = facetsOf(c).map((f) => f.id).join(", ") || "(none yet)";
+      lines.push(`- ${c.id} — ${c.label}: ${c.description}`);
+      lines.push(`  facets: ${facets}`);
+    }
+  }
+  const triage = (map.triage ?? []).map((t) => `- ${t.id}: ${t.intent}`).join("\n");
+  lines.push("## opening screen", triage || "- (none yet)");
+  return lines.join("\n");
+}
+
+/**
+ * §E: the model proposes additions only — new facets for constructs that already exist, new
+ * constructs where nothing in the map covers an item, and new opening-screen intents. The
+ * handler merges and rejects anything that copies the source wording.
+ */
+export function buildIngestMergePrompt(
+  input: IngestMergePromptInput,
+): { system: string; user: string } {
   const system = [
-    "You convert a patient-reported outcome instrument into a construct map: a description of WHAT the instrument measures, never HOW it asks.",
-    "HARD RULE: never copy, quote, lightly reword, or list item text from the instrument. The source is licensed. Every label, description, severity signal and drill-down cue must be a paraphrased abstraction of the construct a scale measures, written in your own words at the level of the scale, not the item.",
-    "Output ONLY a JSON object in this exact format (no prose, no code fences):",
+    "You extend an existing construct map with what a patient-reported outcome instrument measures. A construct map describes WHAT an instrument asks about, never HOW it asks.",
+    "HARD RULE: never copy, quote, lightly reword, or list item text. The source is licensed. Every label, description and facet must be your own paraphrased abstraction at the level of the scale, not the item. Anything that reuses a run of the source wording is rejected and thrown away.",
+    "Propose ADDITIONS ONLY. Never restate, rename or remove anything already in the map.",
+    "1. facets: for constructs already in the map, the clinician-relevant details an interviewer should cover, as {id, label}. Short ids in snake_case; 5–8 facets per construct in total including the ones already there, so add only what is missing.",
+    "2. new_constructs: only where nothing in the map covers what the instrument measures. Full §6 construct objects including facets, and each one names the domain it belongs to.",
+    "3. triage: suggested opening-screen intents ({id, intent, maps_to}); intent is what to find out, in the interviewer's own words, never a question to read out.",
+    "Output ONLY a JSON object in this exact shape (no prose, no code fences):",
     JSON.stringify(
       {
-        slug: "<instrument-slug>-<population>",
-        version: 1,
-        population: "adult | pediatric",
-        language: "en",
-        domains: [{
-          id: "domain_id",
-          label: "Domain label",
-          weight: 1.0,
-          constructs: [{
-            id: "domain_id.construct_id",
-            label: "Short paraphrased label",
-            description: "What this construct captures, paraphrased.",
-            severity_signals: { none: "...", mild: "...", moderate: "...", severe: "..." },
-            drill_down: ["cue", "cue"],
-            age_variants: { pediatric: { description: "...", drill_down: ["..."] } },
-            priority: "core | standard | optional",
-            source_refs: [{ instrument: "<instrument-slug>", scale: "<scale name only>" }],
-          }],
+        facets: { "existing.construct_id": [{ id: "facet_id", label: "Short paraphrased label" }] },
+        new_constructs: [{
+          domain_id: "existing or new domain id",
+          domain_label: "Domain label (only needed for a new domain)",
+          id: "domain_id.construct_id",
+          label: "Short paraphrased label",
+          description: "What this construct captures, paraphrased.",
+          severity_signals: { none: "...", mild: "...", moderate: "...", severe: "..." },
+          drill_down: ["cue"],
+          facets: [{ id: "facet_id", label: "Short paraphrased label" }],
+          priority: "core | standard | optional",
+          source_refs: [{ instrument: "<instrument-slug>", scale: "<scale name only>" }],
         }],
-        coverage_rules: {
-          min_confidence_to_count: 0.6,
-          drill_down_threshold: "moderate",
-          core_constructs_required: true,
-          max_constructs_per_session: 18,
-        },
+        triage: [{ id: "item_id", intent: "What to find out", maps_to: ["construct.id"] }],
       },
       null,
       2,
     ),
-    "source_refs reference scale names only. Aim for 25–35 constructs.",
+    "Any of the three may be empty. source_refs reference scale names only.",
   ].join("\n");
   const user = [
     `Instrument slug: ${input.instrumentSlug}. Population: ${input.population}.`,
+    "",
+    "Current approved map:",
+    renderMapForMerge(input.currentMap),
+    "",
     "Instrument text (for understanding only; do not reproduce any of it):",
     "<<<",
     input.text,

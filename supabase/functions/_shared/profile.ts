@@ -18,7 +18,7 @@ import type {
   Timepoint,
 } from "./types.ts";
 import { PROFILE_DISCLAIMER } from "./types.ts";
-import { isRanked, SEVERITY_RANK, severityRank } from "./tracker.ts";
+import { facetsOf, isConfirmation, isRanked, SEVERITY_RANK, severityRank } from "./tracker.ts";
 import { buildProfilePrompt } from "./prompt.ts";
 import { completeJson, type Usage } from "./anthropic.ts";
 import { MAX_JSON_OUTPUT_TOKENS } from "./config.ts";
@@ -57,6 +57,8 @@ export interface ProfileBuildInput {
   timepoint: Timepoint;
   priorProfile: ProfileJson | null;
   generatedWith: { model: string; prompt_version: string; map: string };
+  /** v1.1 §B: the constructs this session was supposed to explore in depth. */
+  focusConstructs?: readonly string[];
 }
 
 /** Everything that does not need a model call. */
@@ -75,6 +77,12 @@ export function buildDeterministicProfile(input: ProfileBuildInput): ProfileJson
 
     for (const f of findings) if (f.category === "patient_question") questions.push(f.finding);
 
+    // v1.1 §D: which of the construct's details were actually heard, and whether the patient
+    // confirmed the reflection back. Confirmations are findings, not profile narrative.
+    const declared = facetsOf(c).map((f) => f.id);
+    const heard = new Set(
+      live.filter((e) => e.severity !== "declined").flatMap((e) => e.facets ?? []),
+    );
     const construct: ProfileConstruct = {
       id: c.id,
       label: c.label,
@@ -83,8 +91,14 @@ export function buildDeterministicProfile(input: ProfileBuildInput): ProfileJson
       quotes: live
         .filter((e) => e.severity !== "declined" && e.patient_quote)
         .map((e) => ({ text: e.patient_quote, lang: input.language, gloss_en: e.quote_gloss_en })),
-      findings: findings.map((f) => ({ category: f.category, text: f.finding })),
+      findings: findings.filter((f) => !isConfirmation(f)).map((f) => ({
+        category: f.category,
+        text: f.finding,
+      })),
       status,
+      facets_covered: declared.filter((id) => heard.has(id)),
+      facets_missing: declared.filter((id) => !heard.has(id)),
+      confirmed: findings.some(isConfirmation),
     };
 
     if (status === "declined") declined.push(c.id);
@@ -103,6 +117,20 @@ export function buildDeterministicProfile(input: ProfileBuildInput): ProfileJson
     };
     domain.constructs.push(construct);
     domainsById.set(c.domain_id, domain);
+  }
+
+  // v1.1 §B: a focus area the patient never confirmed is exactly what a clinician should check.
+  const byId = new Map(
+    [...domainsById.values()].flatMap((d) => d.constructs).map((c) => [c.id, c]),
+  );
+  for (const id of input.focusConstructs ?? []) {
+    const c = byId.get(id);
+    if (!c || c.confirmed || c.status === "declined") continue;
+    if (needs.some((n) => n.construct_id === id)) continue;
+    needs.push({
+      construct_id: id,
+      reason: "Focus area: never reflected back to the patient and confirmed.",
+    });
   }
 
   const domains = [...domainsById.values()].map((d) => {

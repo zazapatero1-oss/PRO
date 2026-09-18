@@ -10,9 +10,18 @@ Deno.test("formatSseEvent: exact SPEC §7.6 wire format", () => {
   assertEquals(
     formatSseEvent({
       event: "status",
-      data: { coverage: { covered: 2, total_active: 9 }, turns_used: 3, max_turns: 40 },
+      data: {
+        coverage: { covered: 2, total_active: 9 },
+        phase: "explore",
+        current_focus: "appearance.nose",
+        focus_progress: { confirmed: 1, total: 3 },
+        turns_used: 3,
+        max_turns: 60,
+      },
     }),
-    'event: status\ndata: {"coverage":{"covered":2,"total_active":9},"turns_used":3,"max_turns":40}\n\n',
+    'event: status\ndata: {"coverage":{"covered":2,"total_active":9},"phase":"explore",' +
+      '"current_focus":"appearance.nose","focus_progress":{"confirmed":1,"total":3},' +
+      '"turns_used":3,"max_turns":60}\n\n',
   );
   assertEquals(
     formatSseEvent({ event: "ended", data: { reason: "turn_budget" } }),

@@ -14,6 +14,7 @@ export interface RealDeps {
   anthropic: AnthropicClientLike;
   model: string;
   safetyModel?: string;
+  extractModel: string;
   promptVersion: string;
   origin: string;
 }
@@ -28,6 +29,7 @@ export function wireDeps(): RealDeps {
     anthropic: createAnthropicClient(config.anthropicApiKey, config.anthropicWorkspaceId),
     model: config.model,
     safetyModel: config.safetyModel,
+    extractModel: config.extractModel,
     promptVersion: config.promptVersion,
     origin: config.webOrigin,
   };

@@ -1,5 +1,10 @@
-// chat-turn handler (SPEC §7 end to end). All dependencies are injected so the whole turn
-// can be exercised in unit tests with fakes; index.ts only wires real clients.
+// chat-turn handler (SPEC §7 with the v1.1 §C talk/extract split). All dependencies are
+// injected so the whole turn can be exercised in unit tests with fakes; index.ts only wires
+// real clients.
+//
+// One patient turn, in order: deterministic safety + control phrases → the conversational call
+// (no tools, streamed) running concurrently with the model safety screen → the extraction call
+// (one JSON completion) → persist → tracker → `status` (and `ended` when the tracker says so).
 
 import type Anthropic from "@anthropic-ai/sdk";
 import type {
@@ -7,13 +12,13 @@ import type {
   ChatTurnRequest,
   Db,
   EndReason,
+  ExtractionResult,
   Language,
   MessageRow,
-  RaiseSafetyFlagInput,
   SafetyTrigger,
   SessionRow,
-  Severity,
   SseEvent,
+  TrackerState,
 } from "../_shared/types.ts";
 import { badRequest, conflict, errorResponse } from "../_shared/errors.ts";
 import { requireSessionToken } from "../_shared/auth.ts";
@@ -21,17 +26,28 @@ import { AsyncQueue, sseResponse } from "../_shared/sse.ts";
 import { detectSafety } from "../_shared/safety.ts";
 import { PAUSE_MESSAGES, safetyMessageFor, STOP_MESSAGES } from "../_shared/safety_messages.ts";
 import { detectControlPhrase } from "../_shared/control.ts";
-import { computeCoverage, prioritisedOpen } from "../_shared/tracker.ts";
+import { isConfirmation, prioritisedOpen } from "../_shared/tracker.ts";
 import {
   budgetFraction,
+  buildExtractionPrompt,
   buildSystemPromptBlocks,
-  buildToolDefinitions,
   renderPriorBrief,
   type TurnBudget,
 } from "../_shared/prompt.ts";
-import { cachedSystem, isRetryableAnthropicError, streamTurn } from "../_shared/anthropic.ts";
+import {
+  cachedSystem,
+  completeJson,
+  isRetryableAnthropicError,
+  streamTurn,
+} from "../_shared/anthropic.ts";
 import { classifySafety } from "../_shared/safety_classifier.ts";
-import { estimateCostUsd, MAX_OUTPUT_TOKENS } from "../_shared/config.ts";
+import { persistExtraction, validateExtraction } from "../_shared/extraction.ts";
+import {
+  DEFAULT_EXTRACT_MODEL,
+  estimateCostUsd,
+  MAX_JSON_OUTPUT_TOKENS,
+  TALK_MAX_OUTPUT_TOKENS,
+} from "../_shared/config.ts";
 import { writeAudit } from "../_shared/db.ts";
 import {
   countAssistantTurns,
@@ -40,8 +56,8 @@ import {
   nextSeq,
   priorCompletedProfile,
   type SessionContext,
+  trackerStateFor,
 } from "../_shared/session_context.ts";
-import { executeTool } from "./tools.ts";
 
 export interface ChatTurnDeps {
   db: Db;
@@ -49,6 +65,8 @@ export interface ChatTurnDeps {
   model: string;
   /** Model for the second safety layer; undefined disables it (tests, SAFETY_MODEL=off). */
   safetyModel?: string;
+  /** Model for the per-turn extraction call (v1.1 §C). */
+  extractModel?: string;
   origin?: string;
   now?: () => Date;
 }
@@ -125,55 +143,22 @@ async function* runTurn(
     });
   }
 
-  // ---- patient message, safety, control phrases (deterministic, before any model call) ----
+  // The message the patient is answering: what a confirmation ("yes, that's right") refers to.
+  const priorAssistant = [...ctx.messages].reverse().find((m) => m.role === "assistant") ?? null;
+
+  // ---- patient message, deterministic safety patterns, control phrases (before any call) ----
   let patientMessage: MessageRow | null = null;
   const turnNotes: string[] = [];
   if (body.text !== null) {
     patientMessage = await insertPatientMessageIdempotent(db, ctx, body);
 
-    // Layer 1: deterministic patterns (all languages). Layer 2: an independent small model,
-    // consulted only when layer 1 is silent. Both halt the session the same way.
     const keywordHit = detectSafety(body.text, language);
-    let safety:
-      | { trigger: SafetyTrigger; detected_by: "keyword" | "model"; detail: string }
-      | null = keywordHit
-        ? {
-          trigger: keywordHit.trigger,
-          detected_by: "keyword",
-          detail: `matched "${keywordHit.matched}"`,
-        }
-        : null;
-    if (!safety && deps.safetyModel) {
-      const c = await classifySafety({
-        client: deps.anthropic,
-        model: deps.safetyModel,
-        text: body.text,
-        recent: ctx.messages.map((m) => ({ role: m.role, content: m.content })),
+    if (keywordHit) {
+      yield* haltForSafety(deps, ctx, session, patientMessage.id, {
+        trigger: keywordHit.trigger,
+        detected_by: "keyword",
+        detail: `matched "${keywordHit.matched}"`,
       });
-      if (c) safety = { trigger: c.trigger, detected_by: "model", detail: c.rationale };
-    }
-    if (safety) {
-      const message = safetyMessageFor(language, ctx.participant.age_band);
-      await db.insertSafetyFlag({
-        session_id: session.id,
-        message_id: patientMessage.id,
-        trigger: safety.trigger,
-        detected_by: safety.detected_by,
-        action_taken: `session halted; fixed ${language} message shown; ${safety.detail}`,
-        reviewed_by: null,
-        reviewed_at: null,
-      });
-      await db.updateSession(session.id, { status: "safety-halted" });
-      await insertAssistantMessage(db, ctx, message, null);
-      await writeAudit(db, {
-        actor_type: "system",
-        actor_id: "safety",
-        action: "session.safety_halt",
-        target_type: "session",
-        target_id: session.id,
-        metadata: { trigger: safety.trigger, detected_by: safety.detected_by },
-      });
-      yield { event: "safety", data: { message } };
       return;
     }
 
@@ -181,7 +166,7 @@ async function* runTurn(
     if (control?.kind === "stop") {
       const text = STOP_MESSAGES[language] ?? STOP_MESSAGES.en;
       await insertAssistantMessage(db, ctx, text, null);
-      await db.updateSession(session.id, { status: "wrapping-up" });
+      await db.updateSession(session.id, { status: "wrapping-up", phase: "wrap-up" });
       await writeAudit(db, {
         actor_type: "participant",
         actor_id: session.id,
@@ -197,34 +182,31 @@ async function* runTurn(
       const text = PAUSE_MESSAGES[language] ?? PAUSE_MESSAGES.en;
       await insertAssistantMessage(db, ctx, text, null);
       yield { event: "token", data: { t: text } };
-      yield statusEvent(ctx, session);
+      yield statusEvent(trackerStateFor(ctx, session, 0), ctx, session);
       return;
     }
     if (control?.kind === "skip" || control?.kind === "rather_not") {
-      // Deterministic: the topic the assistant was steered to is the top open construct.
-      const current = prioritisedOpen(ctx.coverage)[0];
+      const pre = trackerStateFor(ctx, session, 0);
+      const current = pre.current_focus?.construct_id ??
+        prioritisedOpen(ctx.coverage)[0]?.construct_id;
       if (current) {
         const row = await db.insertEvidence({
           session_id: session.id,
-          construct_id: current.construct_id,
+          construct_id: current,
           message_id: patientMessage.id,
           patient_quote: body.text,
           quote_gloss_en: body.text,
           severity: "declined",
           confidence: 1,
           interference: [],
+          facets: [],
+          triage_item: null,
           note: `declined via control phrase (${control.kind})`,
           superseded_by: null,
         });
         ctx.evidence.push(row);
-        ctx.coverage = computeCoverage(
-          ctx.mapRow.map,
-          ctx.activeConstructs,
-          ctx.evidence,
-          ctx.findings,
-        );
         turnNotes.push(
-          `The patient declined the current topic (${current.construct_id}); it is already recorded as declined. If your last message was about a different construct, call mark_declined for that one too. Acknowledge briefly without apology overload and move to the next topic.`,
+          `The patient declined the current topic (${current}); it is already recorded as declined. Acknowledge briefly without apology overload and move to the next topic.`,
         );
       } else {
         turnNotes.push("The patient declined the current topic. Acknowledge briefly and move on.");
@@ -232,7 +214,7 @@ async function* runTurn(
     }
   }
 
-  // ---- budget ----
+  // ---- budget + tracker state for this turn ----
   const turnsUsed = countAssistantTurns(ctx.messages);
   const started = session.started_at ? new Date(session.started_at) : startedAt;
   const budget: TurnBudget = {
@@ -241,10 +223,10 @@ async function* runTurn(
     minutesElapsed: Math.max(0, (now().getTime() - started.getTime()) / 60000),
     targetMinutes: session.target_minutes,
   };
-  const forcedEnd = budgetFraction(budget) >= 1;
-  if (forcedEnd) {
+  const tracker = trackerStateFor(ctx, session, budgetFraction(budget));
+  if (tracker.end_reason) {
     turnNotes.push(
-      'This is the final message of the session: thank the patient, close warmly in one or two sentences, do not ask anything new, and call end_session with reason "turn_budget".',
+      "This is the final message of the session: thank the patient, close warmly in one or two sentences, and do not ask anything new.",
     );
   }
 
@@ -272,47 +254,32 @@ async function* runTurn(
     clinicianNote: note,
     population: ctx.mapRow.population,
     activeConstructs: ctx.activeConstructs,
-    coverage: ctx.coverage,
+    tracker,
     budget,
     turnNotes,
   });
   const history = toApiMessages(ctx.messages);
 
-  // ---- model turn (streamed) ----
-  const queue = new AsyncQueue<SseEvent>();
-  // Holder object: assignments inside tool callbacks are invisible to TS narrowing on plain lets.
-  const turn = {
-    endReason: null as EndReason | null,
-    modelFlag: null as RaiseSafetyFlagInput | null,
-  };
+  // ---- conversational call (no tools) and safety screen, started together (§C step 2) ----
   const t0 = Date.now();
+  const safetyScreen = body.text !== null && deps.safetyModel
+    ? classifySafety({
+      client: deps.anthropic,
+      model: deps.safetyModel,
+      text: body.text,
+      recent: ctx.messages.map((m) => ({ role: m.role, content: m.content })),
+    })
+    : Promise.resolve(null);
+
+  const queue = new AsyncQueue<SseEvent>();
   const run = streamTurn({
     client: deps.anthropic,
     model: deps.model,
     system: cachedSystem(stable, dynamic),
     messages: history,
-    tools: buildToolDefinitions(),
-    maxTokens: MAX_OUTPUT_TOKENS,
+    tools: [],
+    maxTokens: TALK_MAX_OUTPUT_TOKENS,
     onText: (delta) => queue.push({ event: "token", data: { t: delta } }),
-    onToolUse: (name, input) =>
-      executeTool(
-        {
-          db,
-          sessionId: session.id,
-          messageId: patientMessage?.id ?? null,
-          activeConstructs: ctx.activeConstructs,
-          onEvidence: (e: { construct_id: string; severity: Severity; confidence: number }) =>
-            queue.push({ event: "evidence", data: e }),
-          onEndSession: (reason) => {
-            turn.endReason = reason;
-          },
-          onSafetyFlag: (flag) => {
-            turn.modelFlag = flag;
-          },
-        },
-        name,
-        input,
-      ),
   })
     .then(
       (result) => ({ ok: true as const, result }),
@@ -324,6 +291,7 @@ async function* runTurn(
   const outcome = await run;
   if (!outcome.ok) {
     console.error("chat-turn model call failed", outcome.error);
+    await safetyScreen.catch(() => null);
     yield {
       event: "error",
       data: {
@@ -336,23 +304,8 @@ async function* runTurn(
   }
   const { result } = outcome;
   const latency = Date.now() - t0;
-  if (Deno.env.get("DEBUG_ERRORS") === "1") {
-    yield {
-      event: "debug",
-      data: {
-        rounds: result.rounds,
-        stop: result.stopReason,
-        tools: result.toolCalls.map((c) => ({
-          name: c.name,
-          error: c.result.is_error ?? false,
-          result: c.result.content.slice(0, 200),
-          input: JSON.stringify(c.input).slice(0, 200),
-        })),
-      },
-    };
-  }
 
-  // ---- persist ----
+  // ---- persist the reply ----
   if (result.text.trim()) {
     await insertAssistantMessage(db, ctx, result.text.trim(), {
       tokens_in: result.usage.input_tokens,
@@ -360,70 +313,148 @@ async function* runTurn(
       latency_ms: latency,
     });
   }
-  const inputTokens = session.input_tokens + result.usage.input_tokens;
-  const outputTokens = session.output_tokens + result.usage.output_tokens;
+  let inputTokens = session.input_tokens + result.usage.input_tokens;
+  let outputTokens = session.output_tokens + result.usage.output_tokens;
+
+  // ---- §C step 3: the safety screen result lands after the reply, and still halts ----
+  const screened = await safetyScreen.catch(() => null);
+  if (screened && patientMessage) {
+    await db.updateSession(session.id, {
+      input_tokens: inputTokens,
+      output_tokens: outputTokens,
+      cost_usd_estimate: estimateCostUsd(deps.model, inputTokens, outputTokens),
+    });
+    yield* haltForSafety(deps, ctx, session, patientMessage.id, {
+      trigger: screened.trigger,
+      detected_by: "model",
+      detail: screened.rationale,
+    });
+    return;
+  }
+
+  // ---- §C step 4: extraction. A failure must not break the turn. ----
+  if (patientMessage && body.text !== null) {
+    try {
+      const { system, user } = buildExtractionPrompt({
+        lastAssistantMessage: priorAssistant?.content ?? null,
+        patientMessage: body.text,
+        activeConstructs: ctx.activeConstructs,
+        population: ctx.mapRow.population,
+        triage: tracker.triage.items,
+        language,
+      });
+      const extraction = await completeJson<ExtractionResult>({
+        client: deps.anthropic,
+        model: deps.extractModel ?? DEFAULT_EXTRACT_MODEL,
+        system,
+        user,
+        maxTokens: MAX_JSON_OUTPUT_TOKENS,
+        validate: (v) =>
+          validateExtraction(v, ctx.activeConstructs, tracker.triage.items, body.text ?? ""),
+      });
+      inputTokens += extraction.usage.input_tokens;
+      outputTokens += extraction.usage.output_tokens;
+      const events = await persistExtraction({
+        db,
+        sessionId: session.id,
+        messageId: patientMessage.id,
+        patientMessage: body.text,
+        lastAssistantMessage: priorAssistant?.content ?? null,
+        result: extraction.value,
+        alreadyConfirmed: new Set(
+          ctx.findings.filter(isConfirmation).map((f) => f.construct_id),
+        ),
+        defaultConstructId: tracker.current_focus?.construct_id ??
+          ctx.activeConstructs[0]?.id ?? null,
+      });
+      for (const e of events) yield { event: "evidence", data: e };
+    } catch (err) {
+      console.error("chat-turn extraction failed; the turn continues", err);
+    }
+  }
+
+  // ---- recompute the tracker from what is now stored ----
+  ctx.evidence = await db.listEvidence(session.id);
+  ctx.findings = await db.listFindings(session.id);
+  const after = trackerStateFor(ctx, session, budgetFraction(budget));
+
   const sessionPatch: Partial<SessionRow> = {
     input_tokens: inputTokens,
     output_tokens: outputTokens,
     cost_usd_estimate: estimateCostUsd(deps.model, inputTokens, outputTokens),
+    phase: after.phase,
+    focus_constructs: after.focus_constructs,
   };
 
-  // Refresh coverage after tool execution.
-  ctx.evidence = await db.listEvidence(session.id);
-  ctx.findings = await db.listFindings(session.id);
-  ctx.coverage = computeCoverage(ctx.mapRow.map, ctx.activeConstructs, ctx.evidence, ctx.findings);
-
-  if (turn.modelFlag) {
-    const flag = turn.modelFlag;
-    const message = safetyMessageFor(language, ctx.participant.age_band);
-    await db.insertSafetyFlag({
-      session_id: session.id,
-      message_id: patientMessage?.id ?? null,
-      trigger: flag.trigger,
-      detected_by: "model",
-      action_taken: `session halted after model turn; ${flag.rationale}`,
-      reviewed_by: null,
-      reviewed_at: null,
-    });
-    await db.updateSession(session.id, { ...sessionPatch, status: "safety-halted" });
-    await insertAssistantMessage(db, ctx, message, null);
-    await writeAudit(db, {
-      actor_type: "system",
-      actor_id: "safety",
-      action: "session.safety_halt",
-      target_type: "session",
-      target_id: session.id,
-      metadata: { trigger: flag.trigger, detected_by: "model" },
-    });
-    yield { event: "safety", data: { message } };
-    return;
-  }
-
-  const finalReason: EndReason | null = turn.endReason ?? (forcedEnd ? "turn_budget" : null);
-  if (finalReason) {
+  // The end decision was made before the model wrote, so this reply is already the goodbye.
+  const endReason: EndReason | null = tracker.end_reason;
+  if (endReason) {
     await db.updateSession(session.id, { ...sessionPatch, status: "wrapping-up" });
-    yield statusEvent(ctx, session);
-    yield { event: "ended", data: { reason: finalReason } };
+    yield statusEvent(after, ctx, session);
+    yield { event: "ended", data: { reason: endReason } };
     return;
   }
 
   await db.updateSession(session.id, sessionPatch);
-  yield statusEvent(ctx, session);
+  yield statusEvent(after, ctx, session);
 }
 
 // ---------------------------------------------------------------------------
 // helpers
 // ---------------------------------------------------------------------------
 
-function statusEvent(ctx: SessionContext, session: SessionRow): SseEvent {
+function statusEvent(
+  tracker: TrackerState,
+  ctx: SessionContext,
+  session: SessionRow,
+): SseEvent {
   return {
     event: "status",
     data: {
-      coverage: { covered: ctx.coverage.covered, total_active: ctx.coverage.total_active },
+      coverage: {
+        covered: tracker.coverage.covered,
+        total_active: tracker.coverage.total_active,
+      },
+      phase: tracker.phase,
+      current_focus: tracker.current_focus?.construct_id ?? null,
+      focus_progress: tracker.focus_progress,
       turns_used: countAssistantTurns(ctx.messages),
       max_turns: session.max_turns,
     },
   };
+}
+
+/** Both safety layers end the same way: flag, fixed message, halted session, `safety` event. */
+async function* haltForSafety(
+  deps: ChatTurnDeps,
+  ctx: SessionContext,
+  session: SessionRow,
+  messageId: string,
+  safety: { trigger: SafetyTrigger; detected_by: "keyword" | "model"; detail: string },
+): AsyncGenerator<SseEvent> {
+  const { db } = deps;
+  const language = session.language;
+  const message = safetyMessageFor(language, ctx.participant.age_band);
+  await db.insertSafetyFlag({
+    session_id: session.id,
+    message_id: messageId,
+    trigger: safety.trigger,
+    detected_by: safety.detected_by,
+    action_taken: `session halted; fixed ${language} message shown; ${safety.detail}`,
+    reviewed_by: null,
+    reviewed_at: null,
+  });
+  await db.updateSession(session.id, { status: "safety-halted" });
+  await insertAssistantMessage(db, ctx, message, null);
+  await writeAudit(db, {
+    actor_type: "system",
+    actor_id: "safety",
+    action: "session.safety_halt",
+    target_type: "session",
+    target_id: session.id,
+    metadata: { trigger: safety.trigger, detected_by: safety.detected_by },
+  });
+  yield { event: "safety", data: { message } };
 }
 
 /** A retried turn re-sends the same text; reuse the dangling patient message instead of duplicating. */

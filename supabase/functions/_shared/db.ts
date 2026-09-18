@@ -149,6 +149,16 @@ export function createDb(client: AnyClient): Db {
         .maybeSingle();
       return unwrapNullable(r, "select construct_maps");
     },
+    getLatestApprovedMapForPopulation: async (population) => {
+      const r: PgResult<ConstructMapRow> = await t("construct_maps")
+        .select("*")
+        .eq("population", population)
+        .eq("status", "approved")
+        .order("approved_at", { ascending: false, nullsFirst: false })
+        .limit(1)
+        .maybeSingle();
+      return unwrapNullable(r, "select construct_maps");
+    },
     getMaxMapVersion: async (slug) => {
       const r: PgResult<{ version: number }> = await t("construct_maps")
         .select("version")

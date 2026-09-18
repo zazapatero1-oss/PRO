@@ -51,6 +51,7 @@ export async function generateAndStoreProfile(
       language: ctx.session.language,
       timepoint: ctx.session.timepoint,
       priorProfile: prior?.profile ?? null,
+      focusConstructs: ctx.session.focus_constructs ?? [],
       generatedWith: {
         model: deps.model,
         prompt_version: deps.promptVersion,

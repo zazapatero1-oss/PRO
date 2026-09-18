@@ -36,10 +36,11 @@ export interface StreamTurnOptions {
   model: string;
   system: string | Anthropic.TextBlockParam[];
   messages: Anthropic.MessageParam[];
+  /** v1.1 §C: the conversational turn sends none; `tools` and `tool_choice` are then omitted. */
   tools: Anthropic.Tool[];
   maxTokens: number;
   onText: (delta: string) => void;
-  onToolUse: (name: string, input: unknown) => Promise<ToolExecResult>;
+  onToolUse?: (name: string, input: unknown) => Promise<ToolExecResult>;
   /** Number of model calls, i.e. tool rounds + final answer. SPEC §7.3 says 3. */
   maxRounds?: number;
 }
@@ -69,6 +70,7 @@ export async function streamTurn(opts: StreamTurnOptions): Promise<StreamTurnRes
   let stopReason: Anthropic.StopReason | null = null;
   let rounds = 0;
 
+  const hasTools = opts.tools.length > 0;
   while (rounds < maxRounds) {
     rounds++;
     const stream = opts.client.messages.stream({
@@ -76,7 +78,7 @@ export async function streamTurn(opts: StreamTurnOptions): Promise<StreamTurnRes
       max_tokens: opts.maxTokens,
       system: opts.system,
       messages,
-      tools: opts.tools,
+      ...(hasTools ? { tools: opts.tools } : {}),
     });
     stream.on("text", (delta) => {
       text += delta;
@@ -97,7 +99,9 @@ export async function streamTurn(opts: StreamTurnOptions): Promise<StreamTurnRes
     for (const tu of toolUses) {
       let result: ToolExecResult;
       try {
-        result = await opts.onToolUse(tu.name, tu.input);
+        result = opts.onToolUse
+          ? await opts.onToolUse(tu.name, tu.input)
+          : { content: "No tools are available in this call.", is_error: true };
       } catch (err) {
         result = { content: `Tool failed: ${(err as Error).message}`, is_error: true };
       }
@@ -114,8 +118,9 @@ export async function streamTurn(opts: StreamTurnOptions): Promise<StreamTurnRes
   }
 
   // Every round was tool calls, or the output cap cut a tool call off before any text:
-  // ask once more with tools off so the patient always gets a reply.
-  if (!text.trim() && (stopReason === "tool_use" || stopReason === "max_tokens")) {
+  // ask once more with tools off so the patient always gets a reply. Only meaningful when
+  // tools were sent at all; a tool-free call has nothing to turn off.
+  if (hasTools && !text.trim() && (stopReason === "tool_use" || stopReason === "max_tokens")) {
     rounds++;
     const stream = opts.client.messages.stream({
       model: opts.model,

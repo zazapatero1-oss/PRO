@@ -17,7 +17,7 @@ import { MAX_JSON_OUTPUT_TOKENS } from "../_shared/config.ts";
 import { completeJson } from "../_shared/anthropic.ts";
 import { loadSessionContext, nextSeq } from "../_shared/session_context.ts";
 import { renderConstruct } from "../_shared/prompt.ts";
-import { validateEvidence } from "../chat-turn/tools.ts";
+import { validateEvidence } from "../_shared/extraction.ts";
 import { generateAndStoreProfile } from "../end-session/handler.ts";
 
 export interface ConfirmSummaryDeps {

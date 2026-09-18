@@ -38,7 +38,31 @@ export function fixtureMap(overrides: Partial<ConstructMap> = {}): ConstructMap 
       drill_down_threshold: "moderate",
       core_constructs_required: true,
       max_constructs_per_session: 18,
+      focus_facet_threshold: 0.7,
     },
+    triage: [
+      {
+        id: "overall",
+        intent: "How they feel overall about how their face looks right now",
+        maps_to: ["appearance.overall"],
+      },
+      {
+        id: "features",
+        intent: "Which parts of their face are on their mind most",
+        maps_to: ["appearance.nose"],
+      },
+      {
+        id: "impact",
+        intent: "How it affects how they feel about themselves",
+        maps_to: ["psych.self_consciousness", "psych.mood"],
+      },
+      {
+        id: "recovery",
+        intent: "How recovery is going: pain, swelling, numbness, scarring",
+        maps_to: ["outcome.decision"],
+        timepoints: ["post-op-2w", "post-op-6w", "post-op-6m", "post-op-12m", "follow-up"],
+      },
+    ],
     domains: [
       {
         id: "appearance",
@@ -56,6 +80,11 @@ export function fixtureMap(overrides: Partial<ConstructMap> = {}): ConstructMap 
               severe: "persistent distress, avoidance affecting daily life",
             },
             drill_down: ["Which features", "When it is worse"],
+            facets: [
+              { id: "mirror", label: "How it looks in the mirror" },
+              { id: "photos", label: "How it looks in photos" },
+              { id: "wanted_change", label: "What they would want different" },
+            ],
             age_variants: {
               pediatric: {
                 description: "How the child feels about their face at school and with friends.",
@@ -75,6 +104,10 @@ export function fixtureMap(overrides: Partial<ConstructMap> = {}): ConstructMap 
               severe: "distress",
             },
             drill_down: ["Profile vs front"],
+            facets: [
+              { id: "shape", label: "Shape of the nose" },
+              { id: "breathing", label: "Breathing through it" },
+            ],
             priority: "standard",
           },
         ],
@@ -95,6 +128,10 @@ export function fixtureMap(overrides: Partial<ConstructMap> = {}): ConstructMap 
               severe: "constantly",
             },
             drill_down: ["Situations", "Onset"],
+            facets: [
+              { id: "situations", label: "Situations where it is worse" },
+              { id: "avoidance", label: "Things they avoid because of it" },
+            ],
             priority: "core",
           },
           {
@@ -232,6 +269,11 @@ export class FakeDb implements Db {
       .sort((a, b) => b.version - a.version);
     return Promise.resolve(rows[0] ?? null);
   }
+  getLatestApprovedMapForPopulation(population: ConstructMapRow["population"]) {
+    const rows = this.maps.filter((m) => m.population === population && m.status === "approved")
+      .sort((a, b) => (b.approved_at ?? "").localeCompare(a.approved_at ?? ""));
+    return Promise.resolve(rows[0] ?? null);
+  }
   getMaxMapVersion(slug: string) {
     return Promise.resolve(
       this.maps.filter((m) => m.slug === slug).reduce((m, r) => Math.max(m, r.version), 0),
@@ -305,10 +347,13 @@ export class FakeDb implements Db {
     );
   }
   insertEvidence(row: Parameters<Db["insertEvidence"]>[0]) {
+    // Mirrors the DB defaults for facets / triage_item.
     const full: ConstructEvidenceRow = {
       id: fakeId("ev"),
       created_at: stamp(),
       ...row,
+      facets: row.facets ?? [],
+      triage_item: row.triage_item ?? null,
     } as ConstructEvidenceRow;
     this.evidence.push(full);
     return Promise.resolve(full);
@@ -516,6 +561,8 @@ export async function seedSession(
     respondent: SessionRow["respondent"];
     timepoint: SessionRow["timepoint"];
     status: SessionRow["status"];
+    phase: SessionRow["phase"];
+    focusConstructs: string[];
     map: ConstructMap;
     focus: string[];
     maxTurns: number;
@@ -570,6 +617,8 @@ export async function seedSession(
     prompt_version: "test",
     model_id: "fake-model",
     status: opts.status ?? "consented",
+    phase: opts.phase ?? "triage",
+    focus_constructs: opts.focusConstructs ?? [],
     resume_token_hash: tokenHash,
     resume_token_expires_at: opts.expiresAt ?? null,
     max_turns: opts.maxTurns ?? 40,

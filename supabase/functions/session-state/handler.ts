@@ -13,6 +13,7 @@ import {
   consentVariantNeeded,
   countAssistantTurns,
   loadSessionContext,
+  trackerStateFor,
 } from "../_shared/session_context.ts";
 import { validateParticipantInput } from "../start-session/handler.ts";
 
@@ -104,6 +105,7 @@ export async function handleSessionState(deps: SessionStateDeps, raw: unknown): 
     ? await db.getProfile(session.id)
     : null;
 
+  const tracker = trackerStateFor(ctx, session);
   const res: SessionStateResponse = {
     session_id: session.id,
     status: session.status,
@@ -126,6 +128,9 @@ export async function handleSessionState(deps: SessionStateDeps, raw: unknown): 
       created_at: m.created_at,
     })),
     coverage: { covered: ctx.coverage.covered, total_active: ctx.coverage.total_active },
+    phase: tracker.phase,
+    current_focus: tracker.current_focus?.construct_id ?? null,
+    focus_progress: tracker.focus_progress,
     turns_used: countAssistantTurns(ctx.messages),
     max_turns: session.max_turns,
     patient_summary: profile?.patient_summary ?? null,
