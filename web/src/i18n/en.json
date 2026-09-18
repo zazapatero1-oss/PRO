@@ -1,0 +1,333 @@
+{
+  "common": {
+    "appName": "FACE-Q Conversation",
+    "loading": "Loading…",
+    "oneMoment": "One moment…",
+    "error": "Something went wrong.",
+    "retry": "Try again",
+    "back": "Back",
+    "next": "Next",
+    "continue": "Continue",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "close": "Close",
+    "copy": "Copy",
+    "copied": "Copied",
+    "save": "Save",
+    "signOut": "Sign out",
+    "language": "Language",
+    "english": "English",
+    "spanish": "Español",
+    "notFound": "Page not found.",
+    "home": "Home",
+    "disclaimer": "AI-assisted inferred profile — not a validated FACE-Q score.",
+    "skipToContent": "Skip to content",
+    "optional": "optional",
+    "none": "None",
+    "unknown": "Unknown"
+  },
+  "landing": {
+    "title": "FACE-Q Conversation",
+    "subtitle": "A conversation about how things are for you, in your own words.",
+    "haveLink": "I have a link",
+    "clinicianSignIn": "Clinician sign in",
+    "enterLink": "Paste your link or code",
+    "enterLinkPlaceholder": "https://…/p/… or the code",
+    "open": "Open",
+    "demoLink": "Try the demo patient link (Spanish)"
+  },
+  "patient": {
+    "invalidLink": "This link is not valid or has expired. Please ask your care team for a new one.",
+    "language": {
+      "title": "Which language would you like to use?",
+      "hint": "You can change this later."
+    },
+    "consent": {
+      "adult": {
+        "title": "Before we start",
+        "body": [
+          "This is a conversation with a computer program (an AI). It is not a doctor and does not give medical advice.",
+          "It will ask about how you feel about your face, your treatment and daily life. Your answers help your care team understand what matters to you.",
+          "What you say is saved with a study code, not your name. Your care team can read it.",
+          "You can skip any question, take a break, or stop at any time. Saying \"skip\" or \"stop\" works too."
+        ],
+        "agree": "I understand and I would like to continue",
+        "decline": "I do not want to continue"
+      },
+      "minor-assent": {
+        "title": "Hello! Before we chat",
+        "body": [
+          "You are going to chat with a computer program. It is not a person and it is not a doctor.",
+          "It will ask how you feel about your face and how things are at school and with friends.",
+          "Your name is not saved. Your care team can read what you say so they can help you.",
+          "You can say \"skip\" if you do not want to answer something, or \"stop\" if you want to finish. That is always okay."
+        ],
+        "agree": "Okay, let's chat",
+        "decline": "I do not want to chat"
+      },
+      "guardian": {
+        "title": "For the parent or guardian",
+        "body": [
+          "This is a conversation with a computer program (an AI) about how your child is doing. It is not a clinician and does not give medical advice.",
+          "It asks about your child's feelings about their face, daily life, school and friends. You can answer for your child, together with them, or let them answer with your support.",
+          "Answers are stored under a study code, without names. Your child's care team can read them.",
+          "You can skip any question, take a break, or stop at any time."
+        ],
+        "agree": "I consent on behalf of my child and would like to continue",
+        "decline": "I do not consent"
+      },
+      "declined": "That is completely fine. You can close this page. Your care team will be in touch."
+    },
+    "face": {
+      "title": "A few things about you",
+      "intro": "This helps the conversation fit you. Everything can be changed.",
+      "displayName": "What should we call you?",
+      "displayNameHelp": "A first name or nickname is fine.",
+      "ageBand": "Age",
+      "readingComfort": "How do you like to read and reply?",
+      "diagnosis": "What brings you here?",
+      "diagnosisText": "In your own words (optional)",
+      "diagnosisTextPlaceholder": "For example: nose surgery last month",
+      "respondent": "Who is answering?",
+      "timepoint": "Visit",
+      "start": "Start the conversation"
+    },
+    "chat": {
+      "title": "Conversation",
+      "inputLabel": "Your message",
+      "placeholder": "Type here…",
+      "send": "Send",
+      "skip": "Skip this",
+      "skipPhrase": "skip",
+      "break": "Take a break",
+      "breakPhrase": "I need a break",
+      "coverage": "We've talked about {covered} of {total} areas",
+      "assistant": "Assistant",
+      "you": "You",
+      "oneMoment": "One moment…",
+      "retrying": "Reconnecting…",
+      "failed": "We couldn't send that. Please try again.",
+      "resend": "Try again",
+      "generating": "Putting together your summary…",
+      "safetyTitle": "Important",
+      "halted": "The conversation is paused. Your care team has been notified.",
+      "paused": "Whenever you're ready, just keep typing. This link will bring you back here.",
+      "mic": {
+        "start": "Speak your reply",
+        "stop": "Stop listening",
+        "listening": "Listening… tap to stop",
+        "unsupported": "Voice input isn't available in this browser. You can type instead.",
+        "denied": "Microphone access was blocked. You can type instead.",
+        "error": "Voice input stopped. You can try again or type."
+      }
+    },
+    "summary": {
+      "title": "Did I get this right?",
+      "intro": "Here is a short summary of what you told me. You can correct anything.",
+      "correctLabel": "Correct anything",
+      "correctPlaceholder": "For example: it's my chin that bothers me, not my nose",
+      "add": "Add correction",
+      "yourCorrections": "Your corrections",
+      "remove": "Remove",
+      "confirm": "That's right, finish",
+      "confirmWithCorrections": "Send corrections and finish",
+      "confirming": "Saving…"
+    },
+    "thanks": {
+      "title": "Thank you",
+      "body": "Your care team will look at what you shared before your next visit.",
+      "close": "You can close this page now."
+    },
+    "abandoned": "This conversation has ended.",
+    "completed": "This conversation is complete. Thank you."
+  },
+  "clinician": {
+    "signIn": {
+      "title": "Clinician sign in",
+      "email": "Work email",
+      "sendLink": "Send magic link",
+      "sent": "Check your email for a sign-in link.",
+      "demo": "Sign in as demo clinician",
+      "notClinician": "This account is not registered as a clinician."
+    },
+    "nav": {
+      "participants": "Participants",
+      "instruments": "Instruments"
+    },
+    "participants": {
+      "title": "Participants",
+      "studyId": "Study ID",
+      "diagnosis": "Diagnosis",
+      "timepoints": "Completed",
+      "lastStatus": "Last session",
+      "flags": "Flags",
+      "empty": "No participants yet.",
+      "newParticipant": "New participant",
+      "resetDemo": "Reset demo data",
+      "demo": "demo"
+    },
+    "participant": {
+      "title": "Participant",
+      "timeline": "Timeline",
+      "noSessions": "No sessions yet.",
+      "view": "Open review",
+      "newSession": "New session",
+      "timepoint": "Timepoint",
+      "respondent": "Respondent",
+      "focusNote": "Focus note for this session",
+      "focusNotePlaceholder": "What do you most want to learn this time?",
+      "focusConstructs": "Weight these constructs",
+      "create": "Create session and patient link",
+      "creating": "Creating…",
+      "linkTitle": "Patient link",
+      "linkOnce": "This link is shown once. It is not stored; copy it or scan the code now.",
+      "copyLink": "Copy link",
+      "openLink": "Open as patient",
+      "done": "Done",
+      "severity": "Severity",
+      "profileMissing": "No profile yet",
+      "language": "Language",
+      "age": "Age",
+      "reading": "Reading",
+      "newParticipantIntro": "Creating a new participant. The study ID is generated automatically.",
+      "displayName": "Display name (pseudonym)",
+      "preferredLanguage": "Preferred language",
+      "ageBand": "Age band",
+      "readingComfort": "Reading comfort",
+      "diagnosis": "Diagnosis",
+      "diagnosisText": "Diagnosis detail"
+    },
+    "session": {
+      "title": "Session review",
+      "inferredProfile": "Inferred profile",
+      "domains": "Domains",
+      "aggregationTooltip": "Domain severity = worst covered construct severity; with two or more constructs, the median is shown and the worst is noted. Confidence is the mean of construct confidences.",
+      "worst": "worst",
+      "confidence": "confidence",
+      "constructs": "Constructs and quotes",
+      "gloss": "English gloss",
+      "findings": "Drill-down findings",
+      "needsClarification": "Needs clarification",
+      "notCovered": "Not covered",
+      "declined": "Declined by patient",
+      "patientQuestions": "Patient questions",
+      "change": "Change since prior timepoint",
+      "prior": "Prior",
+      "now": "Now",
+      "note": "Note",
+      "safetyFlags": "Safety flags",
+      "reopen": "Reopen session",
+      "reopening": "Reopening…",
+      "reopened": "Session reopened.",
+      "reviewed": "reviewed",
+      "transcript": "Transcript",
+      "show": "Show",
+      "hide": "Hide",
+      "focusNote": "Clinician focus note",
+      "exportFhir": "Export FHIR JSON",
+      "exportCsv": "Export CSV",
+      "print": "Print / PDF",
+      "deleteParticipant": "Delete participant",
+      "deleteTitle": "Delete this participant?",
+      "deleteBody": "This permanently removes the participant and all of their sessions, messages and profiles. Only the study ID is kept in the audit log.",
+      "deleting": "Deleting…",
+      "noProfile": "No profile has been generated for this session yet.",
+      "generatedWith": "Generated with",
+      "patientSummary": "Patient-facing summary",
+      "corrections": "Patient corrections",
+      "usage": "Usage",
+      "tokens": "tokens",
+      "status": "Status",
+      "evidenceOnly": "Evidence recorded so far (profile not generated yet)",
+      "empty": "Nothing recorded.",
+      "patientConfirmed": "Confirmed by patient"
+    },
+    "instruments": {
+      "title": "Instruments",
+      "list": "Registered instruments",
+      "maps": "Construct maps",
+      "itemTextStored": "Item text stored",
+      "ingest": "Propose a construct map",
+      "ingestIntro": "Paste extracted instrument text. The proposal paraphrases constructs; item text is never stored.",
+      "slug": "Instrument",
+      "population": "Population",
+      "text": "Instrument text",
+      "propose": "Propose construct map",
+      "proposing": "Proposing…",
+      "proposed": "Proposed map",
+      "approve": "Approve",
+      "approving": "Approving…",
+      "approved": "Approved",
+      "version": "Version",
+      "status": "Status",
+      "constructCount": "{count} constructs"
+    }
+  },
+  "enum": {
+    "language": { "en": "English", "es": "Spanish" },
+    "ageBand": {
+      "under-8": "Under 8",
+      "8-12": "8–12",
+      "13-17": "13–17",
+      "18-29": "18–29",
+      "30-49": "30–49",
+      "50-69": "50–69",
+      "70-plus": "70+"
+    },
+    "readingComfort": {
+      "short-messages": "Short messages, please",
+      "comfortable": "I'm comfortable reading longer messages",
+      "prefer-voice": "I'd rather talk than type"
+    },
+    "respondent": { "self": "Patient", "guardian": "Parent / guardian", "both": "Patient with guardian" },
+    "timepoint": {
+      "baseline": "Baseline",
+      "pre-op": "Pre-op",
+      "post-op-2w": "2 weeks post-op",
+      "post-op-6w": "6 weeks post-op",
+      "post-op-6m": "6 months post-op",
+      "post-op-12m": "12 months post-op",
+      "follow-up": "Follow-up"
+    },
+    "status": {
+      "intake": "Intake",
+      "consented": "Consented",
+      "active": "Active",
+      "wrapping-up": "Wrapping up",
+      "summary-review": "Summary review",
+      "completed": "Completed",
+      "abandoned": "Abandoned",
+      "safety-halted": "Safety halted"
+    },
+    "severity": {
+      "none": "None",
+      "mild": "Mild",
+      "moderate": "Moderate",
+      "severe": "Severe",
+      "unclear": "Unclear",
+      "declined": "Declined"
+    },
+    "category": {
+      "onset": "Onset",
+      "trajectory": "Trajectory",
+      "triggers": "Triggers",
+      "relief": "Relief",
+      "impact": "Impact",
+      "expectation": "Expectation",
+      "patient_question": "Patient question",
+      "other": "Other"
+    },
+    "trigger": { "self_harm": "Self-harm", "abuse": "Abuse", "acute_distress": "Acute distress", "other": "Other" },
+    "population": { "adult": "Adult", "pediatric": "Pediatric" },
+    "mapStatus": { "draft": "Draft", "approved": "Approved", "retired": "Retired" },
+    "constructStatus": {
+      "untouched": "Not discussed",
+      "partial": "Partial",
+      "covered": "Covered",
+      "declined": "Declined",
+      "needs_clarification": "Needs clarification",
+      "drill_down_pending": "Drill-down pending",
+      "drill_down_done": "Drill-down done"
+    }
+  }
+}

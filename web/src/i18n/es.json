@@ -1,0 +1,333 @@
+{
+  "common": {
+    "appName": "FACE-Q Conversación",
+    "loading": "Cargando…",
+    "oneMoment": "Un momento…",
+    "error": "Algo salió mal.",
+    "retry": "Intentar de nuevo",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "continue": "Continuar",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "close": "Cerrar",
+    "copy": "Copiar",
+    "copied": "Copiado",
+    "save": "Guardar",
+    "signOut": "Cerrar sesión",
+    "language": "Idioma",
+    "english": "English",
+    "spanish": "Español",
+    "notFound": "Página no encontrada.",
+    "home": "Inicio",
+    "disclaimer": "Perfil inferido asistido por IA — no es una puntuación FACE-Q validada.",
+    "skipToContent": "Ir al contenido",
+    "optional": "opcional",
+    "none": "Ninguno",
+    "unknown": "Desconocido"
+  },
+  "landing": {
+    "title": "FACE-Q Conversación",
+    "subtitle": "Una conversación sobre cómo le va, con sus propias palabras.",
+    "haveLink": "Tengo un enlace",
+    "clinicianSignIn": "Acceso para profesionales",
+    "enterLink": "Pegue su enlace o código",
+    "enterLinkPlaceholder": "https://…/p/… o el código",
+    "open": "Abrir",
+    "demoLink": "Probar el enlace de paciente de demostración (español)"
+  },
+  "patient": {
+    "invalidLink": "Este enlace no es válido o ha caducado. Pida uno nuevo a su equipo de atención.",
+    "language": {
+      "title": "¿Qué idioma prefiere usar?",
+      "hint": "Puede cambiarlo más tarde."
+    },
+    "consent": {
+      "adult": {
+        "title": "Antes de empezar",
+        "body": [
+          "Esta es una conversación con un programa informático (una IA). No es un médico y no da consejos médicos.",
+          "Le preguntará cómo se siente con su cara, su tratamiento y su vida diaria. Sus respuestas ayudan a su equipo de atención a entender qué es importante para usted.",
+          "Lo que diga se guarda con un código de estudio, no con su nombre. Su equipo de atención puede leerlo.",
+          "Puede saltar cualquier pregunta, hacer una pausa o parar en cualquier momento. También puede escribir \"saltar\" o \"parar\"."
+        ],
+        "agree": "Lo entiendo y quiero continuar",
+        "decline": "No quiero continuar"
+      },
+      "minor-assent": {
+        "title": "¡Hola! Antes de charlar",
+        "body": [
+          "Vas a charlar con un programa de ordenador. No es una persona y no es un médico.",
+          "Te preguntará cómo te sientes con tu cara y cómo te va en el cole y con tus amigos.",
+          "Tu nombre no se guarda. Tu equipo médico puede leer lo que dices para poder ayudarte.",
+          "Puedes decir \"saltar\" si no quieres contestar algo, o \"parar\" si quieres terminar. Siempre está bien."
+        ],
+        "agree": "Vale, vamos a charlar",
+        "decline": "No quiero charlar"
+      },
+      "guardian": {
+        "title": "Para el padre, madre o tutor",
+        "body": [
+          "Esta es una conversación con un programa informático (una IA) sobre cómo le va a su hijo o hija. No es un profesional sanitario y no da consejos médicos.",
+          "Pregunta sobre lo que siente su hijo o hija respecto a su cara, la vida diaria, el colegio y los amigos. Puede responder usted, responder juntos o dejar que responda con su apoyo.",
+          "Las respuestas se guardan con un código de estudio, sin nombres. El equipo de atención de su hijo o hija puede leerlas.",
+          "Puede saltar cualquier pregunta, hacer una pausa o parar en cualquier momento."
+        ],
+        "agree": "Doy mi consentimiento en nombre de mi hijo o hija y quiero continuar",
+        "decline": "No doy mi consentimiento"
+      },
+      "declined": "No pasa nada. Puede cerrar esta página. Su equipo de atención se pondrá en contacto."
+    },
+    "face": {
+      "title": "Unas cosas sobre usted",
+      "intro": "Esto ayuda a que la conversación se adapte a usted. Todo se puede cambiar.",
+      "displayName": "¿Cómo quiere que le llamemos?",
+      "displayNameHelp": "Un nombre o apodo está bien.",
+      "ageBand": "Edad",
+      "readingComfort": "¿Cómo prefiere leer y responder?",
+      "diagnosis": "¿Qué le trae por aquí?",
+      "diagnosisText": "Con sus palabras (opcional)",
+      "diagnosisTextPlaceholder": "Por ejemplo: operación de nariz el mes pasado",
+      "respondent": "¿Quién responde?",
+      "timepoint": "Visita",
+      "start": "Empezar la conversación"
+    },
+    "chat": {
+      "title": "Conversación",
+      "inputLabel": "Su mensaje",
+      "placeholder": "Escriba aquí…",
+      "send": "Enviar",
+      "skip": "Saltar esto",
+      "skipPhrase": "saltar",
+      "break": "Hacer una pausa",
+      "breakPhrase": "Necesito una pausa",
+      "coverage": "Hemos hablado de {covered} de {total} temas",
+      "assistant": "Asistente",
+      "you": "Usted",
+      "oneMoment": "Un momento…",
+      "retrying": "Reconectando…",
+      "failed": "No se pudo enviar. Inténtelo de nuevo.",
+      "resend": "Intentar de nuevo",
+      "generating": "Preparando su resumen…",
+      "safetyTitle": "Importante",
+      "halted": "La conversación está en pausa. Su equipo de atención ha sido avisado.",
+      "paused": "Cuando quiera, siga escribiendo. Este enlace le traerá de vuelta aquí.",
+      "mic": {
+        "start": "Hablar su respuesta",
+        "stop": "Dejar de escuchar",
+        "listening": "Escuchando… toque para parar",
+        "unsupported": "La entrada por voz no está disponible en este navegador. Puede escribir.",
+        "denied": "El acceso al micrófono fue bloqueado. Puede escribir.",
+        "error": "La entrada por voz se detuvo. Puede intentarlo de nuevo o escribir."
+      }
+    },
+    "summary": {
+      "title": "¿Lo he entendido bien?",
+      "intro": "Aquí tiene un resumen breve de lo que me contó. Puede corregir lo que quiera.",
+      "correctLabel": "Corregir algo",
+      "correctPlaceholder": "Por ejemplo: lo que me molesta es la barbilla, no la nariz",
+      "add": "Añadir corrección",
+      "yourCorrections": "Sus correcciones",
+      "remove": "Quitar",
+      "confirm": "Es correcto, terminar",
+      "confirmWithCorrections": "Enviar correcciones y terminar",
+      "confirming": "Guardando…"
+    },
+    "thanks": {
+      "title": "Gracias",
+      "body": "Su equipo de atención revisará lo que compartió antes de su próxima visita.",
+      "close": "Ya puede cerrar esta página."
+    },
+    "abandoned": "Esta conversación ha terminado.",
+    "completed": "Esta conversación está completa. Gracias."
+  },
+  "clinician": {
+    "signIn": {
+      "title": "Acceso para profesionales",
+      "email": "Correo de trabajo",
+      "sendLink": "Enviar enlace de acceso",
+      "sent": "Revise su correo para encontrar el enlace de acceso.",
+      "demo": "Entrar como profesional de demostración",
+      "notClinician": "Esta cuenta no está registrada como profesional."
+    },
+    "nav": {
+      "participants": "Participantes",
+      "instruments": "Instrumentos"
+    },
+    "participants": {
+      "title": "Participantes",
+      "studyId": "ID de estudio",
+      "diagnosis": "Diagnóstico",
+      "timepoints": "Completadas",
+      "lastStatus": "Última sesión",
+      "flags": "Alertas",
+      "empty": "Aún no hay participantes.",
+      "newParticipant": "Nuevo participante",
+      "resetDemo": "Restablecer datos de demostración",
+      "demo": "demo"
+    },
+    "participant": {
+      "title": "Participante",
+      "timeline": "Cronología",
+      "noSessions": "Aún no hay sesiones.",
+      "view": "Abrir revisión",
+      "newSession": "Nueva sesión",
+      "timepoint": "Momento",
+      "respondent": "Quién responde",
+      "focusNote": "Nota de enfoque para esta sesión",
+      "focusNotePlaceholder": "¿Qué le interesa más saber esta vez?",
+      "focusConstructs": "Dar peso a estos constructos",
+      "create": "Crear sesión y enlace de paciente",
+      "creating": "Creando…",
+      "linkTitle": "Enlace de paciente",
+      "linkOnce": "Este enlace se muestra una sola vez. No se guarda; cópielo o escanee el código ahora.",
+      "copyLink": "Copiar enlace",
+      "openLink": "Abrir como paciente",
+      "done": "Listo",
+      "severity": "Gravedad",
+      "profileMissing": "Sin perfil todavía",
+      "language": "Idioma",
+      "age": "Edad",
+      "reading": "Lectura",
+      "newParticipantIntro": "Creando un nuevo participante. El ID de estudio se genera automáticamente.",
+      "displayName": "Nombre para mostrar (seudónimo)",
+      "preferredLanguage": "Idioma preferido",
+      "ageBand": "Franja de edad",
+      "readingComfort": "Comodidad de lectura",
+      "diagnosis": "Diagnóstico",
+      "diagnosisText": "Detalle del diagnóstico"
+    },
+    "session": {
+      "title": "Revisión de sesión",
+      "inferredProfile": "Perfil inferido",
+      "domains": "Dominios",
+      "aggregationTooltip": "Gravedad del dominio = la peor gravedad entre los constructos cubiertos; con dos o más constructos se muestra la mediana y se anota la peor. La confianza es la media de las confianzas de los constructos.",
+      "worst": "peor",
+      "confidence": "confianza",
+      "constructs": "Constructos y citas",
+      "gloss": "Glosa en inglés",
+      "findings": "Hallazgos de profundización",
+      "needsClarification": "Necesita aclaración",
+      "notCovered": "No cubierto",
+      "declined": "Rechazado por el paciente",
+      "patientQuestions": "Preguntas del paciente",
+      "change": "Cambio desde el momento anterior",
+      "prior": "Antes",
+      "now": "Ahora",
+      "note": "Nota",
+      "safetyFlags": "Alertas de seguridad",
+      "reopen": "Reabrir sesión",
+      "reopening": "Reabriendo…",
+      "reopened": "Sesión reabierta.",
+      "reviewed": "revisada",
+      "transcript": "Transcripción",
+      "show": "Mostrar",
+      "hide": "Ocultar",
+      "focusNote": "Nota de enfoque del profesional",
+      "exportFhir": "Exportar FHIR JSON",
+      "exportCsv": "Exportar CSV",
+      "print": "Imprimir / PDF",
+      "deleteParticipant": "Eliminar participante",
+      "deleteTitle": "¿Eliminar este participante?",
+      "deleteBody": "Esto elimina de forma permanente al participante y todas sus sesiones, mensajes y perfiles. Solo se conserva el ID de estudio en el registro de auditoría.",
+      "deleting": "Eliminando…",
+      "noProfile": "Todavía no se ha generado un perfil para esta sesión.",
+      "generatedWith": "Generado con",
+      "patientSummary": "Resumen mostrado al paciente",
+      "corrections": "Correcciones del paciente",
+      "usage": "Uso",
+      "tokens": "tokens",
+      "status": "Estado",
+      "evidenceOnly": "Evidencia registrada hasta ahora (perfil aún no generado)",
+      "empty": "Nada registrado.",
+      "patientConfirmed": "Confirmado por el paciente"
+    },
+    "instruments": {
+      "title": "Instrumentos",
+      "list": "Instrumentos registrados",
+      "maps": "Mapas de constructos",
+      "itemTextStored": "Texto de ítems almacenado",
+      "ingest": "Proponer un mapa de constructos",
+      "ingestIntro": "Pegue el texto extraído del instrumento. La propuesta parafrasea los constructos; el texto de los ítems nunca se guarda.",
+      "slug": "Instrumento",
+      "population": "Población",
+      "text": "Texto del instrumento",
+      "propose": "Proponer mapa de constructos",
+      "proposing": "Proponiendo…",
+      "proposed": "Mapa propuesto",
+      "approve": "Aprobar",
+      "approving": "Aprobando…",
+      "approved": "Aprobado",
+      "version": "Versión",
+      "status": "Estado",
+      "constructCount": "{count} constructos"
+    }
+  },
+  "enum": {
+    "language": { "en": "Inglés", "es": "Español" },
+    "ageBand": {
+      "under-8": "Menos de 8",
+      "8-12": "8–12",
+      "13-17": "13–17",
+      "18-29": "18–29",
+      "30-49": "30–49",
+      "50-69": "50–69",
+      "70-plus": "70+"
+    },
+    "readingComfort": {
+      "short-messages": "Mensajes cortos, por favor",
+      "comfortable": "Me siento cómodo leyendo mensajes largos",
+      "prefer-voice": "Prefiero hablar a escribir"
+    },
+    "respondent": { "self": "Paciente", "guardian": "Padre, madre o tutor", "both": "Paciente con tutor" },
+    "timepoint": {
+      "baseline": "Inicial",
+      "pre-op": "Preoperatorio",
+      "post-op-2w": "2 semanas tras la operación",
+      "post-op-6w": "6 semanas tras la operación",
+      "post-op-6m": "6 meses tras la operación",
+      "post-op-12m": "12 meses tras la operación",
+      "follow-up": "Seguimiento"
+    },
+    "status": {
+      "intake": "Admisión",
+      "consented": "Consentimiento dado",
+      "active": "Activa",
+      "wrapping-up": "Cerrando",
+      "summary-review": "Revisión del resumen",
+      "completed": "Completada",
+      "abandoned": "Abandonada",
+      "safety-halted": "Detenida por seguridad"
+    },
+    "severity": {
+      "none": "Ninguna",
+      "mild": "Leve",
+      "moderate": "Moderada",
+      "severe": "Grave",
+      "unclear": "No clara",
+      "declined": "Rechazado"
+    },
+    "category": {
+      "onset": "Inicio",
+      "trajectory": "Evolución",
+      "triggers": "Desencadenantes",
+      "relief": "Alivio",
+      "impact": "Impacto",
+      "expectation": "Expectativa",
+      "patient_question": "Pregunta del paciente",
+      "other": "Otro"
+    },
+    "trigger": { "self_harm": "Autolesión", "abuse": "Abuso", "acute_distress": "Angustia aguda", "other": "Otro" },
+    "population": { "adult": "Adulto", "pediatric": "Pediátrico" },
+    "mapStatus": { "draft": "Borrador", "approved": "Aprobado", "retired": "Retirado" },
+    "constructStatus": {
+      "untouched": "No tratado",
+      "partial": "Parcial",
+      "covered": "Cubierto",
+      "declined": "Rechazado",
+      "needs_clarification": "Necesita aclaración",
+      "drill_down_pending": "Profundización pendiente",
+      "drill_down_done": "Profundización hecha"
+    }
+  }
+}
