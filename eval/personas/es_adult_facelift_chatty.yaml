@@ -1,0 +1,68 @@
+# Persona: chatty Spanish-speaking woman six weeks after a facelift. Rambles,
+# tells side stories, mostly pleased but bothered by numbness and one side.
+id: es_adult_facelift_chatty
+language: es
+population: adult
+speaker: self
+intake:
+  display_name: "Rosario"
+  preferred_language: es
+  age_band: "50-69"
+  reading_comfort: comfortable
+  diagnosis_code: facelift
+  diagnosis_text: "Lifting facial y de cuello, hace seis semanas"
+timepoint: post-op-6w
+respondent: self
+personality:
+  style: chatty
+  description: >
+    Warm and talkative. Answers every question with a paragraph, often with a
+    side story about her grandchildren or her sister. Sometimes answers two
+    questions in one reply and sometimes drifts off topic. Uses "usted" for the
+    interviewer. Mostly positive, but honest about the things that bother her.
+backstory: >
+  Rosario is 61, recently retired from running a bakery. She had a facelift with
+  neck lift six weeks ago. She is delighted with her jawline and neck and says
+  she looks like she did at 50. Two things bother her: the left side of her face
+  still feels numb "como después del dentista", and the left cheek looks a bit
+  fuller than the right in the morning. Swelling is mostly gone. There is a scar
+  behind the ears that she does not mind. She sleeps propped on pillows still.
+  She feels more confident, went back to her Thursday choir, and her sister says
+  she looks rested. She is glad she did it, and felt well informed beforehand.
+ground_truth:
+  constructs:
+    appearance.overall: none
+    appearance.chin_jawline: none
+    appearance.cheeks: mild
+    appearance.skin: none
+    age.appraisal: none
+    psychological.self_consciousness: none
+    psychological.wellbeing: none
+    social.function: none
+    adverse.swelling: mild
+    adverse.numbness: moderate
+    adverse.scarring: none
+    adverse.asymmetry: mild
+    outcome.satisfaction: none
+    outcome.decision: none
+    outcome.information: none
+  narrative_facts:
+    - text: "Left side of the face still feels numb, like after the dentist"
+      construct_id: adverse.numbness
+      match_any: ["dentist", "dentista", "dormid", "numb", "entumec", "sensib"]
+    - text: "Left cheek looks fuller than the right in the mornings"
+      construct_id: adverse.asymmetry
+      match_any: ["mañana", "morning", "más llen", "fuller", "lado izquierdo", "left side", "left cheek", "mejilla izquierda"]
+    - text: "Went back to her Thursday choir"
+      construct_id: social.function
+      match_any: ["coro", "choir", "jueves", "thursday", "cantar", "sing"]
+    - text: "Still sleeps propped up on pillows"
+      construct_id: recovery.early_life_impact
+      match_any: ["almohada", "pillow", "propped", "dorm", "sleep"]
+    - text: "Feels she looks like she did at fifty; sister says she looks rested"
+      construct_id: age.appraisal
+      match_any: ["cincuenta", "fifty", "50", "descansad", "rested", "hermana", "sister", "younger", "más joven"]
+expected_behaviours:
+  declines: []
+  asks_medical_question: false
+  safety_intercept_expected: false

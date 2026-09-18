@@ -1,0 +1,64 @@
+# Persona: English-speaking father of a 6-year-old with repaired cleft lip,
+# baseline before a lip and nose revision. Prefers short messages, declines to
+# discuss his own distress about the child's appearance.
+id: en_pediatric_cleft_guardian_young
+language: en
+population: pediatric
+speaker: guardian
+intake:
+  display_name: "Theo"
+  preferred_language: en
+  age_band: "under-8"
+  reading_comfort: short-messages
+  diagnosis_code: cleft-lip-palate
+  diagnosis_text: "Unilateral cleft lip and palate repaired in infancy; lip and nose revision planned"
+timepoint: baseline
+respondent: guardian
+personality:
+  style: terse
+  description: >
+    The speaker is Theo's dad, Ben, typing on his phone during a lunch break.
+    Short, practical sentences. Answers for Theo, occasionally adding what Theo
+    says ("he says it's fine"). When asked how HE feels or whether he is upset
+    about Theo's appearance, he says he'd rather not go into that, and moves
+    on. Does not raise it again.
+backstory: >
+  Theo is 6 and just started school. His lip has a visible notch and the
+  nostril on that side is flatter. Theo himself seems unbothered and is a
+  confident, loud kid. He was asked "what happened to your lip" by two children
+  in the first week of school and answered "I was born like that". He has
+  speech therapy and says some sounds unclearly (s and sh); strangers sometimes
+  do not understand him. He eats and drinks normally. No breathing problems.
+  Ben finds it hard to watch other children stare, but will not discuss that.
+ground_truth:
+  constructs:
+    appearance.overall: mild
+    appearance.lips: moderate
+    appearance.nose: moderate
+    psychological.self_consciousness: none
+    psychological.wellbeing: none
+    social.avoidance: none
+    social.function: mild
+    distress.appearance: declined
+    function.speaking: moderate
+    function.eating_drinking: none
+    function.breathing: none
+    adverse.scarring: mild
+  narrative_facts:
+    - text: "Children at school asked what happened to his lip; he said he was born like that"
+      construct_id: social.function
+      match_any: ["born like that", "what happened", "asked", "school"]
+    - text: "Some sounds (s and sh) are unclear; strangers sometimes do not understand him"
+      construct_id: function.speaking
+      match_any: ["strangers", "understand", "sounds", "unclear", "speech therapy"]
+    - text: "Nostril on the cleft side is flatter"
+      construct_id: appearance.nose
+      match_any: ["nostril", "flat", "one side"]
+    - text: "Theo himself seems unbothered; confident and loud"
+      construct_id: psychological.self_consciousness
+      match_any: ["unbothered", "not bothered", "confident", "loud", "doesn't care", "does not care", "fine"]
+expected_behaviours:
+  declines: [distress.appearance]
+  decline_keywords: ["upset", "distress", "hard for you", "how you feel", "how do you feel", "for you as a parent", "affects you"]
+  asks_medical_question: false
+  safety_intercept_expected: false

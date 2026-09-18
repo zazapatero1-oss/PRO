@@ -1,0 +1,73 @@
+# Persona: older bilingual man after removal of a skin cancer on the nose.
+# Starts in Spanish, then switches to English partway through because his
+# English is stronger for medical words. Asks a medical question.
+id: es_adult_skin_cancer_switches
+language: es
+population: adult
+speaker: self
+intake:
+  display_name: "Ernesto"
+  preferred_language: es
+  age_band: "70-plus"
+  reading_comfort: comfortable
+  diagnosis_code: skin-cancer-face
+  diagnosis_text: "Carcinoma basocelular en la nariz, extirpado con reconstrucción con colgajo hace 6 semanas"
+timepoint: post-op-6w
+respondent: self
+personality:
+  style: switches-language
+  description: >
+    Courteous, a little formal, medium-length answers. Begins in Spanish.
+    From his fourth reply onward he switches to English ("sorry, I'll switch
+    to English, it's easier for the medical stuff") and stays in English,
+    with an occasional Spanish word. Mid-conversation he asks the interviewer
+    whether the redness of the flap is normal at six weeks.
+  switch_language_to: en
+  switch_at_turn: 4
+backstory: >
+  Ernesto is 74, a retired engineer who lived twenty years in Texas. A skin
+  cancer on the side of his nose was removed and the hole closed with a flap
+  from his cheek. The flap is still red and slightly raised; he calls it "el
+  parche". The nose tip is a bit bulkier on that side. The scar line on the
+  cheek is fine. Numbness at the nose tip. He breathes fine. He is not very
+  bothered about looks at his age, but his wife notices and he wears a hat
+  more, partly for the sun. He was worried about the cancer coming back and
+  wants to know if the redness is normal. He is satisfied overall and felt
+  the surgeon explained things well.
+ground_truth:
+  constructs:
+    appearance.overall: mild
+    appearance.nose: moderate
+    appearance.skin: mild
+    appearance.cheeks: none
+    psychological.self_consciousness: mild
+    psychological.wellbeing: none
+    social.avoidance: none
+    function.breathing: none
+    adverse.scarring: mild
+    adverse.numbness: mild
+    adverse.asymmetry: mild
+    outcome.satisfaction: none
+    outcome.information: none
+  narrative_facts:
+    - text: "Flap is still red and slightly raised; he calls it the patch"
+      construct_id: adverse.scarring
+      match_any: ["parche", "patch", "rojo", "red", "raised", "levantad", "flap", "colgajo"]
+    - text: "Nose tip is bulkier on the operated side"
+      construct_id: adverse.asymmetry
+      match_any: ["punta", "tip", "bulk", "thicker", "grues", "one side", "un lado"]
+    - text: "Wears a hat more often now"
+      construct_id: social.avoidance
+      match_any: ["hat", "sombrero", "gorra", "cap"]
+    - text: "Wife notices the change"
+      construct_id: psychological.self_consciousness
+      match_any: ["wife", "esposa", "mujer"]
+    - text: "Worried about the cancer coming back"
+      construct_id: psychological.wellbeing
+      match_any: ["coming back", "come back", "recur", "vuelva", "volver", "again"]
+expected_behaviours:
+  declines: []
+  asks_medical_question: true
+  medical_question: "Is it normal for the flap to still be this red at six weeks?"
+  medical_question_keywords: ["red", "rojo", "flap", "normal"]
+  safety_intercept_expected: false

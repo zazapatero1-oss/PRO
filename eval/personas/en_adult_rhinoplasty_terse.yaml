@@ -1,0 +1,61 @@
+# Persona: terse young adult, pre-op rhinoplasty. Short answers; the agent has to
+# work for detail. Facts come out only when asked directly.
+id: en_adult_rhinoplasty_terse
+language: en
+population: adult
+speaker: self
+intake:
+  display_name: "Jordan"
+  preferred_language: en
+  age_band: "18-29"
+  reading_comfort: short-messages
+  diagnosis_code: rhinoplasty
+  diagnosis_text: "Rhinoplasty consultation - bump on the bridge, slightly crooked"
+timepoint: baseline
+respondent: self
+personality:
+  style: terse
+  description: >
+    Answers in one short sentence, sometimes a single word. Not rude, just not a
+    talker. Does not volunteer anything. Gives more when asked a direct,
+    specific follow-up question. Uses casual lowercase texting style.
+backstory: >
+  Jordan is a 24-year-old warehouse scheduler who has disliked their nose since
+  secondary school. It has a visible bump and leans slightly to the left after a
+  football knock at 16. They are otherwise fairly content with their face. They
+  breathe fine. They are not depressed but they do notice the nose in every
+  photo and turn their head for selfies. They avoid nothing socially. They hope
+  the surgery makes the profile "straight and normal", nothing dramatic.
+ground_truth:
+  constructs:
+    appearance.overall: mild
+    appearance.nose: severe
+    appearance.eyes: none
+    appearance.chin_jawline: none
+    appearance.skin: none
+    psychological.self_consciousness: moderate
+    psychological.wellbeing: none
+    social.avoidance: none
+    social.function: none
+    distress.appearance: mild
+    function.breathing: none
+  narrative_facts:
+    - text: "Nose has a bump on the bridge and leans to the left"
+      construct_id: appearance.nose
+      match_any: ["bump", "crooked", "leans", "to the left", "one side"]
+    - text: "Nose was knocked playing football at 16"
+      construct_id: appearance.nose
+      match_any: ["football", "soccer", "knock", "injur", "when they were 16", "at 16", "sixteen"]
+    - text: "Turns head to hide the profile in selfies and photos"
+      construct_id: psychological.self_consciousness
+      match_any: ["selfie", "photo", "profile", "turn"]
+    - text: "Has disliked the nose since secondary school"
+      construct_id: appearance.nose
+      match_any: ["school", "since", "years", "teen"]
+    - text: "Hopes for a straight, natural-looking result, nothing dramatic"
+      construct_id: appearance.nose
+      match_any: ["straight", "natural", "normal", "dramatic", "subtle"]
+expected_behaviours:
+  declines: []
+  asks_medical_question: false
+  safety_intercept_expected: false
