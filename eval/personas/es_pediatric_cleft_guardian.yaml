@@ -39,11 +39,9 @@ ground_truth:
       severity: severe
       facets:
         shape: "el labio de arriba está torcido, se le sube de un lado"
-        symmetry: "un lado está más alto que el otro, se ve enseguida"
-        scar_line: "la cicatriz es gruesa y se nota mucho, sobre todo cuando hace frío"
-        smile_movement: "cuando se ríe se le nota todavía más"
-        wanted_change: "que la cicatriz se vea menos, eso es lo que él pide"
-        since_when: "desde siempre, pero este año le importa mucho más"
+        evenness: "un lado está más alto que el otro, se ve enseguida"
+        above_lip: "la cicatriz es gruesa y se nota mucho, sobre todo cuando hace frío"
+        movement: "cuando se ríe se le nota todavía más"
     appearance.nose: mild
     appearance.smile_teeth: mild
     psych.self_confidence: moderate
@@ -51,32 +49,30 @@ ground_truth:
     social.avoidance:
       severity: moderate
       facets:
-        events_avoided: "ya no quiere ir a los cumpleaños"
-        people_avoided: "evita a los niños de la otra clase"
-        places_avoided: "en el parque se queda conmigo, no se acerca"
+        activities: "ya no quiere ir a los cumpleaños"
+        new_people: "evita a los niños de la otra clase"
         frequency: "desde hace unos meses, cada vez más"
-        last_time: "el sábado pasado dijo que no al cumpleaños de su primo"
-        what_would_help: "si un amigo va con él, entonces sí va"
+        family_plans: "el sábado pasado dijo que no al cumpleaños de su primo"
+        conditions: "si un amigo va con él, entonces sí va"
     social.comfort: moderate
     social.school: moderate
     social.teasing_comments:
       severity: moderate
       facets:
-        who_comments: "un compañero de su clase, el mismo siempre"
-        what_is_said: "le puso un apodo por el labio"
+        source: "un compañero de su clase, el mismo siempre"
+        nature: "le puso un apodo por el labio"
         frequency: "casi cada semana, él me dice que no es nada"
-        response: "él se calla y se va, no contesta"
-        who_they_tell: "me lo contó a mí, a la maestra no"
-        effect: "llegó llorando un día, por eso lo sé"
+        child_response: "él se calla y se va, no contesta"
+        telling_adults: "me lo contó a mí, a la maestra no"
     distress.hiding: moderate
     function.speaking:
       severity: mild
       facets:
-        sounds_affected: "algunas letras no le salen claras, la ese sobre todo"
-        being_understood: "en casa le entendemos todo"
-        strangers_vs_family: "los maestros a veces le piden que lo repita"
+        hard_sounds: "algunas letras no le salen claras, la ese sobre todo"
+        clarity: "en casa le entendemos todo"
+        listeners: "los maestros a veces le piden que lo repita"
         therapy: "va a logopedia los martes"
-        effort: "no se cansa, habla muchísimo"
+        holding_back: "no se cansa, habla muchísimo"
     function.eating_drinking: mild
     function.breathing: none
     adverse.scarring: moderate

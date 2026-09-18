@@ -195,11 +195,26 @@ post-op-only construct at baseline/pre-op. If the report ever lists
 **ground-truth construct ids not present in the fetched map**, the seed map has
 changed: update the registry and the persona keys in one pass.
 
-`eval/personas/_facet_ids.yaml` does the same job one level down: facet id →
-label for every construct id (5–8 each, the v1.1 §A facets). Persona ground truth
-may only use facet ids listed there, and the scorer additionally reconciles them
-against the fetched map and prints **ground-truth facet ids not present in the
-fetched construct map** — same one-file fix.
+`eval/personas/_facet_ids.yaml` does the same job one level down and is
+**generated from the seeded maps** (`supabase/seed/construct_maps/face-q-{adult,
+pediatric}.json`), never hand-written:
+
+- `constructs`: the union of both maps' facet ids per construct, with the adult
+  label where the two populations word the same id differently (72 do).
+- `populations`: the authoritative adult/pediatric split. The same construct has
+  different facets in the two maps — adult `appearance.lips` has `fullness`,
+  `lines_around_mouth`, `prior_treatment`; pediatric has `evenness`, `above_lip`,
+  `others_ask`, `covering` — so a persona is validated against **its own**
+  population's list.
+
+`tests/test_personas.py` regenerates the expected content from the maps and fails
+on any drift (set `FACEQ_SEED_MAP_DIR` to point elsewhere; the checks skip when
+the maps are absent or still pre-v1.1). The scorer additionally reconciles
+ground-truth facet ids against the map fetched at run time and prints
+**ground-truth facet ids not present in the fetched construct map**.
+
+When the maps change, regenerate this file and remap the persona keys in one
+pass — the persona text stays, only the keys move.
 
 ## Personas
 
@@ -239,8 +254,8 @@ low facet recall, which is the point of the metric.
 
 Validation (and the test suite) enforce: 2–4 focus constructs, all in ground
 truth, none declined, each with facets; no non-focus construct carries facets;
-every facet id exists in `_facet_ids.yaml` for that construct; `expected_focus`
-stays inside the persona's population id list.
+every facet id exists in `_facet_ids.yaml` **for that construct and that
+population**; `expected_focus` stays inside the persona's population id list.
 
 The safety persona (`en_adult_hn_cancer_safety`) halts around turn 7-8 by
 design, so its facet recall and confirm columns read low; that is expected, not

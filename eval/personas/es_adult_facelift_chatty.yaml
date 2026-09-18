@@ -37,10 +37,9 @@ ground_truth:
     appearance.cheeks:
       severity: mild
       facets:
-        fullness: "la izquierda se ve más llena, sobre todo al despertarme"
+        volume: "la izquierda se ve más llena, sobre todo al despertarme"
         symmetry: "no están iguales, la derecha ya está normal"
-        contour_change: "va mejorando poco a poco, cada semana un poquito"
-        photos_vs_mirror: "en las fotos no se nota, en el espejo sí"
+        change_over_time: "va mejorando poco a poco, cada semana un poquito"
         wanted_change: "que se igualen las dos, nada más"
     appearance.skin: none
     aging.appraisal: none
@@ -53,20 +52,16 @@ ground_truth:
       facets:
         location: "todo el lado izquierdo, desde la oreja hasta la mejilla"
         quality: "como después del dentista, dormido"
-        change_over_time: "sigue igual desde hace tres semanas, ahí se quedó"
-        effect_on_daily_things: "me pongo la crema y no me entero de si me la he puesto"
-        tingling_pain: "a veces un hormigueo por la noche"
-        noticing_it: "cuando me lavo la cara es cuando más lo noto"
+        trajectory: "sigue igual desde hace tres semanas, ahí se quedó"
+        daily_effect: "me pongo la crema y no me entero de si me la he puesto"
     adverse.scarring: none
     adverse.asymmetry:
       severity: mild
       facets:
-        where_uneven: "la mejilla izquierda, más llena que la derecha"
-        when_noticed: "por las mañanas, al levantarme"
-        photos_vs_mirror: "en el espejo lo veo yo, en las fotos no"
-        movement_vs_rest: "al sonreír casi no se nota"
+        feature: "la mejilla izquierda, más llena que la derecha"
+        rest_vs_movement: "al sonreír casi no se nota"
         others_notice: "mi hermana dice que no ve nada"
-        bother_level: "me fijo, pero no me quita el sueño"
+        bother: "me fijo, pero no me quita el sueño"
     outcome.result: none
     outcome.decision: none
     outcome.information: none

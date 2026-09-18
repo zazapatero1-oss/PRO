@@ -1,259 +1,426 @@
 # Facet ids used by persona ground truth (SPEC v1.1 §A).
 #
-# This is the ONE place where persona facet ground truth is tied to facet ids.
-# Each construct in `_construct_ids.yaml` lists the facet ids of the seeded
-# maps (workstream A2) with a short clinician-facing label. Personas reference
-# these ids under `ground_truth.constructs.<id>.facets`; validation fails on an
-# id that is not listed here, and the scorer additionally reconciles every
-# ground-truth facet id against the construct map fetched at run time and
-# reports the ones the map does not have (`unknown_facet_ids`), exactly like
-# the construct-id check. A rename in the seed maps is therefore a one-file
-# edit here plus the persona keys.
+# GENERATED FROM THE SEEDED MAPS - do not invent ids here. Source of truth:
+#   supabase/seed/construct_maps/face-q-adult.json
+#   supabase/seed/construct_maps/face-q-pediatric.json
+# `constructs` is the union of both maps' facet ids per construct, with the
+# adult label where the two populations word the same id differently (72 of them
+# do; the wording is cosmetic, the id is what matters). `populations` is the
+# authoritative split: a persona may only use facet ids listed for ITS
+# population, because the same construct has different facets in the two maps
+# (e.g. adult `appearance.lips.fullness` does not exist in the pediatric map).
+#
+# `tests/test_personas.py` regenerates this file's content from the maps and
+# fails on any drift, whenever the maps are present and carry facets. The
+# scorer additionally reconciles ground-truth facet ids against the map fetched
+# at run time and reports `unknown_facet_ids`, so a rename shows up either way.
 #
 # Labels are paraphrased drill-down details, never instrument item text.
 constructs:
   appearance.overall:
-    overall_feel: "How they feel about the face as a whole"
-    main_feature: "Which feature drives the overall feeling"
-    photos_vs_mirror: "How it looks in photos versus the mirror"
-    situations: "Situations where it feels worse"
+    whole_face: "How the face works together as a whole, not one feature"
+    features_named: "Which features bother them most, in their own words"
+    mirror_vs_photos: "How it looks in the mirror versus photos and video"
+    situations: "Situations, lighting or times of day when it feels worse"
+    fits_self: "Whether their face fits how they feel inside or their age"
     wanted_change: "What specifically they would want different"
-    since_when: "How long they have felt this way"
+    since_when: "How long they have felt this way and whether it is changing"
+    compared_to_peers: "How they think they compare with friends and siblings"
+    photos_mirror: "School photos, videos and mirrors"
+    others_comments: "Comments or questions from other children"
+    guardian_view: "Whether the guardian's view matches what the child says"
   appearance.nose:
-    bridge: "The bridge (bump, straightness)"
-    tip: "The tip (shape, projection)"
-    width: "Width of the nose"
-    nostrils: "Nostrils and their symmetry"
-    profile_vs_front: "How it looks in profile versus from the front"
-    breathing: "Whether breathing is affected too"
+    bridge: "The bridge: bumps, straightness, height"
+    tip: "The tip: shape, droop, definition"
+    width: "Width of the nose and how it sits in the face"
+    nostrils: "Nostrils: size, shape, whether they match"
+    profile_vs_front: "How it looks from the side versus straight on"
+    breathing_link: "Whether breathing through the nose is also a concern"
     wanted_change: "What specifically they would want different"
-    since_when: "How long this has bothered them"
+    since_when: "How long it has bothered them, and any injury or surgery behind it"
+    shape: "Shape of the nose"
+    size: "Size and width of the nose"
+    others_comments: "Whether other children notice or ask about it"
   appearance.eyes:
     shape: "Shape of the eyes"
     symmetry: "Whether the two eyes match"
-    position: "Where they sit on the face / spacing"
-    lids: "Eyelids and under-eye area"
+    position: "Where they sit on the face and how far apart"
+    lids: "Eyelids and the under-eye area: hoods, bags, hollows, dark circles"
     photos_vs_mirror: "How they look in photos versus the mirror"
     wanted_change: "What specifically they would want different"
     since_when: "How long this has bothered them"
+    vision_glasses: "Vision, glasses or patching and how the child feels about them"
+    others_notice: "Whether other children notice or ask"
   appearance.lips:
-    shape: "Shape and outline of the lips"
-    fullness: "Fullness or thinness"
+    fullness: "Fullness of the upper and lower lip"
+    shape: "Shape and definition of the lip border"
     symmetry: "Whether the two sides match"
-    scar_line: "Any scar or notch in the lip"
-    smile_movement: "How the lips move when smiling or talking"
+    lines_around_mouth: "Lines and creases around the mouth"
+    movement: "Whether smiling or speaking makes it more noticeable"
+    prior_treatment: "Any previous lip treatment and how they felt about it"
     wanted_change: "What specifically they would want different"
-    since_when: "How long this has bothered them"
-  appearance.ears:
-    size: "Size of the ears"
-    position: "How far they stand out"
-    symmetry: "Whether the two ears match"
-    hair_covering: "Whether hair or hats are used to cover them"
-    comments_from_others: "Comments other people make"
-    wanted_change: "What specifically they would want different"
+    evenness: "Whether the two sides look even"
+    above_lip: "The area between the lip and the nose, including any repair line"
+    others_ask: "Whether other children ask about it"
+    covering: "Whether they cover their mouth"
   appearance.cheeks:
-    fullness: "Fullness or flatness of the cheeks"
-    symmetry: "Whether the two sides match"
-    contour_change: "How the contour has changed over time"
-    photos_vs_mirror: "How they look in photos versus the mirror"
+    volume: "Fullness or hollowness of the cheeks"
+    contour: "Cheekbone shape and mid-face contour"
+    symmetry: "Whether one side looks different from the other"
+    heaviness: "Heaviness or sagging towards the mouth"
+    change_over_time: "How it has changed with age, weight or treatment"
     wanted_change: "What specifically they would want different"
-    since_when: "How long this has bothered them"
+    shape: "Shape and fullness of the cheeks"
+    evenness: "Whether one side looks different"
+    with_smiling: "Whether it shows more when smiling or talking"
+    growth_change: "Whether it has changed with growth or treatment"
+    others_notice: "Whether other children notice"
   appearance.chin_jawline:
-    jaw_line: "Definition of the jawline"
-    chin_projection: "Chin shape and projection"
-    neck_contour: "The neck under the jaw"
-    symmetry: "Whether the two sides match"
-    profile_vs_front: "How it looks in profile versus from the front"
+    projection: "Chin size and how far it comes forward"
+    definition: "How sharp or blurred the jawline is"
+    symmetry: "Whether the jaw sits evenly"
+    neck: "Looseness or fullness under the chin and in the neck"
+    profile_views: "How it looks from the side and in photos"
+    daily_impact: "Whether it changes posture, collars or how they angle for photos"
     wanted_change: "What specifically they would want different"
+    chin_size: "Size and shape of the chin"
+    jaw_position: "Whether the jaw looks set back or forward"
+    evenness: "Whether the jaw sits evenly"
+    profile: "How it looks from the side"
+    bite_chewing: "Whether the bite or chewing is affected"
+    growth_change: "Whether it has changed as they grow"
   appearance.skin:
-    texture: "Texture and roughness"
-    colour_tone: "Colour and evenness of tone"
-    lines_wrinkles: "Lines and creases"
-    blemishes: "Marks, spots or redness"
-    lighting_situations: "Situations or lighting that make it worse"
-    wanted_change: "What specifically they would want different"
+    texture: "Texture: roughness, pores, bumps"
+    tone_colour: "Tone and colour: redness, patchiness, pigmentation"
+    lines: "Lines and creases"
+    marks_scars: "Marks, blemishes or scars on the skin"
+    areas: "Which specific areas of the face"
+    covering: "Makeup or other covering, and how much effort it takes"
+    history: "Sun exposure, skin conditions or treatments behind it"
+    colour: "Colour and evenness of the skin"
+    marks: "Birthmarks, patches or marks left after treatment"
+    others_ask: "Whether other children ask about it"
   appearance.smile_teeth:
-    teeth_look: "How the teeth look"
-    gum_show: "How much gum shows"
-    smile_shape: "Shape of the smile"
-    symmetry: "Whether the smile is even"
-    photos_vs_mirror: "How it looks in photos versus the mirror"
-    wanted_change: "What specifically they would want different"
+    teeth_show: "How much of the teeth shows when smiling"
+    lip_movement: "How the lips move when smiling or laughing"
+    gums: "How much gum shows and how the gums look"
+    symmetry: "Whether the smile is even on both sides"
+    covering_mouth: "Whether they cover their mouth when laughing or in photos"
+    situations: "Situations where it matters most"
+    braces_dental: "Braces or dental treatment and how they feel about it"
   psych.self_confidence:
-    with_strangers: "Confidence around people they do not know"
-    at_work_or_school: "Confidence at work or school"
-    in_photos: "Confidence being photographed"
-    getting_ready: "Time and effort getting ready"
-    compared_to_before: "How this compares with before"
-    what_helps: "What makes it easier"
+    situations: "Situations where confidence drops most"
+    frequency: "How often this comes up in a typical week"
+    at_ease: "How attractive or at ease they feel in themselves"
+    work_study: "Whether it affects work, study or opportunities they take"
+    what_helps: "What helps them feel more confident"
+    trend: "Whether it has changed over recent months"
+    feeling_different: "Whether they feel different from other children"
+    strengths: "Activities where they feel good about themselves"
   psych.self_acceptance:
-    good_days_bad_days: "How much it varies day to day"
-    comparing_to_others: "Comparing themselves with other people"
-    acceptance_over_time: "Whether acceptance has changed over time"
-    what_would_change: "What would have to change to feel settled"
-    talking_about_it: "How easy it is to talk about"
+    gap: "The gap between how they look and how they want to look"
+    variability: "Whether acceptance varies by day or situation"
+    reassurance: "Whether reassurance from others helps or not"
+    comparisons: "Comparing themselves with others or with old photos"
+    what_would_change: "What would need to change for them to feel at peace"
+    trend: "Whether this has shifted over time"
+    self_talk: "How the child talks about their face when it comes up"
+    explaining: "How they explain their face to other children"
+    wishing_different: "Whether they often wish they looked different"
+    what_helps: "What helps them feel okay about it"
   psych.mood:
-    low_mood_frequency: "How often the mood is low"
-    triggers: "What brings it on"
-    sleep: "Effect on sleep"
-    interest_activities: "Interest in usual activities"
-    support: "Who they have around them"
-    since_when: "How long it has been like this"
+    frequency: "How often mood is affected in a typical week"
+    quality: "Whether it shows as low mood, worry, frustration or anger"
+    triggers: "Situations that set it off"
+    sleep_appetite: "Whether sleep, appetite or energy are affected"
+    coping: "What they do when they feel that way"
+    support: "Whether they have talked to anyone about it"
+    trend: "Whether time or treatment has changed this"
+    signs: "What the guardian sees: tears, withdrawal, anger, clinginess"
+    child_words: "What the child says about how they feel"
   social.comfort:
-    with_strangers: "Comfort with people they do not know"
-    with_friends: "Comfort with friends and family"
-    group_settings: "Comfort in groups"
-    being_photographed: "Comfort being photographed or on video"
-    meeting_new_people: "Meeting new people"
-    what_helps: "What makes it easier"
-  social.school:
-    classmates: "How it is with classmates"
-    lessons_participation: "Taking part in lessons"
-    break_times: "Break times and lunch"
-    activities_clubs: "Clubs, sport and trips"
-    teachers_support: "Support from teachers"
-    absence: "Any days missed"
+    settings: "Which settings are hardest: work, family, strangers, groups"
+    being_looked_at: "Being looked at, photographed or on video"
+    new_people: "Meeting people for the first time"
+    frequency: "How often these situations come up"
+    coping: "What they do to cope in the moment"
+    trend: "Whether this is new or long-standing"
+    friendships: "Whether they have close friends"
+    group_play: "Break time, group play and sport"
+    parties_clubs: "Parties, clubs and other new settings"
+    new_children: "Meeting children they do not know"
+    joining_in: "Whether they join in or hang back"
+    what_helps: "What helps them feel comfortable"
   social.avoidance:
-    events_avoided: "Which events are avoided"
-    people_avoided: "Which people are avoided"
-    places_avoided: "Which places are avoided"
-    frequency: "How often this happens"
-    last_time: "The last time it happened"
-    what_would_help: "What would make it easier"
+    activities: "Specific activities or events they have skipped"
+    frequency: "How often in the last month"
+    photos_video: "Avoiding photos, video calls or being in the frame"
+    life_impact: "Whether it affects work, study or family life"
+    workarounds: "What they do instead, or the conditions they need to go"
+    trend: "Whether this has changed with time or treatment"
+    photos: "Avoiding photos or videos"
+    new_people: "Avoiding meeting new children or adults"
+    family_plans: "Whether family plans have changed because of it"
+    conditions: "What would need to be true for them to join in"
   social.teasing_comments:
-    who_comments: "Who makes the comments"
-    what_is_said: "What kind of thing is said"
+    source: "Who it comes from: strangers, colleagues, family, online"
+    nature: "Stares, questions, comments, teasing or being left out"
     frequency: "How often it happens"
-    response: "How they respond"
-    who_they_tell: "Who they tell about it"
-    effect: "How it leaves them feeling"
+    response: "How they respond in the moment"
+    aftereffect: "How they feel afterwards and what they do"
+    trend: "Whether it has changed over time"
+    setting: "Where it happens: school, clubs, online, family"
+    child_response: "How the child responds, and whether they have a plan for questions"
+    telling_adults: "Whether they tell a guardian or teacher"
+    school_action: "What the school or club has done about it"
   social.relationships:
-    partner_or_close_friend: "Closest relationships"
-    intimacy_comfort: "Comfort with closeness"
-    talking_about_appearance: "Talking about appearance with them"
-    support_received: "Support they get"
-    change_over_time: "How this has changed"
+    partner: "How it affects a current relationship"
+    dating: "Whether they avoid dating or meeting new people"
+    affection: "Physical closeness and being seen up close"
+    family_friends: "Closeness with family and close friends"
+    disclosure: "Whether they talk about it with the people close to them"
+    support: "What support they have"
   distress.preoccupation:
-    time_spent_thinking: "How much of the day it takes up"
-    checking_behaviour: "Checking mirrors or photos"
-    intrusiveness: "Whether the thoughts intrude"
-    triggers: "What sets it off"
-    effect_on_day: "What it stops them doing"
-    since_when: "How long it has been like this"
+    time_occupied: "How much of the day it takes up"
+    checking: "Mirror, camera or photo checking"
+    comparing: "Comparing with other people or with old photos"
+    reassurance: "Asking others for reassurance"
+    interference: "Whether it affects concentration, work or sleep"
+    control: "Whether they can put it aside when they want to"
+    onset: "When it started or intensified"
+    frequency: "How often it comes up in a typical week"
   distress.hiding:
-    what_is_used: "What they use to cover it (hair, make-up, hats, angles)"
-    situations: "Situations where they hide it"
-    photos_and_video: "Photos and video calls"
-    frequency: "How often"
-    effort_cost: "How much effort it takes"
+    methods: "What they use: makeup, hair, glasses, hats, masks"
+    time_cost: "How long it takes and what it costs them"
+    situations: "Situations where they will not go without it"
+    photos_angles: "Angles, filters or lighting they rely on in photos"
+    seen_without: "Whether anyone has seen them without it"
+    if_unable: "How they would feel if they could not conceal it"
+    haircuts_swimming: "Whether it affects haircuts, swimming or sport"
+    photos: "Turning away from or refusing photos"
+    rules: "Whether uniform or club rules get in the way"
   distress.cancer_worry:
-    recurrence_worry: "Worry about it coming back"
-    check_ups: "Feelings around check-ups"
-    triggers: "What sets the worry off"
-    effect_on_sleep: "Effect on sleep"
-    talking_about_it: "Who they talk to about it"
-    reassurance: "What reassures them"
+    content: "What specifically they worry about"
+    frequency: "How often the worry comes and how long it stays"
+    triggers: "What sets it off: check-ups, scans, news, a new mark"
+    self_checking: "Whether they examine their skin or face, and how often"
+    interference: "Whether it affects sleep, mood or plans"
+    team: "Whether they have raised it with their team"
   function.breathing:
-    side_affected: "Which side is worse"
-    at_night: "Breathing at night and sleep"
-    during_exercise: "Breathing during exertion"
-    blocked_frequency: "How often it feels blocked"
-    sprays_or_aids: "Sprays, strips or other aids"
-    since_when: "How long it has been like this"
+    sides: "One side or both"
+    day_night: "Daytime versus lying down and at night"
+    exertion: "Breathing during exercise or exertion"
+    sleep: "Snoring, mouth breathing, disturbed sleep, daytime tiredness"
+    aids: "Sprays, strips or other things they rely on"
+    onset: "Whether it followed injury, surgery or treatment"
+    workarounds: "What they avoid or change because of it"
+    play_sport: "Breathing when running, playing or doing sport"
+    mouth_breathing: "Mouth breathing and a dry mouth"
+    trajectory: "Whether it changed after surgery or treatment"
   function.eating_drinking:
-    food_textures: "Which textures are difficult"
-    drinking_spills: "Spilling or leaking when drinking"
-    chewing: "Chewing"
-    eating_with_others: "Eating in front of other people"
-    meal_length: "How long meals take"
-    weight_change: "Any change in weight"
+    foods: "Which foods or textures are hard"
+    chewing: "Biting and chewing"
+    containment: "Keeping food and drink in the mouth; leaking or spilling"
+    effort_time: "How long meals take and how tiring they are"
+    social_eating: "Eating in front of other people"
+    weight: "Weight change or skipping meals"
+    workarounds: "How they adapt: cutting up, soft foods, drinks, aids"
+    nasal_escape: "Food or drink coming down the nose"
+    school_meals: "Eating at school or with friends"
+    time_effort: "How long meals take and how tiring they are"
+    growth: "Growth, weight and how much they get through"
   function.speaking:
-    sounds_affected: "Which sounds are difficult"
-    being_understood: "Being understood first time"
-    phone_calls: "Phone calls"
-    strangers_vs_family: "Strangers versus people who know them"
-    therapy: "Speech therapy"
-    effort: "How much effort talking takes"
+    clarity: "How clear their speech is"
+    hard_sounds: "Which sounds or words are hardest"
+    listeners: "Strangers and the phone versus family who know them"
+    effort: "Effort or tiredness when talking for a while"
+    holding_back: "Whether they say less because of it"
+    situations: "Situations where it matters most: work, groups, noise"
+    therapy: "Speech therapy or aids and whether they help"
+    nasal_sound: "Whether speech sounds nasal or air escapes"
+    speaking_up: "Speaking up in class or reading aloud"
   function.facial_expression:
-    smiling: "Smiling"
-    eye_closure: "Closing the eye fully"
-    eyebrow_movement: "Moving the eyebrows"
-    asymmetry_when_moving: "Whether one side moves less"
-    tiredness_effect: "Whether tiredness makes it worse"
-    others_notice: "Whether other people notice"
+    movements: "Which movements are affected: smile, brow, eye closure"
+    symmetry: "Whether expressions look even on both sides"
+    eye_closure: "Closing the eye fully; dryness or watering"
+    oral_control: "Drooling or the mouth not sealing"
+    misread: "Whether others misread how they feel"
+    situations: "Situations where it shows most"
+    trend: "Whether it is improving, stable or worsening"
   function.swallowing_oral:
-    swallow_difficulty: "Difficulty swallowing"
-    food_sticking: "Food sticking or pocketing"
-    drooling: "Drooling or leaking"
-    mouth_dryness: "Dry mouth"
-    coughing_choking: "Coughing or choking"
-    diet_changes: "How the diet has changed"
+    consistencies: "Liquids, solids or both"
+    choking: "Coughing, choking or food sticking"
+    saliva: "Controlling saliva and keeping the mouth closed"
+    diet_aids: "Diet changes, thickeners, tube or other aids"
+    social: "Whether it affects eating with other people"
+    trend: "Whether it is improving, stable or worsening"
   adverse.pain_discomfort:
     location: "Where it is"
-    quality: "What it feels like"
-    timing_of_day: "When in the day it is worst"
-    severity_scale: "How strong it gets"
-    relief: "What relieves it"
-    effect_on_activities: "What it stops them doing"
+    quality: "What it feels like: aching, tight, sharp, pressure"
+    intensity: "How bad it gets at its worst and how bad it usually is"
+    pattern: "When it comes: constant, with movement, at certain times"
+    relief: "What makes it better or worse, including medication"
+    sleep_activity: "Whether it affects sleep or stops them doing things"
+    trajectory: "Whether it is improving, stable or worsening"
+    how_shown: "How the child shows it: words, rubbing, crying, not eating"
   adverse.swelling_bruising:
-    location: "Where it is"
-    timing_of_day: "When in the day it is worst"
-    change_over_time: "How it has changed since surgery"
-    colour_bruising: "Any bruising or discolouration"
-    effect_on_appearance: "How it changes how they look"
-    what_helps: "What helps it settle"
+    location: "Which areas are affected"
+    extent: "How visible it is to them and to other people"
+    sidedness: "Whether it is worse on one side"
+    trajectory: "How it has changed since treatment"
+    function_effect: "Whether it affects vision, breathing or eating"
+    expectations: "What they were told to expect"
   adverse.numbness_sensation:
-    location: "Where it is numb or altered"
-    quality: "What the sensation is like"
-    change_over_time: "Whether it is improving"
-    effect_on_daily_things: "What it affects day to day"
-    tingling_pain: "Tingling, burning or shooting feelings"
-    noticing_it: "When they notice it most"
+    location: "Where the altered feeling is"
+    extent: "How large an area, and whether feeling is fully or partly gone"
+    quality: "Numb, tingling, itching, oversensitive or burning"
+    trajectory: "Whether it is changing over time"
+    daily_effect: "Whether it affects eating, drinking, shaving or makeup"
+    bother: "How much it bothers them day to day"
+    touching: "Whether the child touches, rubs or picks at the area"
   adverse.scarring:
-    location: "Where the scars are"
-    visibility: "How visible they are to others"
-    texture_raised: "Whether they are raised or lumpy"
-    colour: "Colour of the scars"
-    itching_tightness: "Itching or tightness"
-    hiding_it: "Whether they cover them"
-    change_over_time: "How they have changed"
+    location: "Which scars and where"
+    visibility: "How noticeable they are to them and to other people"
+    colour: "Colour: red, dark or pale"
+    texture: "Raised, indented, firm or itchy"
+    maturity: "Whether they are still settling and how they have changed"
+    concealment: "Whether they cover them and how"
+    care: "Scar treatments they are using"
+    others_ask: "Whether other children ask about the scar"
   adverse.asymmetry:
-    where_uneven: "Where the two sides differ"
-    when_noticed: "When they notice it"
-    photos_vs_mirror: "Photos versus the mirror"
-    movement_vs_rest: "At rest versus when moving"
-    others_notice: "Whether other people notice"
-    bother_level: "How much it bothers them"
+    feature: "Which feature looks uneven"
+    side: "Which side, and how different it looks to them"
+    rest_vs_movement: "Whether it shows more at rest or with expression"
+    others_notice: "Whether other people notice or comment"
+    trajectory: "Whether it has changed since treatment"
+    bother: "How much it bothers them"
   recovery.daily_activities:
-    work_or_school_return: "Going back to work or school"
-    household_tasks: "Everyday tasks at home"
-    exercise: "Exercise and sport"
-    driving: "Driving or getting around"
-    sleeping: "Sleeping arrangements"
-    help_needed: "Help needed from others"
+    work: "Getting back to work or study"
+    driving_exercise: "Driving, exercise and lifting"
+    sleep_energy: "Sleep and energy levels"
+    caring: "Caring for children or others at home"
+    going_out: "Going out and being seen in public"
+    support: "Support they have at home"
+    expectations: "Whether recovery matches what they were told"
+    school_return: "Getting back to school and how many days were missed"
+    play_sport: "Play, sport and normal activity"
+    eating: "Back to normal eating and drinking"
+    sleep: "Sleep and energy"
+    help_needed: "How much help the child needs with care"
+    family_coping: "How the family is managing care and time off"
   outcome.result:
-    expectations_vs_result: "Result against what they expected"
-    best_part: "What they are most pleased with"
-    worst_part: "What they are least pleased with"
+    expectation_vs_result: "What they hoped for versus what they see"
+    naturalness: "Whether it looks natural and still like them"
+    specific_aspect: "Which aspect, if any, disappoints"
     others_reaction: "What other people have said"
-    would_repeat: "Whether they would do it again"
-    time_to_settle: "Whether they are waiting for more change"
+    worth_it: "Whether it was worth what it took"
+    choose_again: "Whether they would choose it again or recommend it"
+    view_shift: "Whether their view has shifted as healing progresses"
+    child_view: "What the child says about the change"
   outcome.decision:
-    reasons: "Why they decided to go ahead"
-    doubts: "Any second thoughts"
-    timing: "Feelings about the timing"
-    support_from_others: "Support around the decision"
-    feeling_now: "How they feel about it now"
+    influences: "What influenced the decision"
+    timing: "Whether the timing felt right"
+    pressure: "Whether they felt rushed or pressured"
+    alternatives: "Whether other options were considered"
+    regret: "Any regret, and what about"
+    advise_others: "Whether they would advise someone else to do it"
+    child_involvement: "Whether the child was involved and how they felt about it"
   outcome.information:
-    what_was_explained: "What was explained well"
-    what_was_missing: "What they wish they had been told"
-    recovery_expectations: "Whether recovery matched what they were told"
-    format_of_information: "Written, spoken or other formats"
-    who_explained: "Who explained it"
+    before: "What they were told to expect beforehand"
+    recovery_info: "Information about recovery and timescales"
+    risks: "How risks and possible complications were explained"
+    self_care: "How to care for themselves afterwards"
+    clarity: "Whether written and spoken information was clear"
+    gaps: "What they wish they had known, and questions still open"
+    home_care: "How to care for the child at home"
+    child_level: "Whether the child had things explained at their level"
   aging.appraisal:
-    perceived_age: "How old the face looks to them"
-    compared_to_peers: "Compared with people their age"
-    which_features_age: "Which features look oldest"
-    photos_vs_mirror: "How it looks in photos versus the mirror"
-    comments_from_others: "Comments other people make"
-    wanted_change: "What specifically they would want different"
+    perceived_vs_actual: "How old their face looks versus their age"
+    feels_inside: "How old they feel inside compared with how they look"
+    features: "Which features signal age to them: lines, sagging, tiredness"
+    comments: "Whether others comment on tiredness or age"
+    situations: "Situations where it matters: work, dating, photos"
+    wanted_change: "What they hope would change"
+  appearance.ears:
+    size: "Size of the ears"
+    shape: "Shape and folds of the ears"
+    position: "How far they stick out and where they sit"
+    sidedness: "Whether one ear is different from the other"
+    hiding: "Whether they hide their ears with hair or hats"
+    hearing: "Hearing, hearing aids and how the child feels about them"
+    others_comments: "Whether other children notice or comment"
+  social.school:
+    attendance: "Days missed and the reasons"
+    participation: "Speaking up in class and taking part"
+    activities_avoided: "Activities they avoid: sport, swimming, photos, performances"
+    concentration: "Whether schoolwork or concentration is affected"
+    school_support: "Whether the school knows and what they do to help"
+    peer_reactions: "How other children at school react"
+    trend: "Whether it is getting easier or harder"
+populations:
+  adult:
+    appearance.overall: [whole_face, features_named, mirror_vs_photos, situations, fits_self, wanted_change, since_when]
+    appearance.nose: [bridge, tip, width, nostrils, profile_vs_front, breathing_link, wanted_change, since_when]
+    appearance.eyes: [shape, symmetry, position, lids, photos_vs_mirror, wanted_change, since_when]
+    appearance.lips: [fullness, shape, symmetry, lines_around_mouth, movement, prior_treatment, wanted_change]
+    appearance.cheeks: [volume, contour, symmetry, heaviness, change_over_time, wanted_change]
+    appearance.chin_jawline: [projection, definition, symmetry, neck, profile_views, daily_impact, wanted_change]
+    appearance.skin: [texture, tone_colour, lines, marks_scars, areas, covering, history]
+    appearance.smile_teeth: [teeth_show, lip_movement, gums, symmetry, covering_mouth, situations]
+    psych.self_confidence: [situations, frequency, at_ease, work_study, what_helps, trend]
+    psych.self_acceptance: [gap, variability, reassurance, comparisons, what_would_change, trend]
+    psych.mood: [frequency, quality, triggers, sleep_appetite, coping, support, trend]
+    social.comfort: [settings, being_looked_at, new_people, frequency, coping, trend]
+    social.avoidance: [activities, frequency, photos_video, life_impact, workarounds, trend]
+    social.teasing_comments: [source, nature, frequency, response, aftereffect, trend]
+    social.relationships: [partner, dating, affection, family_friends, disclosure, support]
+    distress.preoccupation: [time_occupied, checking, comparing, reassurance, interference, control, onset]
+    distress.hiding: [methods, time_cost, situations, photos_angles, seen_without, if_unable]
+    distress.cancer_worry: [content, frequency, triggers, self_checking, interference, team]
+    function.breathing: [sides, day_night, exertion, sleep, aids, onset, workarounds]
+    function.eating_drinking: [foods, chewing, containment, effort_time, social_eating, weight, workarounds]
+    function.speaking: [clarity, hard_sounds, listeners, effort, holding_back, situations, therapy]
+    function.facial_expression: [movements, symmetry, eye_closure, oral_control, misread, situations, trend]
+    function.swallowing_oral: [consistencies, choking, saliva, diet_aids, social, trend]
+    adverse.pain_discomfort: [location, quality, intensity, pattern, relief, sleep_activity, trajectory]
+    adverse.swelling_bruising: [location, extent, sidedness, trajectory, function_effect, expectations]
+    adverse.numbness_sensation: [location, extent, quality, trajectory, daily_effect, bother]
+    adverse.scarring: [location, visibility, colour, texture, maturity, concealment, care]
+    adverse.asymmetry: [feature, side, rest_vs_movement, others_notice, trajectory, bother]
+    recovery.daily_activities: [work, driving_exercise, sleep_energy, caring, going_out, support, expectations]
+    outcome.result: [expectation_vs_result, naturalness, specific_aspect, others_reaction, worth_it, choose_again, view_shift]
+    outcome.decision: [influences, timing, pressure, alternatives, regret, advise_others]
+    outcome.information: [before, recovery_info, risks, self_care, clarity, gaps]
+    aging.appraisal: [perceived_vs_actual, feels_inside, features, comments, situations, wanted_change]
+  pediatric:
+    appearance.overall: [whole_face, features_named, compared_to_peers, photos_mirror, others_comments, wanted_change, guardian_view]
+    appearance.nose: [shape, size, nostrils, profile_vs_front, breathing_link, others_comments, wanted_change]
+    appearance.eyes: [shape, symmetry, position, lids, vision_glasses, others_notice, wanted_change]
+    appearance.lips: [shape, evenness, above_lip, movement, others_ask, covering]
+    appearance.cheeks: [shape, evenness, with_smiling, growth_change, others_notice]
+    appearance.chin_jawline: [chin_size, jaw_position, evenness, profile, bite_chewing, growth_change]
+    appearance.skin: [colour, texture, marks, areas, covering, others_ask]
+    appearance.smile_teeth: [teeth_show, lip_movement, gums, symmetry, braces_dental, covering_mouth, situations]
+    psych.self_confidence: [situations, feeling_different, strengths, frequency, what_helps, trend]
+    psych.self_acceptance: [self_talk, explaining, wishing_different, what_helps, trend]
+    psych.mood: [signs, frequency, triggers, sleep_appetite, child_words, support, trend]
+    social.comfort: [friendships, group_play, parties_clubs, new_children, joining_in, what_helps]
+    social.avoidance: [activities, frequency, photos, new_people, family_plans, conditions]
+    social.teasing_comments: [source, setting, nature, frequency, child_response, telling_adults, school_action]
+    distress.preoccupation: [frequency, checking, comparing, reassurance, interference, onset]
+    distress.hiding: [methods, situations, haircuts_swimming, photos, if_unable, rules]
+    function.breathing: [sides, day_night, play_sport, sleep, mouth_breathing, trajectory]
+    function.eating_drinking: [foods, chewing, containment, nasal_escape, school_meals, time_effort, growth]
+    function.speaking: [clarity, hard_sounds, listeners, nasal_sound, speaking_up, holding_back, therapy]
+    function.facial_expression: [movements, symmetry, eye_closure, oral_control, misread, trend]
+    adverse.pain_discomfort: [location, how_shown, intensity, pattern, relief, sleep_activity, trajectory]
+    adverse.swelling_bruising: [location, extent, sidedness, trajectory, function_effect, expectations]
+    adverse.numbness_sensation: [location, extent, quality, trajectory, daily_effect, touching]
+    adverse.scarring: [location, visibility, colour, texture, maturity, others_ask, concealment]
+    adverse.asymmetry: [feature, side, rest_vs_movement, others_notice, trajectory, bother]
+    recovery.daily_activities: [school_return, play_sport, eating, sleep, help_needed, family_coping, expectations]
+    outcome.result: [expectation_vs_result, child_view, naturalness, specific_aspect, others_reaction, worth_it, view_shift]
+    outcome.decision: [influences, timing, child_involvement, pressure, regret, advise_others]
+    outcome.information: [before, recovery_info, risks, home_care, child_level, gaps]
+    appearance.ears: [size, shape, position, sidedness, hiding, hearing, others_comments]
+    social.school: [attendance, participation, activities_avoided, concentration, school_support, peer_reactions, trend]
