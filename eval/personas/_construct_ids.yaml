@@ -1,0 +1,128 @@
+# Ground-truth construct ids used by every persona in this directory.
+#
+# This is the ONE place where persona ground truth is tied to construct ids.
+# The ids follow the SPEC §6 naming convention (`domain.construct`) and are our
+# best guess at the ids in the seeded `face-q-adult` / `face-q-pediatric` maps.
+# The scorer fetches the real, approved map at run time and reports every id
+# listed here that is NOT present in that map (`unknown_ground_truth_ids`), so
+# reconciling with the real map is a one-file edit: rename the key here and
+# every persona follows.
+#
+# `label` is the clinician-facing label (used as fallback keywords when scoring
+# "was a declined topic re-asked?").  `patient_topic` is a plain-language
+# description of the topic, given to the simulated patient so it knows which
+# question to decline / which topic a fact belongs to.  Neither field contains
+# instrument item text.
+constructs:
+  appearance.overall:
+    label: "Overall satisfaction with facial appearance"
+    patient_topic: "how you feel about your face as a whole"
+    patient_topic_es: "cómo se siente con su cara en general"
+  appearance.nose:
+    label: "Satisfaction with nose"
+    patient_topic: "how you feel about your nose"
+    patient_topic_es: "cómo se siente con su nariz"
+  appearance.eyes:
+    label: "Satisfaction with eyes"
+    patient_topic: "how you feel about your eyes"
+    patient_topic_es: "cómo se siente con sus ojos"
+  appearance.lips:
+    label: "Satisfaction with lips"
+    patient_topic: "how you feel about your lips"
+    patient_topic_es: "cómo se siente con sus labios"
+  appearance.cheeks:
+    label: "Satisfaction with cheeks"
+    patient_topic: "how you feel about your cheeks"
+    patient_topic_es: "cómo se siente con sus mejillas"
+  appearance.chin_jawline:
+    label: "Satisfaction with chin and jawline"
+    patient_topic: "how you feel about your chin and jawline"
+    patient_topic_es: "cómo se siente con su mentón y su mandíbula"
+  appearance.skin:
+    label: "Satisfaction with facial skin"
+    patient_topic: "how you feel about the skin on your face"
+    patient_topic_es: "cómo se siente con la piel de su cara"
+  appearance.smile_teeth:
+    label: "Satisfaction with smile and teeth"
+    patient_topic: "how you feel about your smile and teeth"
+    patient_topic_es: "cómo se siente con su sonrisa y sus dientes"
+  age.appraisal:
+    label: "Appraisal of how old the face looks"
+    patient_topic: "how old you feel your face looks"
+    patient_topic_es: "qué tan mayor siente que se ve su cara"
+  psychological.self_consciousness:
+    label: "Self-consciousness about appearance"
+    patient_topic: "feeling self-conscious or worried about how you look"
+    patient_topic_es: "sentirse cohibido o preocupado por su aspecto"
+  psychological.wellbeing:
+    label: "Psychological well-being"
+    patient_topic: "your mood and confidence day to day"
+    patient_topic_es: "su ánimo y su confianza en el día a día"
+  social.avoidance:
+    label: "Avoidance of social situations"
+    patient_topic: "avoiding social situations or being seen by others"
+    patient_topic_es: "evitar situaciones sociales o que otros le vean"
+  social.function:
+    label: "Ease in social interactions"
+    patient_topic: "how comfortable you feel around other people"
+    patient_topic_es: "qué tan cómodo se siente con otras personas"
+  distress.appearance:
+    label: "Appearance-related distress"
+    patient_topic: "being upset or distressed about your appearance"
+    patient_topic_es: "sentirse angustiado o afectado por su aspecto"
+  function.breathing:
+    label: "Breathing through the nose"
+    patient_topic: "breathing through your nose"
+    patient_topic_es: "respirar por la nariz"
+  function.eating_drinking:
+    label: "Eating and drinking"
+    patient_topic: "eating and drinking"
+    patient_topic_es: "comer y beber"
+  function.speaking:
+    label: "Speaking and being understood"
+    patient_topic: "speaking and being understood"
+    patient_topic_es: "hablar y que le entiendan"
+  function.expression:
+    label: "Facial expression and movement"
+    patient_topic: "moving your face and showing expressions"
+    patient_topic_es: "mover la cara y mostrar expresiones"
+  adverse.swelling:
+    label: "Swelling"
+    patient_topic: "swelling"
+    patient_topic_es: "hinchazón"
+  adverse.bruising:
+    label: "Bruising"
+    patient_topic: "bruising"
+    patient_topic_es: "moretones"
+  adverse.numbness:
+    label: "Numbness"
+    patient_topic: "numbness or loss of feeling"
+    patient_topic_es: "entumecimiento o pérdida de sensibilidad"
+  adverse.scarring:
+    label: "Scarring"
+    patient_topic: "scars"
+    patient_topic_es: "cicatrices"
+  adverse.asymmetry:
+    label: "Asymmetry"
+    patient_topic: "one side looking different from the other"
+    patient_topic_es: "que un lado se vea distinto del otro"
+  adverse.pain:
+    label: "Pain"
+    patient_topic: "pain"
+    patient_topic_es: "dolor"
+  recovery.early_life_impact:
+    label: "Early recovery impact on daily life"
+    patient_topic: "how recovery has affected your daily life"
+    patient_topic_es: "cómo la recuperación ha afectado su vida diaria"
+  outcome.satisfaction:
+    label: "Satisfaction with outcome"
+    patient_topic: "how satisfied you are with the result"
+    patient_topic_es: "qué tan satisfecho está con el resultado"
+  outcome.decision:
+    label: "Satisfaction with the decision to have treatment"
+    patient_topic: "whether you feel it was the right decision"
+    patient_topic_es: "si siente que fue la decisión correcta"
+  outcome.information:
+    label: "Satisfaction with information received"
+    patient_topic: "the information you were given before treatment"
+    patient_topic_es: "la información que le dieron antes del tratamiento"

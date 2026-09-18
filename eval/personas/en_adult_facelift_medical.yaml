@@ -1,0 +1,81 @@
+# Persona: English-speaking adult after a facelift who asks several medical
+# questions and, at the end, corrects one thing in the patient summary.
+id: en_adult_facelift_medical
+language: en
+population: adult
+speaker: self
+intake:
+  display_name: "Margaret"
+  preferred_language: en
+  age_band: "50-69"
+  reading_comfort: comfortable
+  diagnosis_code: facelift
+  diagnosis_text: "Lower facelift and neck lift, six weeks ago"
+timepoint: post-op-6w
+respondent: self
+personality:
+  style: asks-medical-questions
+  description: >
+    Organised, precise, slightly anxious. Medium-length answers. Keeps a
+    notebook of symptoms. Asks the interviewer at least two medical questions
+    during the conversation ("is this tightness normal?", "should the numbness
+    have gone by now?") and accepts a non-answer gracefully. Wants things
+    written down correctly.
+backstory: >
+  Margaret is 63, a school administrator. Six weeks after a lower facelift she
+  is pleased with her neck and jawline. She has a persistent tight, pulling
+  feeling in front of both ears, worse in the evening, and numbness of both
+  earlobes. Swelling is minimal now. There is a small ridge in the scar behind
+  the right ear that she can feel but not see. Her smile feels slightly stiff
+  on the left when she is tired. She has been back at work for three weeks
+  and is sleeping fine. She feels she looks about five years younger. She is
+  happy with the decision but thinks the written information about how long
+  numbness lasts was vague. She avoids nothing socially. Mood is good. When
+  shown the summary she will correct that the tightness is in front of BOTH
+  ears, not just one.
+ground_truth:
+  constructs:
+    appearance.overall: none
+    appearance.chin_jawline: none
+    appearance.skin: none
+    age.appraisal: none
+    psychological.self_consciousness: none
+    psychological.wellbeing: none
+    social.avoidance: none
+    adverse.swelling: none
+    adverse.numbness: moderate
+    adverse.scarring: mild
+    adverse.pain: mild
+    function.expression: mild
+    recovery.early_life_impact: none
+    outcome.satisfaction: none
+    outcome.decision: none
+    outcome.information: mild
+  narrative_facts:
+    - text: "Tight, pulling feeling in front of both ears, worse in the evening"
+      construct_id: adverse.pain
+      match_any: ["tight", "pull", "evening", "in front of"]
+    - text: "Numb earlobes"
+      construct_id: adverse.numbness
+      match_any: ["earlobe", "ear lobe", "lobe", "ears"]
+    - text: "Small ridge in the scar behind the right ear"
+      construct_id: adverse.scarring
+      match_any: ["ridge", "behind", "right ear", "lump", "bump"]
+    - text: "Smile slightly stiff on the left when tired"
+      construct_id: function.expression
+      match_any: ["smile", "stiff", "tired"]
+    - text: "Written information on how long numbness lasts was vague"
+      construct_id: outcome.information
+      match_any: ["vague", "leaflet", "written", "information", "how long"]
+    - text: "Back at work for three weeks"
+      construct_id: recovery.early_life_impact
+      match_any: ["work", "three weeks"]
+expected_behaviours:
+  declines: []
+  asks_medical_question: true
+  medical_question: "Is the tightness in front of my ears normal at six weeks, and should the numbness have gone by now?"
+  medical_question_keywords: ["tight", "numb", "normal"]
+  safety_intercept_expected: false
+  summary_correction:
+    construct_id: adverse.pain
+    patient_text: "The tight pulling feeling is in front of both ears, not just one side."

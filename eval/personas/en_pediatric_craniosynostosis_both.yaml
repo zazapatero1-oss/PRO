@@ -1,0 +1,73 @@
+# Persona: father and 15-year-old daughter together, six weeks after a
+# cranio-facial revision. The father types; the teen chips in through him.
+id: en_pediatric_craniosynostosis_both
+language: en
+population: pediatric
+speaker: both
+intake:
+  display_name: "Nia"
+  preferred_language: en
+  age_band: "13-17"
+  reading_comfort: comfortable
+  diagnosis_code: craniosynostosis
+  diagnosis_text: "Unicoronal craniosynostosis, repaired in infancy; forehead and orbital contouring 6 weeks ago"
+timepoint: post-op-6w
+respondent: both
+clinician_note:
+  note: "Please pay attention to how she is feeling about school and how the forehead looks to her now."
+  focus_constructs: [social.function, appearance.overall, adverse.swelling]
+personality:
+  style: chatty
+  description: >
+    The speaker is Nia's father, Sam, with Nia sitting next to him. Sam types
+    most replies and is chatty and reassuring, sometimes over-explaining. He
+    relays Nia's own words in quotes ("Nia says: 'it's fine, dad'") and
+    occasionally lets her type a short, dry teenage reply herself, marked with
+    "[Nia]". They disagree mildly about how much she cares about the forehead.
+backstory: >
+  Nia is 15. She had surgery as a baby and a contouring operation on her
+  forehead and eye socket six weeks ago. The left brow used to sit visibly
+  higher than the right; it is now nearly level and she says it "finally looks
+  normal". There is still puffiness around the left eye in the mornings and a
+  numb patch on the scalp near the scar, which she describes as "weird, not
+  bad". The scar is hidden in the hairline. She went back to school two weeks
+  ago and is fine with friends but skipped the swim club because she does not
+  want the scar seen wet. Headaches at night the first two weeks, gone now. Sam
+  thinks she is more confident; Nia says she was already fine. Both are happy
+  with the decision and felt well informed.
+ground_truth:
+  constructs:
+    appearance.overall: mild
+    appearance.eyes: mild
+    psychological.self_consciousness: mild
+    psychological.wellbeing: none
+    social.function: none
+    social.avoidance: mild
+    adverse.swelling: mild
+    adverse.numbness: mild
+    adverse.scarring: none
+    adverse.asymmetry: none
+    adverse.pain: none
+    recovery.early_life_impact: mild
+    outcome.satisfaction: none
+    outcome.decision: none
+  narrative_facts:
+    - text: "Left brow used to sit higher; now nearly level"
+      construct_id: adverse.asymmetry
+      match_any: ["brow", "eyebrow", "level", "higher", "even"]
+    - text: "Puffiness around the left eye in the mornings"
+      construct_id: adverse.swelling
+      match_any: ["morning", "puffy", "puffiness", "left eye"]
+    - text: "Numb patch on the scalp near the scar"
+      construct_id: adverse.numbness
+      match_any: ["scalp", "patch", "numb", "weird"]
+    - text: "Skipped swim club because she does not want the scar seen wet"
+      construct_id: social.avoidance
+      match_any: ["swim", "pool", "wet", "hair"]
+    - text: "Night headaches in the first two weeks, gone now"
+      construct_id: adverse.pain
+      match_any: ["headache", "first two weeks", "gone now", "at night"]
+expected_behaviours:
+  declines: []
+  asks_medical_question: false
+  safety_intercept_expected: false
