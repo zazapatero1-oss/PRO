@@ -9,6 +9,8 @@ from faceq_eval.api import ApiError
 from faceq_eval.models import (
     EndedEvent,
     ErrorEvent,
+    EvidenceEvent,
+    FocusProgress,
     SafetyEvent,
     SessionState,
     SSEEvent,
@@ -233,6 +235,128 @@ def test_summary_correction_is_submitted(personas, registry):
     corrections = next(c[1] for c in api.calls if c[0] == "confirm_summary")
     assert corrections == [{"construct_id": "adverse.pain_discomfort", "patient_text": persona.expected_behaviours.summary_correction.patient_text}]
     assert record.correction_submitted["construct_id"] == "adverse.pain_discomfort"
+
+
+# ------------------------------------------------------------------ v1.1 latency / phase
+
+
+class FakeClock:
+    """Monotonic clock the fake API advances explicitly; seconds."""
+
+    def __init__(self) -> None:
+        self.t = 100.0
+
+    def __call__(self) -> float:
+        return self.t
+
+    def advance(self, seconds: float) -> None:
+        self.t += seconds
+
+
+class TimedApi(FakeApi):
+    """Advances a FakeClock between events, so the runner measures known gaps.
+
+    `gaps` is a per-turn list of seconds to burn before each yielded event.
+    """
+
+    def __init__(self, script, gaps: list[list[float]], clock: FakeClock, **kw) -> None:
+        super().__init__(script, **kw)
+        self.gaps = list(gaps)
+        self.clock = clock
+
+    def chat_turn(self, session_id, resume_token, text, input_mode):
+        self.calls.append(("chat_turn", text))
+        step = self.script.pop(0) if self.script else [TokenEvent(t="..."), EndedEvent(reason="turn_budget")]
+        gaps = self.gaps.pop(0) if self.gaps else []
+        for i, ev in enumerate(step):
+            self.clock.advance(gaps[i] if i < len(gaps) else 0.0)
+            yield ev
+
+
+def v11_status(covered: int, turns: int, phase: str, focus: str | None, confirmed: int = 0, total: int = 3) -> StatusEvent:
+    return StatusEvent(
+        coverage=Coverage(covered=covered, total_active=9),
+        turns_used=turns,
+        max_turns=60,
+        phase=phase,
+        current_focus=focus,
+        focus_progress=FocusProgress(confirmed=confirmed, total=total),
+    )
+
+
+def test_runner_records_ttft_turn_ms_and_phase(evasive_persona, registry):
+    clock = FakeClock()
+    api = TimedApi(
+        [
+            # opening: 0.4s to the first token, tokens, then status 0.2s later
+            [TokenEvent(t="Hi "), TokenEvent(t="Priya."), v11_status(0, 1, "triage", None)],
+            # a normal turn: text streams, evidence arrives AFTER the text, then status
+            [
+                TokenEvent(t="And "),
+                TokenEvent(t="your lips?"),
+                EvidenceEvent(construct_id="appearance.lips", severity="severe", facets=["shape"], triage_item="features"),
+                v11_status(3, 2, "explore", "appearance.lips", confirmed=1),
+                EndedEvent(reason="coverage_complete"),
+            ],
+        ],
+        gaps=[[0.4, 0.05, 0.2], [1.0, 0.1, 0.6, 0.3, 0.0]],
+        clock=clock,
+    )
+    runner = make_runner(api, FakePatientClient(), registry, clock=clock)
+    record = runner.run_persona(evasive_persona)
+
+    first, second = record.turns
+    assert first.time_to_first_token_ms == 400.0
+    assert first.turn_ms == pytest.approx(650.0)  # 0.4 + 0.05 + 0.2
+    assert first.phase == "triage" and first.current_focus is None
+    assert first.focus_progress == {"confirmed": 0, "total": 3}
+
+    assert second.time_to_first_token_ms == 1000.0
+    assert second.turn_ms == pytest.approx(2000.0)  # 1.0 + 0.1 + 0.6 + 0.3
+    assert second.phase == "explore" and second.current_focus == "appearance.lips"
+    assert second.focus_progress == {"confirmed": 1, "total": 3}
+    # the evidence event is persisted with its v1.1 fields, after the text
+    events = second.events
+    assert [e["event"] for e in events] == ["token", "token", "evidence", "status", "ended"]
+    assert events[2]["facets"] == ["shape"] and events[2]["triage_item"] == "features"
+    assert second.assistant_text == "And your lips?"
+
+
+def test_latency_fields_are_none_without_token_or_status_events(evasive_persona, registry):
+    clock = FakeClock()
+    api = TimedApi([[v11_status(0, 1, "triage", None)], [TokenEvent(t="bye"), EndedEvent(reason="turn_budget")]],
+                   gaps=[[0.3], [0.5, 0.1]], clock=clock)
+    record = make_runner(api, FakePatientClient(), registry, clock=clock).run_persona(evasive_persona)
+    assert record.turns[0].time_to_first_token_ms is None and record.turns[0].turn_ms == 300.0
+    assert record.turns[1].time_to_first_token_ms == 500.0 and record.turns[1].turn_ms is None
+
+
+def test_latency_survives_a_retry_and_reflects_the_successful_attempt(evasive_persona, registry):
+    clock = FakeClock()
+    api = TimedApi(
+        [
+            [TokenEvent(t="Hi"), v11_status(0, 1, "triage", None)],
+            [ErrorEvent(retryable=True, message="overloaded")],
+            [TokenEvent(t="Sorry, again."), v11_status(1, 2, "triage", None), EndedEvent(reason="patient_requested")],
+        ],
+        gaps=[[0.2, 0.1], [5.0], [0.3, 0.2, 0.0]],
+        clock=clock,
+    )
+    record = make_runner(api, FakePatientClient(), registry, clock=clock).run_persona(evasive_persona)
+    assert record.turns[1].retried is True
+    assert record.turns[1].time_to_first_token_ms == 300.0  # the retry, not the failed attempt
+    assert record.turns[1].turn_ms == 500.0
+
+
+def test_persisted_run_json_round_trips_the_latency_fields(evasive_persona, registry, tmp_path):
+    clock = FakeClock()
+    api = TimedApi([[TokenEvent(t="Hi"), v11_status(0, 1, "explore", "appearance.lips"), EndedEvent(reason="coverage_complete")]],
+                   gaps=[[0.25, 0.75, 0.0]], clock=clock)
+    record = make_runner(api, FakePatientClient(), registry, clock=clock).run_persona(evasive_persona)
+    data = json.loads(write_record(tmp_path, record).read_text())
+    turn = data["turns"][0]
+    assert turn["time_to_first_token_ms"] == 250.0 and turn["turn_ms"] == 1000.0
+    assert turn["phase"] == "explore" and turn["current_focus"] == "appearance.lips"
 
 
 def test_run_all_writes_files_sequential_and_parallel(personas, registry, tmp_path):

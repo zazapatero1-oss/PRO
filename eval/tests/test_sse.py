@@ -63,6 +63,67 @@ def test_trailing_event_without_blank_line_is_flushed_on_close():
     assert len(got) == 1 and isinstance(got[0], EndedEvent) and got[0].reason == "turn_budget"
 
 
+# ------------------------------------------------------------------ v1.1 ordering / shapes
+
+# SPEC v1.1 §C: the talk call streams first and extraction runs afterwards, so
+# `evidence` events arrive AFTER the reply text and before `status`.
+V11_STREAM = (
+    b'event: token\ndata: {"t": "And how"}\n\n'
+    b'event: token\ndata: {"t": " are your eyes?"}\n\n'
+    b'event: evidence\ndata: {"construct_id": "appearance.eyes", "severity": "moderate", "confidence": 0.8,'
+    b' "facets": ["shape", "symmetry"], "triage_item": "features"}\n\n'
+    b'event: evidence\ndata: {"construct_id": "psych.mood", "severity": "mild", "confidence": 0.6, "facets": []}\n\n'
+    b'event: status\ndata: {"coverage": {"covered": 4, "total_active": 9}, "phase": "explore",'
+    b' "current_focus": "appearance.eyes", "focus_progress": {"confirmed": 1, "total": 3},'
+    b' "turns_used": 7, "max_turns": 60}\n\n'
+)
+
+
+def test_evidence_after_text_then_status():
+    events = list(parse_stream([V11_STREAM]))
+    assert [type(e) for e in events] == [TokenEvent, TokenEvent, EvidenceEvent, EvidenceEvent, StatusEvent]
+    # the reply text is complete before any evidence arrives
+    assert isinstance(events[1], TokenEvent) and "".join(e.t for e in events[:2]) == "And how are your eyes?"
+    assert events[2].facets == ["shape", "symmetry"] and events[2].triage_item == "features"
+    assert events[3].facets == [] and events[3].triage_item is None
+
+
+def test_status_carries_phase_focus_and_progress():
+    status = list(parse_stream([V11_STREAM]))[-1]
+    assert isinstance(status, StatusEvent)
+    assert status.phase == "explore" and status.current_focus == "appearance.eyes"
+    assert status.focus_progress.confirmed == 1 and status.focus_progress.total == 3
+    assert status.coverage.total_active == 9 and status.turns_used == 7 and status.max_turns == 60
+
+
+def test_v11_stream_survives_tight_chunk_boundaries():
+    chunks = [V11_STREAM[i : i + 5] for i in range(0, len(V11_STREAM), 5)]
+    events = list(parse_stream(chunks))
+    assert [type(e) for e in events] == [TokenEvent, TokenEvent, EvidenceEvent, EvidenceEvent, StatusEvent]
+    assert events[-1].current_focus == "appearance.eyes"
+
+
+def test_status_without_v11_fields_still_parses():
+    """A pre-v1.1 engine (no phase/focus) must not fall back to UnknownEvent."""
+    (ev,) = list(parse_stream([b'event: status\ndata: {"coverage": {"covered": 1, "total_active": 2},'
+                              b' "turns_used": 1, "max_turns": 40}\n\n']))
+    assert isinstance(ev, StatusEvent)
+    assert ev.phase is None and ev.current_focus is None and ev.focus_progress is None
+
+
+def test_status_with_unknown_phase_is_unknown_event():
+    (ev,) = list(parse_stream([b'event: status\ndata: {"coverage": {"covered": 1, "total_active": 2},'
+                              b' "turns_used": 1, "max_turns": 40, "phase": "nonsense"}\n\n']))
+    assert isinstance(ev, UnknownEvent) and ev.data["phase"] == "nonsense"
+
+
+def test_null_current_focus_during_triage():
+    (ev,) = list(parse_stream([b'event: status\ndata: {"coverage": {"covered": 0, "total_active": 9},'
+                              b' "phase": "triage", "current_focus": null,'
+                              b' "focus_progress": {"confirmed": 0, "total": 0}, "turns_used": 2, "max_turns": 60}\n\n']))
+    assert isinstance(ev, StatusEvent) and ev.phase == "triage" and ev.current_focus is None
+
+
 def test_default_event_name_is_message_and_resets():
     events = list(parse_stream([b'data: {"t": "no name"}\n\nevent: token\ndata: {"t": "named"}\n\n']))
     assert isinstance(events[0], UnknownEvent) and events[0].event == "message"

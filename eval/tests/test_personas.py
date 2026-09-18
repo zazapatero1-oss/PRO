@@ -112,6 +112,88 @@ def test_persona_validation_rejects_bad_files():
         Persona.model_validate(bad)
 
 
+# ------------------------------------------------------------------ v1.1 facets / focus
+
+
+def test_every_persona_has_expected_focus_with_facets(personas, registry):
+    for p in personas:
+        assert 2 <= len(p.expected_focus) <= 4, p.id
+        assert set(p.expected_focus) <= set(p.ground_truth.constructs), p.id
+        assert set(p.expected_focus) <= registry.ids_for(p.population), p.id
+        for cid in p.expected_focus:
+            facets = p.ground_truth.facets_for(cid)
+            assert 3 <= len(facets) <= 8, f"{p.id}:{cid} has {len(facets)} facets"
+            assert all(v.strip() for v in facets.values()), f"{p.id}:{cid}"
+            assert p.ground_truth.severities[cid] != "declined", p.id
+        # only focus constructs carry facets
+        with_facets = {cid for cid, c in p.ground_truth.constructs.items() if c.facets}
+        assert with_facets == set(p.expected_focus), p.id
+
+
+def test_persona_facet_ids_are_in_the_facet_registry(personas, registry, facet_registry):
+    assert validate_persona_set(personas, registry, facet_registry) == []
+    for p in personas:
+        for cid, c in p.ground_truth.constructs.items():
+            unknown = set(c.facets) - facet_registry.facets_for(cid)
+            assert not unknown, f"{p.id}: {cid} -> {sorted(unknown)}"
+
+
+def test_facet_registry_covers_every_construct_id(registry, facet_registry):
+    assert set(facet_registry.constructs) == set(registry.constructs)
+    for cid, facets in facet_registry.constructs.items():
+        assert 5 <= len(facets) <= 8, f"{cid} has {len(facets)} facets"
+        assert all(fid == fid.lower() and " " not in fid for fid in facets), cid
+        assert all(label.strip() for label in facets.values()), cid
+
+
+def test_validate_flags_unknown_facet_id(personas, registry, facet_registry):
+    bad = next(p for p in personas if p.id == "en_adult_rhinoplasty_terse").model_copy(deep=True)
+    bad.ground_truth.constructs["appearance.nose"].facets["nostril_shape"] = "made up id"
+    problems = validate_persona_set([bad], registry, facet_registry)
+    assert any("appearance.nose.nostril_shape" in x for x in problems)
+
+
+def test_validate_flags_facet_registry_id_missing_from_construct_registry(personas, registry, facet_registry):
+    broken = facet_registry.model_copy(deep=True)
+    broken.constructs["nope.nothing"] = {"a": "A", "b": "B", "c": "C", "d": "D", "e": "E"}
+    problems = validate_persona_set(personas, registry, broken)
+    assert any("nope.nothing" in x and "_construct_ids.yaml" in x for x in problems)
+
+
+def test_validate_flags_expected_focus_outside_population(personas, registry, facet_registry):
+    ped = next(p for p in personas if p.population == "pediatric").model_copy(deep=True)
+    # aging.appraisal is adult-only; give it ground truth + facets so the model validator passes
+    ped.ground_truth.constructs["aging.appraisal"] = ped.ground_truth.constructs[ped.expected_focus[0]]
+    ped.expected_focus = [*ped.expected_focus, "aging.appraisal"]
+    problems = validate_persona_set([ped], registry, facet_registry)
+    assert any("aging.appraisal" in x and "pediatric map" in x for x in problems)
+
+
+def test_persona_model_rejects_bad_focus_declarations():
+    raw = yaml.safe_load((PERSONA_DIR / "en_adult_rhinoplasty_terse.yaml").read_text(encoding="utf-8"))
+    with pytest.raises(ValueError, match="expected_focus"):
+        Persona.model_validate({**raw, "expected_focus": ["appearance.nose"]})  # fewer than 2
+    with pytest.raises(ValueError, match="must list facets"):
+        Persona.model_validate({**raw, "expected_focus": [*raw["expected_focus"], "appearance.eyes"]})
+    dropped = {**raw, "expected_focus": raw["expected_focus"][:2]}
+    with pytest.raises(ValueError, match="not in expected_focus"):
+        Persona.model_validate(dropped)  # distress.hiding still carries facets
+    declined = yaml.safe_load((PERSONA_DIR / "en_adult_injectables_evasive.yaml").read_text(encoding="utf-8"))
+    declined["ground_truth"]["constructs"]["social.avoidance"] = {"severity": "declined", "facets": {"frequency": "x"}}
+    with pytest.raises(ValueError, match="declined construct cannot carry facets"):
+        Persona.model_validate(declined)
+
+
+def test_focus_facets_reach_the_patient_prompt(personas, registry, facet_registry):
+    for p in personas:
+        prompt = build_system_prompt(p, registry, facet_registry)
+        for cid in p.expected_focus:
+            for fid, detail in p.ground_truth.facets_for(cid).items():
+                assert facet_registry.label(cid, fid) in prompt, f"{p.id}:{cid}.{fid}"
+                assert detail in prompt, f"{p.id}:{cid}.{fid}"
+        assert "ONE detail per reply" in prompt
+
+
 def test_system_prompt_mentions_key_instructions(personas, registry):
     for p in personas:
         prompt = build_system_prompt(p, registry)

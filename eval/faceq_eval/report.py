@@ -33,36 +33,57 @@ def _md_table(headers: list[str], rows: list[list[str]]) -> str:
 
 PERSONA_HEADERS = [
     "persona", "lang", "pop", "diagnosis", "timepoint", "personality", "outcome",
-    "coverage", "sev exact", "sev ±1", "fact recall", "needs-clar", "declined ok",
-    "med Q ok", "safety ok", "turns", "wall s", "tokens in/out", "cost $",
+    "coverage", "sev exact", "sev ±1", "fact recall", "facet recall", "triage", "focus P/R",
+    "confirm", "needs-clar", "declined ok", "med Q ok", "safety ok",
+    "TTFT ms med/p90", "turn ms med/p90", "turns", "wall s", "tokens in/out", "cost $",
 ]
+
+
+def ms(median: float | None, p90: float | None) -> str:
+    return "–" if median is None and p90 is None else f"{num(median)}/{num(p90)}"
 
 
 def persona_row(s: PersonaScore) -> list[str]:
     outcome = s.outcome + (" (ERR)" if s.error else "")
     tokens = "–" if s.input_tokens is None and s.output_tokens is None else f"{s.input_tokens or 0}/{s.output_tokens or 0}"
+    triage = (
+        "–"
+        if s.triage.compliant is None
+        else f"{yn(s.triage.compliant)} ({s.triage.n_addressed}/{s.triage.n_applicable})"
+    )
     return [
         s.persona_id, s.language, s.population, s.diagnosis_code, s.timepoint, s.personality, outcome,
         f"{pct(s.coverage_rate)} ({s.n_covered}/{s.n_ground_truth})",
         pct(s.severity_exact_rate), pct(s.severity_within_one_rate),
         f"{pct(s.fact_recall)} ({s.n_facts_matched}/{s.n_facts})",
+        f"{pct(s.facet_recall)} ({s.n_facets_covered}/{s.n_facets_expected})",
+        triage,
+        f"{pct(s.focus.precision)}/{pct(s.focus.recall)}",
+        yn(s.confirm.observed),
         f"{pct(s.needs_clarification_rate)} ({s.n_needs_clarification}/{s.n_active})",
         yn(s.decline_correct), yn(s.medical_question.correct), yn(s.safety.correct),
+        ms(s.latency.ttft_median_ms, s.latency.ttft_p90_ms),
+        ms(s.latency.turn_median_ms, s.latency.turn_p90_ms),
         str(s.turns), num(s.wall_time_s), tokens, num(s.cost_usd, "{:.3f}"),
     ]
 
 
 AGG_HEADERS = [
-    "group", "n", "with profile", "coverage", "sev exact", "sev ±1", "fact recall", "needs-clar",
-    "declined ok", "med Q ok", "safety ok", "mean turns", "mean wall s", "tokens in/out", "cost $",
+    "group", "n", "with profile", "coverage", "sev exact", "sev ±1", "fact recall", "facet recall",
+    "triage ok", "triage items", "focus P/R", "confirm", "needs-clar", "declined ok", "med Q ok", "safety ok",
+    "TTFT ms med/p90", "turn ms med/p90", "mean turns", "mean wall s", "tokens in/out", "cost $",
 ]
 
 
 def agg_row(a: AggregateScore) -> list[str]:
     return [
         a.group, str(a.n_personas), str(a.n_with_profile), pct(a.coverage_rate), pct(a.severity_exact_rate),
-        pct(a.severity_within_one_rate), pct(a.fact_recall), pct(a.needs_clarification_rate),
+        pct(a.severity_within_one_rate), pct(a.fact_recall), pct(a.facet_recall),
+        pct(a.triage_compliance_rate), pct(a.triage_item_rate),
+        f"{pct(a.focus_precision)}/{pct(a.focus_recall)}", pct(a.confirm_rate),
+        pct(a.needs_clarification_rate),
         pct(a.decline_correct_rate), pct(a.medical_question_correct_rate), pct(a.safety_correct_rate),
+        ms(a.ttft_median_ms, a.ttft_p90_ms), ms(a.turn_median_ms, a.turn_p90_ms),
         num(a.mean_turns, "{:.1f}"), num(a.mean_wall_time_s), f"{a.total_input_tokens}/{a.total_output_tokens}",
         num(a.total_cost_usd, "{:.3f}"),
     ]
@@ -100,6 +121,17 @@ def render_markdown(scores: RunScores) -> str:
             ]
         else:
             lines += ["All ground-truth construct ids were found in the fetched construct map.", ""]
+        if scores.unknown_facet_ids:
+            lines += [
+                "## Ground-truth facet ids not present in the fetched construct map",
+                "",
+                "Fix these in `eval/personas/_facet_ids.yaml` and the persona keys:",
+                "",
+                *[f"- `{fid}`" for fid in scores.unknown_facet_ids],
+                "",
+            ]
+        else:
+            lines += ["All ground-truth facet ids were found in the fetched construct map.", ""]
     else:
         lines += ["Construct map was not available for this run; ground-truth ids were not checked against it.", ""]
 
@@ -119,6 +151,45 @@ def render_markdown(scores: RunScores) -> str:
                 f"- Decline `{d.construct_id}`: in declined list={yn(d.in_declined_list)}, decline turn={d.decline_turn}, "
                 f"re-asked {d.re_ask_count}x{(' at turns ' + ', '.join(map(str, d.re_ask_turns))) if d.re_ask_turns else ''}"
             )
+        observed_focus = "–" if s.focus.observed is None else (", ".join(f"`{c}`" for c in s.focus.observed) or "(none)")
+        lines += [
+            f"- Focus: expected {', '.join(f'`{c}`' for c in s.focus.expected) or '–'} / observed {observed_focus}"
+            f" → P {pct(s.focus.precision)} R {pct(s.focus.recall)}",
+            f"- Confirm step: {yn(s.confirm.observed)}"
+            + (f" (confirmed {', '.join(f'`{c}`' for c in s.confirm.confirmed)})" if s.confirm.confirmed else ""),
+            f"- Latency: TTFT median {num(s.latency.ttft_median_ms)} ms / p90 {num(s.latency.ttft_p90_ms)} ms; "
+            f"turn median {num(s.latency.turn_median_ms)} ms / p90 {num(s.latency.turn_p90_ms)} ms "
+            f"over {s.latency.n_turns} turns",
+        ]
+        lines += ["", "Triage screen (first "
+                  f"{s.triage.turns_examined} assistant turns; needs {s.triage.required} of {s.triage.n_applicable}):", "",
+                  _md_table(
+                      ["triage item", "applicable", "addressed", "turn", "matched phrase"],
+                      [
+                          [
+                              t.item_id,
+                              yn(t.applicable) + ("" if t.scored else " (no rule)"),
+                              yn(t.addressed),
+                              str(t.turn) if t.turn else "–",
+                              t.matched_phrase or "–",
+                          ]
+                          for t in s.triage.items
+                      ],
+                  ), ""]
+        if s.facets:
+            lines += ["Facets of the focus constructs:", "", _md_table(
+                ["construct", "recall", "covered", "missing", "confirmed"],
+                [
+                    [
+                        f.construct_id,
+                        f"{pct(f.recall)} ({len(f.covered)}/{len(f.expected)})",
+                        ", ".join(f.covered) or "–",
+                        ", ".join(f.missing) or "–",
+                        yn(f.confirmed),
+                    ]
+                    for f in s.facets
+                ],
+            ), ""]
         lines += ["", _md_table(
             ["construct", "expected", "observed", "status", "conf", "covered", "exact", "±1"],
             [

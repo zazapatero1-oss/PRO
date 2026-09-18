@@ -31,20 +31,52 @@ backstory: >
   he has speech therapy on Tuesdays. He eats normally; occasionally liquid comes
   out of his nose when he laughs while drinking. He is a cheerful boy at home
   but has stopped wanting to go to birthday parties. Breathing is fine.
+expected_focus: [appearance.lips, social.teasing_comments, social.avoidance, function.speaking]
 ground_truth:
   constructs:
     appearance.overall: moderate
-    appearance.lips: severe
+    appearance.lips:
+      severity: severe
+      facets:
+        shape: "el labio de arriba está torcido, se le sube de un lado"
+        symmetry: "un lado está más alto que el otro, se ve enseguida"
+        scar_line: "la cicatriz es gruesa y se nota mucho, sobre todo cuando hace frío"
+        smile_movement: "cuando se ríe se le nota todavía más"
+        wanted_change: "que la cicatriz se vea menos, eso es lo que él pide"
+        since_when: "desde siempre, pero este año le importa mucho más"
     appearance.nose: mild
     appearance.smile_teeth: mild
     psych.self_confidence: moderate
     psych.mood: mild
-    social.avoidance: moderate
+    social.avoidance:
+      severity: moderate
+      facets:
+        events_avoided: "ya no quiere ir a los cumpleaños"
+        people_avoided: "evita a los niños de la otra clase"
+        places_avoided: "en el parque se queda conmigo, no se acerca"
+        frequency: "desde hace unos meses, cada vez más"
+        last_time: "el sábado pasado dijo que no al cumpleaños de su primo"
+        what_would_help: "si un amigo va con él, entonces sí va"
     social.comfort: moderate
     social.school: moderate
-    social.teasing_comments: moderate
+    social.teasing_comments:
+      severity: moderate
+      facets:
+        who_comments: "un compañero de su clase, el mismo siempre"
+        what_is_said: "le puso un apodo por el labio"
+        frequency: "casi cada semana, él me dice que no es nada"
+        response: "él se calla y se va, no contesta"
+        who_they_tell: "me lo contó a mí, a la maestra no"
+        effect: "llegó llorando un día, por eso lo sé"
     distress.hiding: moderate
-    function.speaking: mild
+    function.speaking:
+      severity: mild
+      facets:
+        sounds_affected: "algunas letras no le salen claras, la ese sobre todo"
+        being_understood: "en casa le entendemos todo"
+        strangers_vs_family: "los maestros a veces le piden que lo repita"
+        therapy: "va a logopedia los martes"
+        effort: "no se cansa, habla muchísimo"
     function.eating_drinking: mild
     function.breathing: none
     adverse.scarring: moderate

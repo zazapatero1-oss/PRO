@@ -1,12 +1,16 @@
 from __future__ import annotations
 
-from conftest import make_profile, make_record
+from conftest import evidence_event, make_profile, make_record
 
 from faceq_eval.score import (
+    TRIAGE_MIN_ITEMS,
     aggregate,
     map_construct_ids,
+    map_facets,
+    map_triage,
     match_fact,
     normalize,
+    percentile,
     score_persona,
     score_run,
 )
@@ -186,6 +190,240 @@ def test_unknown_ground_truth_ids_reported(evasive_persona, evasive_profile, reg
     assert "appearance.overall" in s.unknown_ground_truth_ids
     assert "appearance.lips" not in s.unknown_ground_truth_ids
     assert next(c for c in s.constructs if c.construct_id == "appearance.lips").in_map is True
+
+
+# ------------------------------------------------------------------ v1.1: facet recall
+
+
+def _facet_profile():
+    """Profile where the engine covered some of the evasive persona's focus facets."""
+    return make_profile(
+        {
+            "appearance.lips": {
+                "severity": "severe",
+                "facets_covered": ["shape", "fullness", "symmetry"],
+                "facets_missing": ["smile_movement", "wanted_change", "since_when"],
+                "confirmed": True,
+            },
+            "appearance.cheeks": {"severity": "moderate", "facets_covered": ["fullness", "contour_change"]},
+            "aging.appraisal": {"severity": "moderate", "facets_covered": []},
+            # `extra` is not in the persona's ground truth and must not inflate recall
+            "psych.self_confidence": {"severity": "moderate", "facets_covered": ["in_photos", "extra"]},
+        }
+    )
+
+
+def test_facet_recall_unions_profile_and_evidence_events(evasive_persona, registry):
+    turns = [
+        (None, "How is your face treating you?", []),
+        # a late `evidence` event contributes a facet the profile does not list
+        ("my lips vanish when I smile", "I see.", [evidence_event("appearance.lips", ["smile_movement"])]),
+    ]
+    s = score_persona(evasive_persona, make_record(evasive_persona.id, _facet_profile(), turns), registry)
+    by_id = {f.construct_id: f for f in s.facets}
+    assert set(by_id) == set(evasive_persona.expected_focus)
+
+    lips = by_id["appearance.lips"]
+    assert lips.covered == ["fullness", "shape", "smile_movement", "symmetry"]
+    assert lips.from_evidence == ["smile_movement"]
+    assert lips.missing == ["since_when", "wanted_change"]
+    assert lips.recall == 4 / 6 and lips.confirmed is True
+
+    assert by_id["appearance.cheeks"].recall == 2 / 4
+    assert by_id["aging.appraisal"].recall == 0.0
+    # "extra" is dropped: only ground-truth facets count
+    assert by_id["psych.self_confidence"].covered == ["in_photos"]
+
+    assert s.n_facets_expected == 20 and s.n_facets_covered == 7
+    assert s.facet_recall == 7 / 20
+
+
+def test_facet_recall_is_none_without_a_profile(evasive_persona, registry):
+    s = score_persona(evasive_persona, make_record(evasive_persona.id, None, outcome="error"), registry)
+    assert s.facet_recall is None and all(f.recall is None for f in s.facets)
+
+
+def test_unknown_facet_ids_reported_against_the_map(evasive_persona, registry):
+    cmap = {
+        "slug": "face-q-adult",
+        "map": {
+            "domains": [
+                {
+                    "id": "appearance",
+                    "constructs": [
+                        {"id": "appearance.lips", "label": "Lips", "facets": [{"id": "shape"}, {"id": "fullness"}]},
+                        {"id": "appearance.cheeks", "label": "Cheeks", "facets": []},
+                    ],
+                }
+            ]
+        },
+    }
+    assert map_facets(cmap) == {"appearance.lips": {"shape", "fullness"}, "appearance.cheeks": set()}
+    s = score_persona(evasive_persona, make_record(evasive_persona.id, _facet_profile()), registry, cmap)
+    assert "appearance.lips.symmetry" in s.unknown_facet_ids
+    assert "appearance.lips.shape" not in s.unknown_facet_ids
+    assert "appearance.cheeks.fullness" in s.unknown_facet_ids
+    assert map_facets(None) is None
+
+
+# ------------------------------------------------------------------ v1.1: triage compliance
+
+TRIAGE_TURNS_OK = [
+    (None, "Hi Priya. To start, how do you feel about your face overall these days?", []),
+    ("it's fine honestly", "Are there parts of your face that are on your mind most - the nose, lips, anything?", []),
+    ("my lips I guess", "Does anything about your face make everyday things harder: breathing, eating, speaking?", []),
+    ("no, all fine", "And how does it affect how you feel about yourself, or being around other people?", []),
+]
+
+
+def test_triage_compliant_when_four_items_addressed_in_the_first_turns(evasive_persona, evasive_profile, registry):
+    s = score_persona(evasive_persona, make_record(evasive_persona.id, evasive_profile, TRIAGE_TURNS_OK), registry)
+    # baseline persona: the `recovery` item does not apply
+    assert s.triage.n_applicable == 4 and s.triage.required == TRIAGE_MIN_ITEMS
+    assert s.triage.n_addressed == 4 and s.triage.compliant is True
+    by_id = {t.item_id: t for t in s.triage.items}
+    assert by_id["overall"].turn == 1 and by_id["features"].turn == 2
+    assert by_id["function"].turn == 3 and by_id["impact"].turn == 4
+    assert by_id["recovery"].applicable is False and by_id["recovery"].addressed is False
+    assert by_id["overall"].matched_phrase is not None
+
+
+def test_triage_not_compliant_when_screen_is_skipped(evasive_persona, evasive_profile, registry):
+    turns = [
+        (None, "Hi Priya, how do you feel about your face overall?", []),
+        ("fine", "Tell me more about that.", []),
+        ("not much to say", "Mmhm. And anything else?", []),
+    ]
+    s = score_persona(evasive_persona, make_record(evasive_persona.id, evasive_profile, turns), registry)
+    assert s.triage.n_addressed == 1 and s.triage.compliant is False
+
+
+def test_triage_only_looks_at_the_first_six_turns(evasive_persona, evasive_profile, registry):
+    filler = [(f"ok {i}", f"Tell me more, {i}.", []) for i in range(5)]
+    late = [("ok", "Does breathing or eating give you any trouble?", [])]
+    turns = TRIAGE_TURNS_OK[:2] + filler + late
+    s = score_persona(evasive_persona, make_record(evasive_persona.id, evasive_profile, turns), registry)
+    assert s.triage.turns_examined == 6
+    by_id = {t.item_id: t for t in s.triage.items}
+    assert by_id["function"].addressed is False  # it happened on turn 8
+    assert s.triage.n_addressed == 2 and s.triage.compliant is False
+
+
+def test_triage_recovery_item_applies_post_op_and_matches_spanish(personas, registry):
+    rosario = next(p for p in personas if p.id == "es_adult_facelift_chatty")  # es, post-op-6w
+    turns = [
+        (None, "Hola Rosario. ¿Cómo se siente con su cara en general?", []),
+        ("muy bien", "¿Y hay alguna parte, la mejilla, la piel?", []),
+        ("la mejilla", "¿Le cuesta algo del día a día: comer, hablar, respirar?", []),
+        ("no", "¿Cómo va la recuperación: dolor, hinchazón, entumecimiento?", []),
+        ("algo dormida", "¿Y cómo le afecta con otras personas, con sus amigos?", []),
+    ]
+    s = score_persona(rosario, make_record(rosario.id, make_profile({"appearance.cheeks": {"severity": "mild"}}), turns), registry)
+    assert s.triage.n_applicable == 5  # recovery applies at post-op-6w
+    assert s.triage.n_addressed == 5 and s.triage.compliant is True
+    assert {t.item_id for t in s.triage.items if t.addressed} == {"overall", "features", "function", "impact", "recovery"}
+
+
+def test_triage_uses_the_maps_own_items_and_flags_unscored_ones(evasive_persona, evasive_profile, registry):
+    cmap = {"map": {"domains": [], "triage": [
+        {"id": "overall", "intent": "..."},
+        {"id": "brand_new_item", "intent": "something the harness has no rule for"},
+    ]}}
+    assert [t["id"] for t in map_triage(cmap)] == ["overall", "brand_new_item"]
+    s = score_persona(evasive_persona, make_record(evasive_persona.id, evasive_profile, TRIAGE_TURNS_OK), registry, cmap)
+    assert s.triage.unscored_item_ids == ["brand_new_item"]
+    assert s.triage.n_applicable == 1 and s.triage.required == 1 and s.triage.compliant is True
+    assert [t["id"] for t in map_triage(None)] == ["overall", "features", "function", "impact", "recovery"]
+
+
+# ------------------------------------------------------------------ v1.1: focus precision/recall + confirm
+
+
+def test_focus_precision_and_recall_from_the_session_row(evasive_persona, registry):
+    # expected: lips, cheeks, aging.appraisal, self_confidence; observed gets 3 of them + 1 extra
+    row = {"status": "completed", "focus_constructs": ["appearance.lips", "appearance.cheeks", "aging.appraisal", "psych.mood"]}
+    s = score_persona(evasive_persona, make_record(evasive_persona.id, _facet_profile(), session_row=row), registry)
+    assert s.focus.observed == row["focus_constructs"]
+    assert s.focus.matched == ["aging.appraisal", "appearance.cheeks", "appearance.lips"]
+    assert s.focus.precision == 3 / 4 and s.focus.recall == 3 / 4
+
+
+def test_focus_is_none_when_the_session_row_has_no_focus_constructs(evasive_persona, registry):
+    s = score_persona(evasive_persona, make_record(evasive_persona.id, _facet_profile(), session_row={"status": "completed"}), registry)
+    assert s.focus.observed is None and s.focus.precision is None and s.focus.recall is None
+    assert s.focus.expected == evasive_persona.expected_focus
+
+
+def test_empty_focus_list_scores_zero_recall(evasive_persona, registry):
+    s = score_persona(evasive_persona, make_record(evasive_persona.id, _facet_profile(), session_row={"focus_constructs": []}), registry)
+    assert s.focus.observed == [] and s.focus.recall == 0.0 and s.focus.precision is None
+
+
+def test_confirm_observed_when_a_focus_construct_is_confirmed(evasive_persona, registry):
+    s = score_persona(evasive_persona, make_record(evasive_persona.id, _facet_profile()), registry)
+    assert s.confirm.confirmed == ["appearance.lips"] and s.confirm.observed is True
+
+
+def test_confirm_not_observed_when_no_focus_construct_is_confirmed(evasive_persona, evasive_profile, registry):
+    s = score_persona(evasive_persona, make_record(evasive_persona.id, evasive_profile), registry)
+    assert s.confirm.confirmed == [] and s.confirm.observed is False
+    # confirming a non-focus construct does not count
+    profile = make_profile({"psych.mood": {"severity": "mild", "confirmed": True}})
+    s = score_persona(evasive_persona, make_record(evasive_persona.id, profile), registry)
+    assert s.confirm.observed is False
+
+
+def test_confirm_is_none_without_a_profile(evasive_persona, registry):
+    s = score_persona(evasive_persona, make_record(evasive_persona.id, None, outcome="error"), registry)
+    assert s.confirm.observed is None
+
+
+# ------------------------------------------------------------------ v1.1: latency
+
+
+def test_percentile_interpolates_and_handles_edges():
+    assert percentile([], 0.5) is None
+    assert percentile([7.0], 0.9) == 7.0
+    assert percentile([1.0, 2.0, 3.0, 4.0], 0.5) == 2.5
+    assert percentile([10.0, 20.0, 30.0, 40.0, 50.0], 0.9) == 46.0
+
+
+def test_latency_summary_per_persona(evasive_persona, evasive_profile, registry):
+    turns = [(None, "a", []), ("x", "b", []), ("y", "c", []), ("z", "d", [])]
+    latencies = [(900.0, 4000.0), (300.0, 2000.0), (500.0, 2500.0), (700.0, 3000.0)]
+    rec = make_record(evasive_persona.id, evasive_profile, turns, latencies=latencies)
+    s = score_persona(evasive_persona, rec, registry)
+    assert s.latency.n_turns == 4
+    assert s.latency.ttft_median_ms == 600.0 and s.latency.ttft_p90_ms == 840.0
+    assert s.latency.turn_median_ms == 2750.0 and s.latency.turn_p90_ms == 3700.0
+    assert s.latency.ttft_ms == [900.0, 300.0, 500.0, 700.0]
+
+
+def test_latency_skips_turns_without_measurements(evasive_persona, evasive_profile, registry):
+    turns = [(None, "a", []), ("x", "b", [])]
+    rec = make_record(evasive_persona.id, evasive_profile, turns, latencies=[(None, None), (250.0, 1000.0)])
+    s = score_persona(evasive_persona, rec, registry).latency
+    assert s.ttft_ms == [250.0] and s.ttft_median_ms == 250.0 and s.turn_median_ms == 1000.0
+
+
+def test_aggregate_pools_latency_and_averages_the_new_rates(evasive_persona, evasive_profile, registry, personas):
+    a = make_record(evasive_persona.id, _facet_profile(), TRIAGE_TURNS_OK,
+                    latencies=[(100.0, 1000.0)] * 4,
+                    session_row={"focus_constructs": evasive_persona.expected_focus})
+    b = make_record(evasive_persona.id, evasive_profile, TRIAGE_TURNS_OK[:1],
+                    latencies=[(500.0, 5000.0)], session_row={"focus_constructs": []})
+    scores = [score_persona(evasive_persona, r, registry) for r in (a, b)]
+    agg = aggregate("x", scores)
+    # pooled over all 5 turns: [100, 100, 100, 100, 500]
+    assert agg.ttft_median_ms == 100.0 and agg.ttft_p90_ms == 340.0
+    assert agg.turn_median_ms == 1000.0 and agg.turn_p90_ms == 3400.0
+    # 6/20 for the facet profile (no late evidence event here) and 0 for the plain one
+    assert agg.facet_recall == round((6 / 20 + 0.0) / 2, 4)
+    assert agg.triage_compliance_rate == 0.5  # one compliant, one not
+    assert agg.triage_item_rate == round((4 + 1) / 8, 4)
+    assert agg.focus_recall == 0.5 and agg.focus_precision == 1.0  # empty observed -> precision None, skipped
+    assert agg.confirm_rate == 0.5
+    assert aggregate("empty", []).facet_recall is None
 
 
 # ------------------------------------------------------------------ tokens / cost / aggregates

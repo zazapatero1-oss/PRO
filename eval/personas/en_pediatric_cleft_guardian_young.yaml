@@ -31,11 +31,35 @@ backstory: >
   do not understand him. He eats and drinks normally. No breathing problems.
   Ben finds it hard to watch other children stare and thinks about the lip
   more than he lets on, but will not discuss any of that.
+expected_focus: [appearance.lips, appearance.nose, function.speaking]
 ground_truth:
   constructs:
     appearance.overall: mild
-    appearance.lips: moderate
-    appearance.nose: moderate
+    appearance.lips:
+      severity: moderate
+      facets:
+        shape: "there's a notch in the top lip, you see it straight away"
+        symmetry: "left side sits lower than the right"
+        scar_line: "the scar is pale, goes up towards the nose"
+        smile_movement: "when he smiles it pulls the notch wider"
+        wanted_change: "just make the notch less obvious"
+        since_when: "he's had it since the first repair as a baby"
+    appearance.nose:
+      severity: moderate
+      facets:
+        tip: "the tip points off to the left a bit"
+        width: "that side looks wider"
+        nostrils: "the nostril on that side is flatter, more spread out"
+        profile_vs_front: "you notice it from the front, not so much side on"
+        wanted_change: "make the two nostrils match"
+    function.speaking:
+      severity: moderate
+      facets:
+        sounds_affected: "s and sh sounds come out wrong"
+        being_understood: "we understand him, other people ask him to repeat it"
+        strangers_vs_family: "strangers struggle, his teacher is used to him"
+        therapy: "speech therapy, he's been going about a year"
+        effort: "he doesn't seem bothered, he just says it again louder"
     psych.self_confidence: none
     psych.mood: none
     social.avoidance: none
@@ -43,7 +67,6 @@ ground_truth:
     social.school: none
     social.teasing_comments: mild
     distress.preoccupation: declined
-    function.speaking: moderate
     function.eating_drinking: none
     function.breathing: none
     adverse.scarring: mild

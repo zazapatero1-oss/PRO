@@ -5,13 +5,18 @@ from typing import Any
 
 import pytest
 
-from faceq_eval.models import ConstructRegistry, Persona, RunRecord, TurnRecord
-from faceq_eval.personas import load_personas, load_registry
+from faceq_eval.models import ConstructRegistry, FacetRegistry, Persona, RunRecord, TurnRecord
+from faceq_eval.personas import load_facet_registry, load_personas, load_registry
 
 
 @pytest.fixture(scope="session")
 def registry() -> ConstructRegistry:
     return load_registry()
+
+
+@pytest.fixture(scope="session")
+def facet_registry() -> FacetRegistry:
+    return load_facet_registry()
 
 
 @pytest.fixture(scope="session")
@@ -55,11 +60,40 @@ def make_profile(constructs: dict[str, dict[str, Any]], **extra: Any) -> dict[st
     return profile
 
 
-def make_record(persona_id: str, profile: dict[str, Any] | None, turns: list[tuple[str | None, str, list[dict]]] | None = None, **kw: Any) -> RunRecord:
+def make_record(
+    persona_id: str,
+    profile: dict[str, Any] | None,
+    turns: list[tuple[str | None, str, list[dict]]] | None = None,
+    latencies: list[tuple[float | None, float | None]] | None = None,
+    **kw: Any,
+) -> RunRecord:
+    """`latencies` is an optional list of (time_to_first_token_ms, turn_ms) per turn."""
     rec = RunRecord(persona_id=persona_id, started_at="2026-01-01T00:00:00+00:00", outcome=kw.pop("outcome", "ended"), profile=copy.deepcopy(profile), **kw)
     for i, (patient, assistant, events) in enumerate(turns or [], start=1):
-        rec.turns.append(TurnRecord(turn=i, patient_text=patient, input_mode="text" if patient else None, assistant_text=assistant, events=events))
+        ttft, turn_ms = (latencies[i - 1] if latencies and i - 1 < len(latencies) else (None, None))
+        rec.turns.append(
+            TurnRecord(
+                turn=i,
+                patient_text=patient,
+                input_mode="text" if patient else None,
+                assistant_text=assistant,
+                events=events,
+                time_to_first_token_ms=ttft,
+                turn_ms=turn_ms,
+            )
+        )
     return rec
+
+
+def evidence_event(construct_id: str, facets: list[str] | None = None, **kw: Any) -> dict[str, Any]:
+    return {
+        "event": "evidence",
+        "construct_id": construct_id,
+        "severity": kw.pop("severity", "moderate"),
+        "confidence": kw.pop("confidence", 0.8),
+        "facets": facets or [],
+        "triage_item": kw.pop("triage_item", None),
+    }
 
 
 @pytest.fixture
