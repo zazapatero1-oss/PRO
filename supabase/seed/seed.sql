@@ -1,0 +1,2470 @@
+-- GENERATED FILE. Do not edit by hand; run supabase/seed/build_seed.py.
+-- Reference data for FACE-Q Conversation: instruments, diagnosis catalog and
+-- approved construct maps. Idempotent (upserts). No item text from any instrument.
+
+begin;
+
+-- instruments
+insert into public.instruments (id, slug, name, version, publisher, license_notes, license_url, item_text_stored)
+values (
+  '6d2f3a10-0001-4a00-8000-000000000001',
+  $seed$face-q-aesthetics$seed$,
+  $seed$FACE-Q Aesthetics$seed$,
+  $seed$2015 (as published; scale list current as of qportfolio.org)$seed$,
+  $seed$Q-Portfolio (McMaster University / Memorial Sloan Kettering Cancer Center); distributed by Mapi Research Trust$seed$,
+  $seed$FACE-Q Aesthetics is a licensed patient-reported outcome instrument distributed through Q-Portfolio and Mapi Research Trust (ePROVIDE). Use is free of charge for non-commercial academic and clinical use subject to registration and a user agreement; commercial use requires a paid licence. Questionnaire item text is copyrighted and is NOT stored in this repository or shown to patients. Only publicly documented scale names and paraphrased descriptions of what the scales measure are used to build construct maps.$seed$,
+  $seed$https://qportfolio.org/face-q/face-q-aesthetics/$seed$,
+  false
+)
+on conflict (slug) do update set
+  name = excluded.name,
+  version = excluded.version,
+  publisher = excluded.publisher,
+  license_notes = excluded.license_notes,
+  license_url = excluded.license_url,
+  item_text_stored = false;
+
+insert into public.instruments (id, slug, name, version, publisher, license_notes, license_url, item_text_stored)
+values (
+  '6d2f3a10-0001-4a00-8000-000000000002',
+  $seed$face-q-craniofacial$seed$,
+  $seed$FACE-Q Craniofacial Module$seed$,
+  $seed$2021 (as published; scale list current as of qportfolio.org)$seed$,
+  $seed$Q-Portfolio (McMaster University / Memorial Sloan Kettering Cancer Center); distributed by Mapi Research Trust$seed$,
+  $seed$FACE-Q Craniofacial Module (child and young adult, with parent-report options) is a licensed patient-reported outcome instrument distributed through Q-Portfolio and Mapi Research Trust (ePROVIDE). Use is free of charge for non-commercial academic and clinical use subject to registration and a user agreement; commercial use requires a paid licence. Questionnaire item text is copyrighted and is NOT stored in this repository or shown to patients. Only publicly documented scale names and paraphrased descriptions of what the scales measure are used to build construct maps.$seed$,
+  $seed$https://qportfolio.org/face-q/face-q-craniofacial/$seed$,
+  false
+)
+on conflict (slug) do update set
+  name = excluded.name,
+  version = excluded.version,
+  publisher = excluded.publisher,
+  license_notes = excluded.license_notes,
+  license_url = excluded.license_url,
+  item_text_stored = false;
+
+insert into public.instruments (id, slug, name, version, publisher, license_notes, license_url, item_text_stored)
+values (
+  '6d2f3a10-0001-4a00-8000-000000000003',
+  $seed$face-q-head-neck-cancer$seed$,
+  $seed$FACE-Q Head and Neck Cancer Module$seed$,
+  $seed$2019 (as published; scale list current as of qportfolio.org)$seed$,
+  $seed$Q-Portfolio (McMaster University / Memorial Sloan Kettering Cancer Center); distributed by Mapi Research Trust$seed$,
+  $seed$FACE-Q Head and Neck Cancer Module is a licensed patient-reported outcome instrument distributed through Q-Portfolio and Mapi Research Trust (ePROVIDE). Use is free of charge for non-commercial academic and clinical use subject to registration and a user agreement; commercial use requires a paid licence. Questionnaire item text is copyrighted and is NOT stored in this repository or shown to patients. Only publicly documented scale names and paraphrased descriptions of what the scales measure are used to build construct maps.$seed$,
+  $seed$https://qportfolio.org/face-q/face-q-head-and-neck-cancer/$seed$,
+  false
+)
+on conflict (slug) do update set
+  name = excluded.name,
+  version = excluded.version,
+  publisher = excluded.publisher,
+  license_notes = excluded.license_notes,
+  license_url = excluded.license_url,
+  item_text_stored = false;
+
+insert into public.instruments (id, slug, name, version, publisher, license_notes, license_url, item_text_stored)
+values (
+  '6d2f3a10-0001-4a00-8000-000000000004',
+  $seed$face-q-skin-cancer$seed$,
+  $seed$FACE-Q Skin Cancer Module$seed$,
+  $seed$2018 (as published; scale list current as of qportfolio.org)$seed$,
+  $seed$Q-Portfolio (McMaster University / Memorial Sloan Kettering Cancer Center); distributed by Mapi Research Trust$seed$,
+  $seed$FACE-Q Skin Cancer Module is a licensed patient-reported outcome instrument distributed through Q-Portfolio and Mapi Research Trust (ePROVIDE). Use is free of charge for non-commercial academic and clinical use subject to registration and a user agreement; commercial use requires a paid licence. Questionnaire item text is copyrighted and is NOT stored in this repository or shown to patients. Only publicly documented scale names and paraphrased descriptions of what the scales measure are used to build construct maps.$seed$,
+  $seed$https://qportfolio.org/face-q/face-q-skin-cancer/$seed$,
+  false
+)
+on conflict (slug) do update set
+  name = excluded.name,
+  version = excluded.version,
+  publisher = excluded.publisher,
+  license_notes = excluded.license_notes,
+  license_url = excluded.license_url,
+  item_text_stored = false;
+
+-- diagnosis_catalog
+insert into public.diagnosis_catalog (code, label_en, label_es, module, default_map_slug_adult, default_map_slug_pediatric, focus_constructs)
+values (
+  $seed$rhinoplasty$seed$,
+  $seed$Rhinoplasty$seed$,
+  $seed$Rinoplastia$seed$,
+  $seed$aesthetics$seed$,
+  $seed$face-q-adult$seed$,
+  $seed$face-q-pediatric$seed$,
+  array[$seed$appearance.overall$seed$, $seed$appearance.nose$seed$, $seed$function.breathing$seed$, $seed$psych.self_confidence$seed$, $seed$psych.mood$seed$, $seed$social.comfort$seed$, $seed$social.avoidance$seed$, $seed$distress.preoccupation$seed$, $seed$distress.hiding$seed$, $seed$adverse.swelling_bruising$seed$, $seed$adverse.numbness_sensation$seed$, $seed$adverse.asymmetry$seed$, $seed$adverse.pain_discomfort$seed$, $seed$recovery.daily_activities$seed$, $seed$outcome.result$seed$, $seed$outcome.decision$seed$, $seed$outcome.information$seed$]::text[]
+)
+on conflict (code) do update set
+  label_en = excluded.label_en,
+  label_es = excluded.label_es,
+  module = excluded.module,
+  default_map_slug_adult = excluded.default_map_slug_adult,
+  default_map_slug_pediatric = excluded.default_map_slug_pediatric,
+  focus_constructs = excluded.focus_constructs;
+
+insert into public.diagnosis_catalog (code, label_en, label_es, module, default_map_slug_adult, default_map_slug_pediatric, focus_constructs)
+values (
+  $seed$facelift$seed$,
+  $seed$Facelift (rhytidectomy)$seed$,
+  $seed$Lifting facial (ritidectomía)$seed$,
+  $seed$aesthetics$seed$,
+  $seed$face-q-adult$seed$,
+  $seed$face-q-pediatric$seed$,
+  array[$seed$appearance.overall$seed$, $seed$appearance.chin_jawline$seed$, $seed$appearance.cheeks$seed$, $seed$appearance.skin$seed$, $seed$aging.appraisal$seed$, $seed$psych.self_confidence$seed$, $seed$psych.mood$seed$, $seed$social.comfort$seed$, $seed$distress.preoccupation$seed$, $seed$adverse.swelling_bruising$seed$, $seed$adverse.numbness_sensation$seed$, $seed$adverse.scarring$seed$, $seed$adverse.pain_discomfort$seed$, $seed$recovery.daily_activities$seed$, $seed$outcome.result$seed$, $seed$outcome.decision$seed$, $seed$outcome.information$seed$]::text[]
+)
+on conflict (code) do update set
+  label_en = excluded.label_en,
+  label_es = excluded.label_es,
+  module = excluded.module,
+  default_map_slug_adult = excluded.default_map_slug_adult,
+  default_map_slug_pediatric = excluded.default_map_slug_pediatric,
+  focus_constructs = excluded.focus_constructs;
+
+insert into public.diagnosis_catalog (code, label_en, label_es, module, default_map_slug_adult, default_map_slug_pediatric, focus_constructs)
+values (
+  $seed$injectables$seed$,
+  $seed$Injectables (neuromodulators / fillers)$seed$,
+  $seed$Inyectables (toxina botulínica / rellenos)$seed$,
+  $seed$aesthetics$seed$,
+  $seed$face-q-adult$seed$,
+  $seed$face-q-pediatric$seed$,
+  array[$seed$appearance.overall$seed$, $seed$appearance.lips$seed$, $seed$appearance.cheeks$seed$, $seed$appearance.skin$seed$, $seed$appearance.eyes$seed$, $seed$aging.appraisal$seed$, $seed$psych.self_confidence$seed$, $seed$social.comfort$seed$, $seed$distress.preoccupation$seed$, $seed$adverse.swelling_bruising$seed$, $seed$adverse.asymmetry$seed$, $seed$adverse.pain_discomfort$seed$, $seed$outcome.result$seed$, $seed$outcome.information$seed$]::text[]
+)
+on conflict (code) do update set
+  label_en = excluded.label_en,
+  label_es = excluded.label_es,
+  module = excluded.module,
+  default_map_slug_adult = excluded.default_map_slug_adult,
+  default_map_slug_pediatric = excluded.default_map_slug_pediatric,
+  focus_constructs = excluded.focus_constructs;
+
+insert into public.diagnosis_catalog (code, label_en, label_es, module, default_map_slug_adult, default_map_slug_pediatric, focus_constructs)
+values (
+  $seed$blepharoplasty$seed$,
+  $seed$Eyelid surgery (blepharoplasty)$seed$,
+  $seed$Cirugía de párpados (blefaroplastia)$seed$,
+  $seed$aesthetics$seed$,
+  $seed$face-q-adult$seed$,
+  $seed$face-q-pediatric$seed$,
+  array[$seed$appearance.overall$seed$, $seed$appearance.eyes$seed$, $seed$aging.appraisal$seed$, $seed$psych.self_confidence$seed$, $seed$psych.mood$seed$, $seed$social.comfort$seed$, $seed$distress.preoccupation$seed$, $seed$adverse.swelling_bruising$seed$, $seed$adverse.numbness_sensation$seed$, $seed$adverse.asymmetry$seed$, $seed$adverse.scarring$seed$, $seed$adverse.pain_discomfort$seed$, $seed$recovery.daily_activities$seed$, $seed$outcome.result$seed$, $seed$outcome.decision$seed$, $seed$outcome.information$seed$]::text[]
+)
+on conflict (code) do update set
+  label_en = excluded.label_en,
+  label_es = excluded.label_es,
+  module = excluded.module,
+  default_map_slug_adult = excluded.default_map_slug_adult,
+  default_map_slug_pediatric = excluded.default_map_slug_pediatric,
+  focus_constructs = excluded.focus_constructs;
+
+insert into public.diagnosis_catalog (code, label_en, label_es, module, default_map_slug_adult, default_map_slug_pediatric, focus_constructs)
+values (
+  $seed$skin-resurfacing$seed$,
+  $seed$Skin resurfacing (laser / peel)$seed$,
+  $seed$Rejuvenecimiento cutáneo (láser / peeling)$seed$,
+  $seed$aesthetics$seed$,
+  $seed$face-q-adult$seed$,
+  $seed$face-q-pediatric$seed$,
+  array[$seed$appearance.overall$seed$, $seed$appearance.skin$seed$, $seed$aging.appraisal$seed$, $seed$psych.self_confidence$seed$, $seed$social.comfort$seed$, $seed$distress.preoccupation$seed$, $seed$distress.hiding$seed$, $seed$adverse.swelling_bruising$seed$, $seed$adverse.pain_discomfort$seed$, $seed$recovery.daily_activities$seed$, $seed$outcome.result$seed$, $seed$outcome.information$seed$]::text[]
+)
+on conflict (code) do update set
+  label_en = excluded.label_en,
+  label_es = excluded.label_es,
+  module = excluded.module,
+  default_map_slug_adult = excluded.default_map_slug_adult,
+  default_map_slug_pediatric = excluded.default_map_slug_pediatric,
+  focus_constructs = excluded.focus_constructs;
+
+insert into public.diagnosis_catalog (code, label_en, label_es, module, default_map_slug_adult, default_map_slug_pediatric, focus_constructs)
+values (
+  $seed$cleft-lip-palate$seed$,
+  $seed$Cleft lip and/or palate$seed$,
+  $seed$Labio y/o paladar hendido (fisura labiopalatina)$seed$,
+  $seed$craniofacial$seed$,
+  $seed$face-q-adult$seed$,
+  $seed$face-q-pediatric$seed$,
+  array[$seed$appearance.overall$seed$, $seed$appearance.lips$seed$, $seed$appearance.nose$seed$, $seed$appearance.smile_teeth$seed$, $seed$adverse.scarring$seed$, $seed$function.speaking$seed$, $seed$function.eating_drinking$seed$, $seed$function.breathing$seed$, $seed$psych.self_confidence$seed$, $seed$psych.mood$seed$, $seed$social.comfort$seed$, $seed$social.school$seed$, $seed$social.teasing_comments$seed$, $seed$distress.preoccupation$seed$, $seed$adverse.pain_discomfort$seed$, $seed$outcome.result$seed$, $seed$outcome.information$seed$]::text[]
+)
+on conflict (code) do update set
+  label_en = excluded.label_en,
+  label_es = excluded.label_es,
+  module = excluded.module,
+  default_map_slug_adult = excluded.default_map_slug_adult,
+  default_map_slug_pediatric = excluded.default_map_slug_pediatric,
+  focus_constructs = excluded.focus_constructs;
+
+insert into public.diagnosis_catalog (code, label_en, label_es, module, default_map_slug_adult, default_map_slug_pediatric, focus_constructs)
+values (
+  $seed$craniosynostosis$seed$,
+  $seed$Craniosynostosis$seed$,
+  $seed$Craneosinostosis$seed$,
+  $seed$craniofacial$seed$,
+  $seed$face-q-adult$seed$,
+  $seed$face-q-pediatric$seed$,
+  array[$seed$appearance.overall$seed$, $seed$appearance.eyes$seed$, $seed$psych.self_confidence$seed$, $seed$psych.mood$seed$, $seed$social.comfort$seed$, $seed$social.school$seed$, $seed$social.teasing_comments$seed$, $seed$distress.preoccupation$seed$, $seed$distress.hiding$seed$, $seed$adverse.scarring$seed$, $seed$adverse.pain_discomfort$seed$, $seed$adverse.swelling_bruising$seed$, $seed$recovery.daily_activities$seed$, $seed$outcome.result$seed$, $seed$outcome.information$seed$]::text[]
+)
+on conflict (code) do update set
+  label_en = excluded.label_en,
+  label_es = excluded.label_es,
+  module = excluded.module,
+  default_map_slug_adult = excluded.default_map_slug_adult,
+  default_map_slug_pediatric = excluded.default_map_slug_pediatric,
+  focus_constructs = excluded.focus_constructs;
+
+insert into public.diagnosis_catalog (code, label_en, label_es, module, default_map_slug_adult, default_map_slug_pediatric, focus_constructs)
+values (
+  $seed$microtia$seed$,
+  $seed$Microtia / ear reconstruction$seed$,
+  $seed$Microtia / reconstrucción de oreja$seed$,
+  $seed$craniofacial$seed$,
+  $seed$face-q-adult$seed$,
+  $seed$face-q-pediatric$seed$,
+  array[$seed$appearance.overall$seed$, $seed$appearance.ears$seed$, $seed$psych.self_confidence$seed$, $seed$psych.mood$seed$, $seed$social.comfort$seed$, $seed$social.school$seed$, $seed$social.teasing_comments$seed$, $seed$distress.preoccupation$seed$, $seed$distress.hiding$seed$, $seed$adverse.scarring$seed$, $seed$adverse.pain_discomfort$seed$, $seed$adverse.asymmetry$seed$, $seed$recovery.daily_activities$seed$, $seed$outcome.result$seed$, $seed$outcome.decision$seed$, $seed$outcome.information$seed$]::text[]
+)
+on conflict (code) do update set
+  label_en = excluded.label_en,
+  label_es = excluded.label_es,
+  module = excluded.module,
+  default_map_slug_adult = excluded.default_map_slug_adult,
+  default_map_slug_pediatric = excluded.default_map_slug_pediatric,
+  focus_constructs = excluded.focus_constructs;
+
+insert into public.diagnosis_catalog (code, label_en, label_es, module, default_map_slug_adult, default_map_slug_pediatric, focus_constructs)
+values (
+  $seed$otoplasty$seed$,
+  $seed$Prominent ears (otoplasty)$seed$,
+  $seed$Orejas prominentes (otoplastia)$seed$,
+  $seed$craniofacial$seed$,
+  $seed$face-q-adult$seed$,
+  $seed$face-q-pediatric$seed$,
+  array[$seed$appearance.overall$seed$, $seed$appearance.ears$seed$, $seed$psych.self_confidence$seed$, $seed$social.comfort$seed$, $seed$social.school$seed$, $seed$social.teasing_comments$seed$, $seed$distress.hiding$seed$, $seed$adverse.pain_discomfort$seed$, $seed$adverse.asymmetry$seed$, $seed$adverse.scarring$seed$, $seed$outcome.result$seed$, $seed$outcome.decision$seed$]::text[]
+)
+on conflict (code) do update set
+  label_en = excluded.label_en,
+  label_es = excluded.label_es,
+  module = excluded.module,
+  default_map_slug_adult = excluded.default_map_slug_adult,
+  default_map_slug_pediatric = excluded.default_map_slug_pediatric,
+  focus_constructs = excluded.focus_constructs;
+
+insert into public.diagnosis_catalog (code, label_en, label_es, module, default_map_slug_adult, default_map_slug_pediatric, focus_constructs)
+values (
+  $seed$hemifacial-microsomia$seed$,
+  $seed$Hemifacial microsomia$seed$,
+  $seed$Microsomía hemifacial$seed$,
+  $seed$craniofacial$seed$,
+  $seed$face-q-adult$seed$,
+  $seed$face-q-pediatric$seed$,
+  array[$seed$appearance.overall$seed$, $seed$appearance.ears$seed$, $seed$appearance.cheeks$seed$, $seed$appearance.chin_jawline$seed$, $seed$adverse.asymmetry$seed$, $seed$function.eating_drinking$seed$, $seed$function.facial_expression$seed$, $seed$function.speaking$seed$, $seed$psych.self_confidence$seed$, $seed$psych.mood$seed$, $seed$social.comfort$seed$, $seed$social.school$seed$, $seed$social.teasing_comments$seed$, $seed$distress.preoccupation$seed$, $seed$outcome.result$seed$, $seed$outcome.information$seed$]::text[]
+)
+on conflict (code) do update set
+  label_en = excluded.label_en,
+  label_es = excluded.label_es,
+  module = excluded.module,
+  default_map_slug_adult = excluded.default_map_slug_adult,
+  default_map_slug_pediatric = excluded.default_map_slug_pediatric,
+  focus_constructs = excluded.focus_constructs;
+
+insert into public.diagnosis_catalog (code, label_en, label_es, module, default_map_slug_adult, default_map_slug_pediatric, focus_constructs)
+values (
+  $seed$facial-palsy$seed$,
+  $seed$Facial palsy$seed$,
+  $seed$Parálisis facial$seed$,
+  $seed$craniofacial$seed$,
+  $seed$face-q-adult$seed$,
+  $seed$face-q-pediatric$seed$,
+  array[$seed$appearance.overall$seed$, $seed$appearance.smile_teeth$seed$, $seed$function.facial_expression$seed$, $seed$function.eating_drinking$seed$, $seed$function.speaking$seed$, $seed$adverse.asymmetry$seed$, $seed$psych.self_confidence$seed$, $seed$psych.mood$seed$, $seed$social.comfort$seed$, $seed$social.avoidance$seed$, $seed$social.teasing_comments$seed$, $seed$distress.preoccupation$seed$, $seed$distress.hiding$seed$, $seed$outcome.result$seed$]::text[]
+)
+on conflict (code) do update set
+  label_en = excluded.label_en,
+  label_es = excluded.label_es,
+  module = excluded.module,
+  default_map_slug_adult = excluded.default_map_slug_adult,
+  default_map_slug_pediatric = excluded.default_map_slug_pediatric,
+  focus_constructs = excluded.focus_constructs;
+
+insert into public.diagnosis_catalog (code, label_en, label_es, module, default_map_slug_adult, default_map_slug_pediatric, focus_constructs)
+values (
+  $seed$facial-trauma$seed$,
+  $seed$Facial trauma / reconstruction$seed$,
+  $seed$Traumatismo facial / reconstrucción$seed$,
+  $seed$craniofacial$seed$,
+  $seed$face-q-adult$seed$,
+  $seed$face-q-pediatric$seed$,
+  array[$seed$appearance.overall$seed$, $seed$adverse.scarring$seed$, $seed$adverse.asymmetry$seed$, $seed$adverse.numbness_sensation$seed$, $seed$adverse.pain_discomfort$seed$, $seed$function.eating_drinking$seed$, $seed$function.facial_expression$seed$, $seed$function.breathing$seed$, $seed$psych.mood$seed$, $seed$social.comfort$seed$, $seed$distress.preoccupation$seed$, $seed$recovery.daily_activities$seed$, $seed$outcome.result$seed$, $seed$outcome.information$seed$]::text[]
+)
+on conflict (code) do update set
+  label_en = excluded.label_en,
+  label_es = excluded.label_es,
+  module = excluded.module,
+  default_map_slug_adult = excluded.default_map_slug_adult,
+  default_map_slug_pediatric = excluded.default_map_slug_pediatric,
+  focus_constructs = excluded.focus_constructs;
+
+insert into public.diagnosis_catalog (code, label_en, label_es, module, default_map_slug_adult, default_map_slug_pediatric, focus_constructs)
+values (
+  $seed$hn-cancer$seed$,
+  $seed$Head and neck cancer$seed$,
+  $seed$Cáncer de cabeza y cuello$seed$,
+  $seed$head-neck-cancer$seed$,
+  $seed$face-q-adult$seed$,
+  $seed$face-q-pediatric$seed$,
+  array[$seed$appearance.overall$seed$, $seed$appearance.smile_teeth$seed$, $seed$function.eating_drinking$seed$, $seed$function.speaking$seed$, $seed$function.swallowing_oral$seed$, $seed$function.facial_expression$seed$, $seed$adverse.scarring$seed$, $seed$adverse.pain_discomfort$seed$, $seed$adverse.numbness_sensation$seed$, $seed$psych.self_confidence$seed$, $seed$psych.mood$seed$, $seed$social.comfort$seed$, $seed$social.avoidance$seed$, $seed$distress.preoccupation$seed$, $seed$distress.cancer_worry$seed$, $seed$recovery.daily_activities$seed$, $seed$outcome.result$seed$, $seed$outcome.information$seed$]::text[]
+)
+on conflict (code) do update set
+  label_en = excluded.label_en,
+  label_es = excluded.label_es,
+  module = excluded.module,
+  default_map_slug_adult = excluded.default_map_slug_adult,
+  default_map_slug_pediatric = excluded.default_map_slug_pediatric,
+  focus_constructs = excluded.focus_constructs;
+
+insert into public.diagnosis_catalog (code, label_en, label_es, module, default_map_slug_adult, default_map_slug_pediatric, focus_constructs)
+values (
+  $seed$oral-cancer$seed$,
+  $seed$Oral cavity cancer$seed$,
+  $seed$Cáncer de cavidad oral$seed$,
+  $seed$head-neck-cancer$seed$,
+  $seed$face-q-adult$seed$,
+  $seed$face-q-pediatric$seed$,
+  array[$seed$appearance.overall$seed$, $seed$appearance.smile_teeth$seed$, $seed$function.eating_drinking$seed$, $seed$function.speaking$seed$, $seed$function.swallowing_oral$seed$, $seed$adverse.pain_discomfort$seed$, $seed$adverse.scarring$seed$, $seed$psych.mood$seed$, $seed$social.comfort$seed$, $seed$social.avoidance$seed$, $seed$distress.cancer_worry$seed$, $seed$recovery.daily_activities$seed$, $seed$outcome.result$seed$, $seed$outcome.information$seed$]::text[]
+)
+on conflict (code) do update set
+  label_en = excluded.label_en,
+  label_es = excluded.label_es,
+  module = excluded.module,
+  default_map_slug_adult = excluded.default_map_slug_adult,
+  default_map_slug_pediatric = excluded.default_map_slug_pediatric,
+  focus_constructs = excluded.focus_constructs;
+
+insert into public.diagnosis_catalog (code, label_en, label_es, module, default_map_slug_adult, default_map_slug_pediatric, focus_constructs)
+values (
+  $seed$skin-cancer-face$seed$,
+  $seed$Facial skin cancer$seed$,
+  $seed$Cáncer de piel facial$seed$,
+  $seed$skin-cancer$seed$,
+  $seed$face-q-adult$seed$,
+  $seed$face-q-pediatric$seed$,
+  array[$seed$appearance.overall$seed$, $seed$appearance.skin$seed$, $seed$adverse.scarring$seed$, $seed$adverse.asymmetry$seed$, $seed$adverse.numbness_sensation$seed$, $seed$adverse.pain_discomfort$seed$, $seed$psych.self_confidence$seed$, $seed$psych.mood$seed$, $seed$social.comfort$seed$, $seed$distress.preoccupation$seed$, $seed$distress.hiding$seed$, $seed$distress.cancer_worry$seed$, $seed$recovery.daily_activities$seed$, $seed$outcome.result$seed$, $seed$outcome.information$seed$]::text[]
+)
+on conflict (code) do update set
+  label_en = excluded.label_en,
+  label_es = excluded.label_es,
+  module = excluded.module,
+  default_map_slug_adult = excluded.default_map_slug_adult,
+  default_map_slug_pediatric = excluded.default_map_slug_pediatric,
+  focus_constructs = excluded.focus_constructs;
+
+insert into public.diagnosis_catalog (code, label_en, label_es, module, default_map_slug_adult, default_map_slug_pediatric, focus_constructs)
+values (
+  $seed$mohs-reconstruction$seed$,
+  $seed$Reconstruction after Mohs surgery$seed$,
+  $seed$Reconstrucción tras cirugía de Mohs$seed$,
+  $seed$skin-cancer$seed$,
+  $seed$face-q-adult$seed$,
+  $seed$face-q-pediatric$seed$,
+  array[$seed$appearance.overall$seed$, $seed$appearance.nose$seed$, $seed$appearance.eyes$seed$, $seed$appearance.lips$seed$, $seed$adverse.scarring$seed$, $seed$adverse.asymmetry$seed$, $seed$adverse.numbness_sensation$seed$, $seed$adverse.swelling_bruising$seed$, $seed$adverse.pain_discomfort$seed$, $seed$function.facial_expression$seed$, $seed$psych.mood$seed$, $seed$social.comfort$seed$, $seed$distress.cancer_worry$seed$, $seed$recovery.daily_activities$seed$, $seed$outcome.result$seed$, $seed$outcome.information$seed$]::text[]
+)
+on conflict (code) do update set
+  label_en = excluded.label_en,
+  label_es = excluded.label_es,
+  module = excluded.module,
+  default_map_slug_adult = excluded.default_map_slug_adult,
+  default_map_slug_pediatric = excluded.default_map_slug_pediatric,
+  focus_constructs = excluded.focus_constructs;
+
+insert into public.diagnosis_catalog (code, label_en, label_es, module, default_map_slug_adult, default_map_slug_pediatric, focus_constructs)
+values (
+  $seed$other$seed$,
+  $seed$Other (see free text)$seed$,
+  $seed$Otro (ver texto libre)$seed$,
+  $seed$aesthetics$seed$,
+  $seed$face-q-adult$seed$,
+  $seed$face-q-pediatric$seed$,
+  array[$seed$appearance.overall$seed$, $seed$psych.self_confidence$seed$, $seed$psych.mood$seed$, $seed$social.comfort$seed$, $seed$social.avoidance$seed$, $seed$distress.preoccupation$seed$, $seed$distress.hiding$seed$, $seed$adverse.pain_discomfort$seed$, $seed$adverse.scarring$seed$, $seed$function.facial_expression$seed$, $seed$outcome.result$seed$, $seed$outcome.information$seed$]::text[]
+)
+on conflict (code) do update set
+  label_en = excluded.label_en,
+  label_es = excluded.label_es,
+  module = excluded.module,
+  default_map_slug_adult = excluded.default_map_slug_adult,
+  default_map_slug_pediatric = excluded.default_map_slug_pediatric,
+  focus_constructs = excluded.focus_constructs;
+
+-- construct_maps (status approved; approved_by null = seeded, not clinician-approved)
+insert into public.construct_maps (id, slug, version, population, source_instrument_ids, map, status, approved_by, approved_at)
+values (
+  '7a1c5e20-0002-4a00-8000-000000000001',
+  $seed$face-q-adult$seed$,
+  1,
+  $seed$adult$seed$,
+  array['6d2f3a10-0001-4a00-8000-000000000001', '6d2f3a10-0001-4a00-8000-000000000002', '6d2f3a10-0001-4a00-8000-000000000003', '6d2f3a10-0001-4a00-8000-000000000004']::uuid[],
+  $seed${
+  "slug": "face-q-adult",
+  "version": 1,
+  "population": "adult",
+  "language": "en",
+  "notes": "Built from publicly documented FACE-Q scale names and what those scales measure. Descriptions are paraphrased constructs; no questionnaire item text is included. For satisfaction-type constructs, 'severity' expresses the degree of dissatisfaction or concern. Constructs with 'applicable_timepoints' are only active at those timepoints (extension to SPEC §6, see seed/README.md).",
+  "domains": [
+    {
+      "id": "appearance",
+      "label": "Satisfaction with facial appearance",
+      "weight": 1.0,
+      "constructs": [
+        {
+          "id": "appearance.overall",
+          "label": "Overall satisfaction with how the face looks",
+          "description": "How the person feels about their facial appearance as a whole: in the mirror, in photos and video, first thing in the morning, and whether it fits how they feel inside.",
+          "severity_signals": {
+            "none": "content or positive about their face as a whole",
+            "mild": "occasional dissatisfaction or a single feature they would tweak; no avoidance",
+            "moderate": "regular dissatisfaction; some avoidance of mirrors, photos or video calls",
+            "severe": "persistent distress about their face; avoidance or checking that shapes daily life"
+          },
+          "drill_down": [
+            "Which features bother them most",
+            "Situations where it feels worse (photos, video calls, bright light, mornings)",
+            "How long they have felt this way and whether it is changing",
+            "What they hope will be different"
+          ],
+          "age_variants": {
+            "pediatric": {
+              "description": "How the child feels about their face at school, with friends, and in photos.",
+              "drill_down": [
+                "Teasing or comments from others",
+                "Whether they avoid activities or photos"
+              ]
+            }
+          },
+          "priority": "core",
+          "source_refs": [
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Satisfaction with Facial Appearance Overall"
+            },
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Appearance: Face"
+            },
+            {
+              "instrument": "face-q-skin-cancer",
+              "scale": "Satisfaction with Facial Appearance"
+            }
+          ]
+        },
+        {
+          "id": "appearance.nose",
+          "label": "Satisfaction with the nose",
+          "description": "How the person feels about the size, shape, profile, tip and nostrils of their nose, from the front and from the side, and whether it looks in proportion with the rest of the face.",
+          "severity_signals": {
+            "none": "happy with or neutral about their nose",
+            "mild": "minor niggles about one aspect (bump, tip, width)",
+            "moderate": "clearly bothered; notices it in most photos or from certain angles",
+            "severe": "nose is a constant preoccupation; drives avoidance of photos or profile views"
+          },
+          "drill_down": [
+            "Which aspect: bridge, tip, width, nostrils, profile",
+            "Angles or lighting where it bothers them most",
+            "Whether breathing is also a concern",
+            "How long it has bothered them"
+          ],
+          "priority": "standard",
+          "source_refs": [
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Satisfaction with Nose"
+            },
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Satisfaction with Nostrils"
+            },
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Appearance: Nose"
+            }
+          ]
+        },
+        {
+          "id": "appearance.eyes",
+          "label": "Satisfaction with the eyes and under-eye area",
+          "description": "How the person feels about the look of their eyes: eyelids, symmetry, how awake or rested they look, and the under-eye area (bags, hollows, dark circles).",
+          "severity_signals": {
+            "none": "content with how their eyes look",
+            "mild": "occasionally notices tiredness or puffiness",
+            "moderate": "regularly feels the eyes look tired, uneven or older than they feel",
+            "severe": "eyes are a persistent source of distress; uses concealment or avoids close-up views"
+          },
+          "drill_down": [
+            "Upper lids, lower lids or under-eye area",
+            "Whether people comment that they look tired",
+            "Vision or eye comfort concerns",
+            "Time of day or situations where it is worse"
+          ],
+          "priority": "standard",
+          "source_refs": [
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Satisfaction with Eyes"
+            },
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Satisfaction with Under Eye Area"
+            },
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Appearance: Eyes"
+            }
+          ]
+        },
+        {
+          "id": "appearance.lips",
+          "label": "Satisfaction with the lips",
+          "description": "How the person feels about the shape, fullness, symmetry and definition of their lips and the lines around the mouth.",
+          "severity_signals": {
+            "none": "content with their lips",
+            "mild": "minor wish for a change in fullness or symmetry",
+            "moderate": "regularly bothered by lip shape, thinness or lines around the mouth",
+            "severe": "lips are a constant preoccupation; conceals or avoids smiling in photos"
+          },
+          "drill_down": [
+            "Fullness, shape, symmetry or lines around the mouth",
+            "Whether smiling or speaking makes it more noticeable",
+            "Previous treatments and how they felt about them"
+          ],
+          "priority": "standard",
+          "source_refs": [
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Satisfaction with Lips"
+            },
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Satisfaction with Lip Lines"
+            },
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Appearance: Lips"
+            }
+          ]
+        },
+        {
+          "id": "appearance.cheeks",
+          "label": "Satisfaction with the cheeks and mid-face",
+          "description": "How the person feels about the fullness, contour and symmetry of their cheeks and the area between the eyes and the mouth.",
+          "severity_signals": {
+            "none": "content with their cheeks",
+            "mild": "occasionally notices flatness, fullness or unevenness",
+            "moderate": "regularly bothered by cheek volume, sagging or asymmetry",
+            "severe": "cheek appearance dominates how they see their face; avoids certain angles"
+          },
+          "drill_down": [
+            "Volume loss, heaviness or asymmetry",
+            "Whether it is worse on one side",
+            "How it changed over time"
+          ],
+          "priority": "standard",
+          "source_refs": [
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Satisfaction with Cheeks"
+            },
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Appearance: Cheeks"
+            }
+          ]
+        },
+        {
+          "id": "appearance.chin_jawline",
+          "label": "Satisfaction with the chin, jawline and neck",
+          "description": "How the person feels about the definition of their jawline, the size and projection of their chin, and looseness or fullness under the chin and in the neck.",
+          "severity_signals": {
+            "none": "content with the lower face and neck",
+            "mild": "occasional wish for a sharper jawline or a different chin",
+            "moderate": "regularly bothered by jowls, chin shape or neck laxity; adjusts posture or clothing",
+            "severe": "lower face and neck are a persistent distress; avoids side views or photos"
+          },
+          "drill_down": [
+            "Jawline definition, chin size or neck laxity",
+            "Whether it is more noticeable from the side or in photos",
+            "How it affects clothing choices or posture"
+          ],
+          "priority": "standard",
+          "source_refs": [
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Satisfaction with Chin"
+            },
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Satisfaction with Lower Face and Jawline"
+            },
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Satisfaction with Neck"
+            },
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Appearance: Chin"
+            },
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Appearance: Jaw"
+            }
+          ]
+        },
+        {
+          "id": "appearance.skin",
+          "label": "Satisfaction with facial skin",
+          "description": "How the person feels about the texture, tone, evenness, pores, lines and overall quality of the skin on their face.",
+          "severity_signals": {
+            "none": "content with their skin",
+            "mild": "occasional bother about texture, tone or lines",
+            "moderate": "regularly bothered by skin quality; relies on makeup or filters",
+            "severe": "skin appearance causes persistent distress; avoids being seen without concealment"
+          },
+          "drill_down": [
+            "Texture, tone, pigmentation, pores or lines",
+            "Sun-related or treatment-related changes",
+            "How much effort goes into concealing it"
+          ],
+          "priority": "standard",
+          "source_refs": [
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Satisfaction with Facial Skin"
+            },
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Appearance: Skin"
+            }
+          ]
+        },
+        {
+          "id": "appearance.smile_teeth",
+          "label": "Satisfaction with the smile and teeth",
+          "description": "How the person feels about their smile: how it looks, how natural and symmetric it is, and how their teeth and mouth look when they smile.",
+          "severity_signals": {
+            "none": "comfortable smiling openly",
+            "mild": "occasionally self-conscious about their smile",
+            "moderate": "regularly holds back or covers their smile",
+            "severe": "avoids smiling or laughing in front of others"
+          },
+          "drill_down": [
+            "Symmetry, teeth, gums or lip movement",
+            "Whether they cover their mouth when laughing",
+            "Situations where it matters most (photos, meeting people)"
+          ],
+          "priority": "optional",
+          "source_refs": [
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Appearance: Smile"
+            },
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Appearance: Teeth"
+            },
+            {
+              "instrument": "face-q-head-neck-cancer",
+              "scale": "Smiling"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "psychological",
+      "label": "Psychological function",
+      "weight": 1.0,
+      "constructs": [
+        {
+          "id": "psych.self_confidence",
+          "label": "Self-confidence and feeling at ease with oneself",
+          "description": "How confident, attractive and at ease the person feels in themselves day to day, and how much their facial appearance or condition supports or undermines that.",
+          "severity_signals": {
+            "none": "feels confident and comfortable in themselves",
+            "mild": "confidence dips occasionally, tied to specific situations",
+            "moderate": "confidence is regularly undermined by how they feel about their face",
+            "severe": "pervasive low confidence; feels unattractive or diminished most of the time"
+          },
+          "drill_down": [
+            "Situations where confidence drops most",
+            "Whether this has changed over the past months",
+            "What helps them feel more confident",
+            "Whether it affects work or study"
+          ],
+          "age_variants": {
+            "pediatric": {
+              "description": "How sure of themselves the child feels around other children and adults, and whether their face makes them feel different.",
+              "drill_down": [
+                "Whether they feel 'like the other kids'",
+                "Activities they enjoy where they feel good about themselves"
+              ]
+            }
+          },
+          "priority": "core",
+          "source_refs": [
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Psychological Function"
+            },
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Psychological Function"
+            },
+            {
+              "instrument": "face-q-head-neck-cancer",
+              "scale": "Psychological Function"
+            }
+          ]
+        },
+        {
+          "id": "psych.self_acceptance",
+          "label": "Acceptance of one's appearance",
+          "description": "Whether the person accepts and feels comfortable with how they look, or feels a persistent gap between how they look and how they want to look.",
+          "severity_signals": {
+            "none": "accepts their appearance, including imperfections",
+            "mild": "mostly accepting with occasional wishes for change",
+            "moderate": "regularly struggles to accept how they look",
+            "severe": "cannot accept their appearance; strong sense of being defined by it"
+          },
+          "drill_down": [
+            "Whether acceptance varies by day or situation",
+            "What would need to change for them to feel at peace",
+            "Whether others' reassurance helps"
+          ],
+          "priority": "standard",
+          "source_refs": [
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Psychological Function"
+            },
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Psychological Function"
+            }
+          ]
+        },
+        {
+          "id": "psych.mood",
+          "label": "Mood and emotional wellbeing linked to appearance",
+          "description": "Feeling low, frustrated, anxious or upset because of facial appearance, the condition, or its treatment; how much of the person's emotional life this takes up.",
+          "severity_signals": {
+            "none": "mood is not affected by their face or condition",
+            "mild": "occasional bad days linked to their appearance",
+            "moderate": "regular low mood or worry tied to appearance; recovers with distraction",
+            "severe": "persistent low mood or anxiety about appearance affecting sleep, energy or motivation"
+          },
+          "drill_down": [
+            "How often it affects mood in a typical week",
+            "Whether sleep, appetite or energy are affected",
+            "Whether they have talked to anyone about it",
+            "Whether treatment has changed this"
+          ],
+          "age_variants": {
+            "pediatric": {
+              "description": "Whether the child seems sad, worried or angry about their face, and how the guardian sees this affecting them at home.",
+              "drill_down": [
+                "Signs the guardian notices (withdrawal, tears, anger)",
+                "Whether it is worse around school events or photos"
+              ]
+            }
+          },
+          "priority": "core",
+          "source_refs": [
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Psychological Function"
+            },
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Appearance-related Psychosocial Distress"
+            },
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Psychological Function"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "social",
+      "label": "Social function",
+      "weight": 1.0,
+      "constructs": [
+        {
+          "id": "social.comfort",
+          "label": "Comfort in social situations",
+          "description": "How at ease the person feels meeting people, being in groups, being looked at or photographed, and taking part in social life.",
+          "severity_signals": {
+            "none": "comfortable socially; face does not come into it",
+            "mild": "slightly self-aware in some settings (new people, cameras)",
+            "moderate": "regularly uncomfortable; prefers familiar company or low-visibility settings",
+            "severe": "social situations feel threatening; strong urge to hide or leave"
+          },
+          "drill_down": [
+            "Which settings are hardest (work, family, strangers, cameras)",
+            "Whether this is new or long-standing",
+            "What they do to cope in those moments"
+          ],
+          "age_variants": {
+            "pediatric": {
+              "description": "How comfortable the child is with friends, in play and at parties or group activities.",
+              "drill_down": [
+                "Whether they join in or hang back",
+                "Whether they have close friends they feel relaxed with"
+              ]
+            }
+          },
+          "priority": "core",
+          "source_refs": [
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Social Function"
+            },
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Social Function"
+            },
+            {
+              "instrument": "face-q-head-neck-cancer",
+              "scale": "Social Function"
+            }
+          ]
+        },
+        {
+          "id": "social.avoidance",
+          "label": "Avoidance of social or public situations",
+          "description": "Whether the person turns down invitations, avoids going out, avoids photos or video, or withdraws from activities because of how their face looks or works.",
+          "severity_signals": {
+            "none": "no avoidance",
+            "mild": "occasionally opts out of photos or events",
+            "moderate": "regularly avoids some activities or people because of their face",
+            "severe": "withdrawn from most social life; isolation because of appearance"
+          },
+          "drill_down": [
+            "Specific activities or events they have skipped",
+            "How often in the last month",
+            "Whether it affects work, study or family life",
+            "Whether treatment has changed this"
+          ],
+          "priority": "core",
+          "source_refs": [
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Social Function"
+            },
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Social Function"
+            }
+          ]
+        },
+        {
+          "id": "social.teasing_comments",
+          "label": "Comments, stares and teasing from others",
+          "description": "Whether the person experiences stares, questions, unwanted comments, teasing or exclusion because of their facial appearance, and how they respond.",
+          "severity_signals": {
+            "none": "no comments or stares that bother them",
+            "mild": "occasional questions or looks that they brush off",
+            "moderate": "regular comments or stares that upset them or that they plan around",
+            "severe": "frequent teasing, bullying or exclusion; significant hurt or fear"
+          },
+          "drill_down": [
+            "Who it comes from (strangers, colleagues, family, online)",
+            "How they respond in the moment",
+            "Whether it has changed over time"
+          ],
+          "age_variants": {
+            "pediatric": {
+              "description": "Whether the child is teased, stared at, asked questions or left out at school or in play because of their face.",
+              "drill_down": [
+                "Whether teachers or the school know",
+                "Whether the child tells the guardian when it happens",
+                "Whether they have a comeback or plan"
+              ]
+            }
+          },
+          "priority": "standard",
+          "source_refs": [
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Social Function"
+            },
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Appearance Distress"
+            }
+          ]
+        },
+        {
+          "id": "social.relationships",
+          "label": "Close relationships and intimacy",
+          "description": "How facial appearance or condition affects closeness with a partner, family or close friends, including dating and physical affection.",
+          "severity_signals": {
+            "none": "relationships unaffected",
+            "mild": "occasional self-consciousness with close others",
+            "moderate": "holds back from closeness or dating because of their face",
+            "severe": "relationships strained or avoided; feels unlovable because of appearance"
+          },
+          "drill_down": [
+            "Whether a partner or family have noticed a change",
+            "Whether they avoid dating or affection",
+            "What support they have"
+          ],
+          "priority": "optional",
+          "source_refs": [
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Social Function"
+            },
+            {
+              "instrument": "face-q-head-neck-cancer",
+              "scale": "Social Function"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "distress",
+      "label": "Appearance-related distress",
+      "weight": 1.0,
+      "constructs": [
+        {
+          "id": "distress.preoccupation",
+          "label": "Preoccupation with appearance",
+          "description": "How much mental space facial appearance takes: thinking about it, checking it, comparing to others, and feeling unable to stop.",
+          "severity_signals": {
+            "none": "rarely thinks about it",
+            "mild": "thinks about it now and then; can set it aside",
+            "moderate": "thinks about it most days; some checking or comparing",
+            "severe": "intrusive, hard-to-control preoccupation; frequent checking or reassurance seeking"
+          },
+          "drill_down": [
+            "How much of the day it occupies",
+            "Checking, comparing or reassurance-seeking behaviours",
+            "When it started or intensified",
+            "Whether it affects concentration or sleep"
+          ],
+          "age_variants": {
+            "pediatric": {
+              "description": "How often the child talks about, checks or worries about their face, as seen by the child or the guardian.",
+              "drill_down": [
+                "Whether they ask 'why do I look different'",
+                "Mirror or photo checking"
+              ]
+            }
+          },
+          "priority": "core",
+          "source_refs": [
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Appearance-related Psychosocial Distress"
+            },
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Appearance Distress"
+            },
+            {
+              "instrument": "face-q-head-neck-cancer",
+              "scale": "Appearance Distress"
+            },
+            {
+              "instrument": "face-q-skin-cancer",
+              "scale": "Appearance-related Psychosocial Distress"
+            }
+          ]
+        },
+        {
+          "id": "distress.hiding",
+          "label": "Hiding or camouflaging the face",
+          "description": "Effort spent concealing the face or a feature: makeup, hair, glasses, hats, masks, angles in photos, filters, or avoiding being seen in certain light.",
+          "severity_signals": {
+            "none": "no concealment beyond ordinary grooming",
+            "mild": "some concealment for special occasions or photos",
+            "moderate": "daily concealment; uncomfortable being seen without it",
+            "severe": "cannot leave the house or be seen without concealment; strong distress if exposed"
+          },
+          "drill_down": [
+            "What they use to conceal and how long it takes",
+            "Whether anyone has seen them without it",
+            "How they would feel if they could not conceal"
+          ],
+          "priority": "core",
+          "source_refs": [
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Appearance-related Psychosocial Distress"
+            },
+            {
+              "instrument": "face-q-skin-cancer",
+              "scale": "Appearance-related Psychosocial Distress"
+            }
+          ]
+        },
+        {
+          "id": "distress.cancer_worry",
+          "label": "Worry about cancer",
+          "description": "For cancer-related conditions: worry about the cancer coming back or spreading, about further treatment, and about what changes on the face might mean.",
+          "severity_signals": {
+            "none": "not worried, or worry is contained",
+            "mild": "occasional worry around check-ups",
+            "moderate": "worries most weeks; checks the face for changes",
+            "severe": "constant worry that interferes with sleep, plans or daily life"
+          },
+          "drill_down": [
+            "What specifically they worry about",
+            "Whether check-ups or news stories trigger it",
+            "Whether they self-examine and how often",
+            "Whether they have asked their team about it"
+          ],
+          "priority": "optional",
+          "source_refs": [
+            {
+              "instrument": "face-q-head-neck-cancer",
+              "scale": "Cancer Worry"
+            },
+            {
+              "instrument": "face-q-skin-cancer",
+              "scale": "Cancer Worry"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "function",
+      "label": "Facial function",
+      "weight": 0.8,
+      "constructs": [
+        {
+          "id": "function.breathing",
+          "label": "Breathing through the nose",
+          "description": "Ease of breathing through the nose at rest, during exercise, when lying down and when sleeping; blocked or congested feeling; snoring or mouth breathing.",
+          "severity_signals": {
+            "none": "breathes easily through the nose",
+            "mild": "occasional blockage (colds, one side, at night)",
+            "moderate": "regular difficulty; mouth breathes or wakes at night",
+            "severe": "constant obstruction affecting sleep, exercise or daily comfort"
+          },
+          "drill_down": [
+            "One side or both; day or night",
+            "Effect on sleep or exercise",
+            "Whether it changed after injury, surgery or treatment",
+            "Sprays or aids they rely on"
+          ],
+          "priority": "standard",
+          "source_refs": [
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Breathing"
+            },
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Adverse Effects: Nose"
+            }
+          ]
+        },
+        {
+          "id": "function.eating_drinking",
+          "label": "Eating and drinking",
+          "description": "Ability to chew, bite, keep food and liquid in the mouth, eat a normal range of foods, and eat in front of others without difficulty.",
+          "severity_signals": {
+            "none": "eats and drinks normally",
+            "mild": "avoids a few foods or eats a little more slowly",
+            "moderate": "regular difficulty chewing, leaking or spilling; avoids eating in company",
+            "severe": "eating is a daily struggle; weight, nutrition or social eating significantly affected"
+          },
+          "drill_down": [
+            "Which foods or textures are hard",
+            "Leaking, spilling or drooling",
+            "Whether they avoid eating with others",
+            "Weight change"
+          ],
+          "priority": "standard",
+          "source_refs": [
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Eating and Drinking"
+            },
+            {
+              "instrument": "face-q-head-neck-cancer",
+              "scale": "Eating Distress"
+            },
+            {
+              "instrument": "face-q-head-neck-cancer",
+              "scale": "Oral Competence"
+            }
+          ]
+        },
+        {
+          "id": "function.speaking",
+          "label": "Speaking and being understood",
+          "description": "Clarity of speech, being understood by strangers and on the phone, effort or tiredness when talking, and reluctance to speak because of how it sounds.",
+          "severity_signals": {
+            "none": "speech is clear and effortless",
+            "mild": "occasionally asked to repeat; some words are harder",
+            "moderate": "regularly misunderstood; avoids the phone or speaking up",
+            "severe": "speech severely limits communication; relies on others or writing"
+          },
+          "drill_down": [
+            "Which sounds or situations are hardest",
+            "Phone calls and strangers versus family",
+            "Whether they hold back from speaking",
+            "Speech therapy or aids"
+          ],
+          "priority": "standard",
+          "source_refs": [
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Speaking"
+            },
+            {
+              "instrument": "face-q-head-neck-cancer",
+              "scale": "Speaking"
+            }
+          ]
+        },
+        {
+          "id": "function.facial_expression",
+          "label": "Facial expression and movement",
+          "description": "Ability to smile, frown, raise the eyebrows, close the eyes and show emotion with the face; whether expressions look symmetric and natural.",
+          "severity_signals": {
+            "none": "full, natural expression",
+            "mild": "slight asymmetry or stiffness they notice",
+            "moderate": "expressions look uneven or limited; people misread their mood",
+            "severe": "cannot express emotion with the face; eye closure or lip function problems"
+          },
+          "drill_down": [
+            "Which movements are affected",
+            "Whether others misread their expression",
+            "Eye closure, dryness or drooling",
+            "Whether it is improving, stable or worsening"
+          ],
+          "priority": "standard",
+          "source_refs": [
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Facial Expression"
+            },
+            {
+              "instrument": "face-q-head-neck-cancer",
+              "scale": "Smiling"
+            }
+          ]
+        },
+        {
+          "id": "function.swallowing_oral",
+          "label": "Swallowing and oral control",
+          "description": "Swallowing safely and comfortably, controlling saliva, and keeping the mouth closed; mainly relevant after head and neck treatment.",
+          "severity_signals": {
+            "none": "no swallowing or saliva problems",
+            "mild": "occasional coughing with liquids or minor drooling",
+            "moderate": "regular difficulty swallowing or drooling that needs managing in public",
+            "severe": "swallowing unsafe or severely restricted; constant drooling"
+          },
+          "drill_down": [
+            "Liquids, solids or both",
+            "Coughing, choking or drooling episodes",
+            "Diet changes or aids",
+            "Whether it affects eating with others"
+          ],
+          "priority": "optional",
+          "source_refs": [
+            {
+              "instrument": "face-q-head-neck-cancer",
+              "scale": "Swallowing"
+            },
+            {
+              "instrument": "face-q-head-neck-cancer",
+              "scale": "Drooling"
+            },
+            {
+              "instrument": "face-q-head-neck-cancer",
+              "scale": "Oral Competence"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "adverse",
+      "label": "Adverse effects and symptoms",
+      "weight": 0.8,
+      "constructs": [
+        {
+          "id": "adverse.pain_discomfort",
+          "label": "Pain, tightness or discomfort",
+          "description": "Pain, aching, tightness, pressure or tenderness in the face or treated area; how constant it is and what it stops them doing.",
+          "severity_signals": {
+            "none": "no pain or discomfort",
+            "mild": "occasional mild discomfort; no medication or limits",
+            "moderate": "regular pain needing medication or limiting some activities",
+            "severe": "constant or severe pain affecting sleep, eating or daily function"
+          },
+          "drill_down": [
+            "Where and what it feels like",
+            "What makes it better or worse",
+            "Medication use",
+            "Whether it is improving over time"
+          ],
+          "age_variants": {
+            "pediatric": {
+              "description": "Whether the child says it hurts or shows signs of pain (rubbing, crying, not wanting to be touched).",
+              "drill_down": [
+                "How the child shows pain",
+                "Whether pain relief is being used and helps"
+              ]
+            }
+          },
+          "priority": "core",
+          "source_refs": [
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Adverse Effects: Face Overall"
+            },
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Recovery Early Symptoms"
+            }
+          ]
+        },
+        {
+          "id": "adverse.swelling_bruising",
+          "label": "Swelling, bruising and redness",
+          "description": "Swelling, bruising, redness or lumpiness in the treated area; how visible it is and whether it is settling as expected.",
+          "severity_signals": {
+            "none": "none, or fully settled",
+            "mild": "slight residual swelling only they notice",
+            "moderate": "visible swelling or bruising they feel they must explain or hide",
+            "severe": "marked swelling or bruising affecting function or keeping them at home"
+          },
+          "drill_down": [
+            "Which areas and whether it is one-sided",
+            "Trend since treatment",
+            "Whether it affects vision, breathing or eating",
+            "What they were told to expect"
+          ],
+          "priority": "standard",
+          "source_refs": [
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Adverse Effects: Face Overall"
+            },
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Recovery Early Symptoms"
+            }
+          ]
+        },
+        {
+          "id": "adverse.numbness_sensation",
+          "label": "Numbness or altered sensation",
+          "description": "Numbness, tingling, itching, oversensitivity or strange feelings in the face or treated area, and how much it bothers them.",
+          "severity_signals": {
+            "none": "normal sensation",
+            "mild": "small numb patch they rarely notice",
+            "moderate": "noticeable numbness or tingling that bothers them daily",
+            "severe": "widespread or painful altered sensation affecting eating, speaking or comfort"
+          },
+          "drill_down": [
+            "Location and extent",
+            "Whether it is changing over time",
+            "Whether it affects eating, drinking or shaving/makeup"
+          ],
+          "priority": "standard",
+          "source_refs": [
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Adverse Effects: Face Overall"
+            },
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Adverse Effects: Cheeks, Lower Face and Neck"
+            }
+          ]
+        },
+        {
+          "id": "adverse.scarring",
+          "label": "Scars",
+          "description": "How the person feels about scars from surgery, injury or treatment: visibility, colour, texture, width, and whether they draw attention.",
+          "severity_signals": {
+            "none": "scars not noticeable or not a concern",
+            "mild": "notices scars but they do not bother them much",
+            "moderate": "scars are visible and bother them; some concealment",
+            "severe": "scars dominate how they see their face; significant distress or avoidance"
+          },
+          "drill_down": [
+            "Which scars and where",
+            "Colour, texture or raised areas",
+            "Whether they are still maturing",
+            "Whether they use scar treatments or concealment"
+          ],
+          "age_variants": {
+            "pediatric": {
+              "description": "How the child (and guardian) feel about the child's scars, including whether other children notice or ask.",
+              "drill_down": [
+                "Whether other children ask about the scar",
+                "Whether the child wants to hide it"
+              ]
+            }
+          },
+          "priority": "standard",
+          "source_refs": [
+            {
+              "instrument": "face-q-skin-cancer",
+              "scale": "Appraisal of Scars"
+            },
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Appearance: Cleft Lip Scar"
+            }
+          ]
+        },
+        {
+          "id": "adverse.asymmetry",
+          "label": "Unevenness or asymmetry",
+          "description": "Whether the person perceives one side of the face or a feature as different from the other, and how much it bothers them.",
+          "severity_signals": {
+            "none": "no asymmetry that concerns them",
+            "mild": "slight unevenness only they notice",
+            "moderate": "asymmetry they see in most photos and that others may notice",
+            "severe": "asymmetry is highly visible to them; strong distress or avoidance"
+          },
+          "drill_down": [
+            "Which feature or side",
+            "Whether it is worse with movement or expression",
+            "Whether it has changed since treatment"
+          ],
+          "priority": "standard",
+          "source_refs": [
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Adverse Effects: Face Overall"
+            },
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Adverse Effects: Eyes"
+            },
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Adverse Effects: Lips"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "recovery",
+      "label": "Recovery and early life impact",
+      "weight": 0.6,
+      "constructs": [
+        {
+          "id": "recovery.daily_activities",
+          "label": "Impact of recovery on daily life",
+          "description": "In the weeks after treatment: ability to work, drive, exercise, sleep, care for others and go out; tiredness; and whether recovery is going as expected.",
+          "severity_signals": {
+            "none": "back to normal activities",
+            "mild": "minor limits (e.g., no heavy exercise yet)",
+            "moderate": "off work or missing regular activities; needs help with some tasks",
+            "severe": "largely housebound or dependent on others; recovery much harder than expected"
+          },
+          "drill_down": [
+            "Which activities are still limited",
+            "Sleep and energy",
+            "Support at home",
+            "Whether recovery matches what they were told"
+          ],
+          "age_variants": {
+            "pediatric": {
+              "description": "Whether the child is back to school, play, sport and normal sleep, and how the family is managing care.",
+              "drill_down": [
+                "Days of school missed",
+                "Whether they can play as usual",
+                "How the family is coping"
+              ]
+            }
+          },
+          "priority": "standard",
+          "applicable_timepoints": [
+            "post-op-2w",
+            "post-op-6w"
+          ],
+          "source_refs": [
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Recovery Early Life Impact"
+            },
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Recovery Early Symptoms"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outcome",
+      "label": "Satisfaction with outcome, decision and information",
+      "weight": 1.0,
+      "constructs": [
+        {
+          "id": "outcome.result",
+          "label": "Satisfaction with the result",
+          "description": "After treatment: whether the result matches what the person hoped for, looks natural, was worth it, and whether they would choose it again.",
+          "severity_signals": {
+            "none": "pleased; result met or exceeded hopes",
+            "mild": "mostly pleased with a small reservation",
+            "moderate": "mixed; clear disappointment in one or more aspects",
+            "severe": "regrets the treatment or feels worse than before"
+          },
+          "drill_down": [
+            "What they hoped for versus what they see",
+            "Which aspect disappoints, if any",
+            "Whether they would do it again or recommend it",
+            "Whether their view has shifted as healing progresses"
+          ],
+          "age_variants": {
+            "pediatric": {
+              "description": "Whether the child and guardian are pleased with the result and whether it is what they expected.",
+              "drill_down": [
+                "What the child says about the change",
+                "Whether the guardian's hopes were met"
+              ]
+            }
+          },
+          "priority": "core",
+          "applicable_timepoints": [
+            "post-op-2w",
+            "post-op-6w",
+            "post-op-6m",
+            "post-op-12m",
+            "follow-up"
+          ],
+          "source_refs": [
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Satisfaction with Outcome"
+            },
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Expectations"
+            }
+          ]
+        },
+        {
+          "id": "outcome.decision",
+          "label": "Satisfaction with the decision to have treatment",
+          "description": "Whether the person feels the decision to have treatment was right for them, made with enough time and without pressure, and whether they have any regret.",
+          "severity_signals": {
+            "none": "confident the decision was right",
+            "mild": "small doubts but glad overall",
+            "moderate": "meaningful second thoughts or felt rushed",
+            "severe": "regrets the decision or felt pressured into it"
+          },
+          "drill_down": [
+            "What influenced the decision",
+            "Whether they felt rushed or pressured",
+            "Whether they would advise someone else to do it"
+          ],
+          "priority": "standard",
+          "applicable_timepoints": [
+            "post-op-2w",
+            "post-op-6w",
+            "post-op-6m",
+            "post-op-12m",
+            "follow-up"
+          ],
+          "source_refs": [
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Satisfaction with Decision"
+            }
+          ]
+        },
+        {
+          "id": "outcome.information",
+          "label": "Satisfaction with information received",
+          "description": "Whether the person felt well informed before and after treatment about what to expect, recovery, risks and how to care for themselves.",
+          "severity_signals": {
+            "none": "felt fully informed",
+            "mild": "a few things they wish they had been told",
+            "moderate": "important gaps; surprised by parts of recovery or result",
+            "severe": "felt uninformed or misled; major unexpected consequences"
+          },
+          "drill_down": [
+            "What they wish they had known",
+            "Whether written or spoken information was clear",
+            "Questions they still have for the team"
+          ],
+          "priority": "standard",
+          "applicable_timepoints": [
+            "post-op-2w",
+            "post-op-6w",
+            "post-op-6m",
+            "post-op-12m",
+            "follow-up"
+          ],
+          "source_refs": [
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Satisfaction with Information"
+            },
+            {
+              "instrument": "face-q-skin-cancer",
+              "scale": "Satisfaction with Information"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "aging",
+      "label": "Age appraisal",
+      "weight": 0.6,
+      "constructs": [
+        {
+          "id": "aging.appraisal",
+          "label": "How old the face looks versus how the person feels",
+          "description": "Whether the person feels their face looks older than they are or feel, which features signal age to them (lines, sagging, tiredness), and how much this bothers them.",
+          "severity_signals": {
+            "none": "feels they look their age or younger; not a concern",
+            "mild": "occasionally feels they look tired or older",
+            "moderate": "regularly bothered by looking older; compares to peers",
+            "severe": "looking older is a persistent distress affecting confidence or work"
+          },
+          "drill_down": [
+            "Which features signal age to them",
+            "Whether others comment on tiredness or age",
+            "Whether it affects work or relationships",
+            "What they hope treatment will change"
+          ],
+          "priority": "standard",
+          "source_refs": [
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Appraisal of Aging Appearance"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "coverage_rules": {
+    "min_confidence_to_count": 0.6,
+    "drill_down_threshold": "moderate",
+    "core_constructs_required": true,
+    "max_constructs_per_session": 18
+  }
+}$seed$::jsonb,
+  'approved',
+  null,
+  now()
+)
+on conflict (slug, version) do update set
+  population = excluded.population,
+  source_instrument_ids = excluded.source_instrument_ids,
+  map = excluded.map,
+  status = 'approved',
+  approved_at = coalesce(public.construct_maps.approved_at, now());
+
+insert into public.construct_maps (id, slug, version, population, source_instrument_ids, map, status, approved_by, approved_at)
+values (
+  '7a1c5e20-0002-4a00-8000-000000000002',
+  $seed$face-q-pediatric$seed$,
+  1,
+  $seed$pediatric$seed$,
+  array['6d2f3a10-0001-4a00-8000-000000000001', '6d2f3a10-0001-4a00-8000-000000000002', '6d2f3a10-0001-4a00-8000-000000000004']::uuid[],
+  $seed${
+  "slug": "face-q-pediatric",
+  "version": 1,
+  "population": "pediatric",
+  "language": "en",
+  "notes": "Built from publicly documented FACE-Q Craniofacial Module scale names (with Aesthetics/Skin Cancer scales where they apply) and what those scales measure. Descriptions are paraphrased constructs; no questionnaire item text is included. Conversations may be with the child (self), a guardian speaking about the child (guardian), or both; drill-down cues address the guardian view where useful. For satisfaction-type constructs, 'severity' expresses the degree of dissatisfaction or concern. Constructs with 'applicable_timepoints' are only active at those timepoints (extension to SPEC §6, see seed/README.md). Construct ids are shared with face-q-adult where the construct is the same so diagnosis focus lists work across both maps.",
+  "domains": [
+    {
+      "id": "appearance",
+      "label": "Satisfaction with facial appearance",
+      "weight": 1.0,
+      "constructs": [
+        {
+          "id": "appearance.overall",
+          "label": "How the child feels about their face overall",
+          "description": "How the child feels about their face as a whole: in the mirror, in school photos, on video, and compared with friends and siblings. If the guardian answers: what the child says and shows about their face.",
+          "severity_signals": {
+            "none": "happy with or unbothered by their face",
+            "mild": "sometimes mentions something they would change; no avoidance",
+            "moderate": "often unhappy about their face; avoids photos or mirrors sometimes",
+            "severe": "very upset about their face; avoidance or upset that affects school or play"
+          },
+          "drill_down": [
+            "Which part of the face bothers them most",
+            "Teasing or comments from other children",
+            "Whether they avoid photos, mirrors or activities",
+            "What the child hopes will change",
+            "Whether the guardian's view matches the child's"
+          ],
+          "priority": "core",
+          "source_refs": [
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Appearance: Face"
+            },
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Satisfaction with Facial Appearance Overall"
+            }
+          ]
+        },
+        {
+          "id": "appearance.nose",
+          "label": "How the child feels about their nose",
+          "description": "How the child feels about the shape and size of their nose and nostrils, from the front and the side, and whether it looks like other children's.",
+          "severity_signals": {
+            "none": "not bothered by their nose",
+            "mild": "occasionally mentions it",
+            "moderate": "often bothered; notices it in photos or when others look",
+            "severe": "nose is a constant worry; hides it or gets very upset about it"
+          },
+          "drill_down": [
+            "Nostril shape, tip, width or profile",
+            "Whether other children comment",
+            "Whether breathing is also a problem"
+          ],
+          "priority": "standard",
+          "source_refs": [
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Appearance: Nose"
+            },
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Appearance: Nostrils"
+            }
+          ]
+        },
+        {
+          "id": "appearance.eyes",
+          "label": "How the child feels about their eyes",
+          "description": "How the child feels about the look of their eyes and eyelids, including whether they look even and whether other children notice.",
+          "severity_signals": {
+            "none": "not bothered by their eyes",
+            "mild": "sometimes notices a difference",
+            "moderate": "often bothered; unevenness or shape is a regular worry",
+            "severe": "eyes are a major source of upset; hides them or avoids being looked at"
+          },
+          "drill_down": [
+            "Shape, position, eyelids or evenness",
+            "Whether glasses or patches are involved and how they feel about them",
+            "Whether vision is affected"
+          ],
+          "priority": "standard",
+          "source_refs": [
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Appearance: Eyes"
+            }
+          ]
+        },
+        {
+          "id": "appearance.lips",
+          "label": "How the child feels about their lips",
+          "description": "How the child feels about the shape, evenness and look of their lips and the area above the lip, including any cleft-related differences.",
+          "severity_signals": {
+            "none": "not bothered by their lips",
+            "mild": "sometimes notices a difference",
+            "moderate": "often bothered; covers their mouth or avoids smiling in photos",
+            "severe": "lips are a constant worry; strongly avoids smiling or being looked at"
+          },
+          "drill_down": [
+            "Shape, evenness or the area above the lip",
+            "Whether they cover their mouth when smiling or laughing",
+            "Whether other children ask about it"
+          ],
+          "priority": "standard",
+          "source_refs": [
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Appearance: Lips"
+            }
+          ]
+        },
+        {
+          "id": "appearance.ears",
+          "label": "How the child feels about their ears",
+          "description": "How the child feels about the size, shape, position and evenness of their ears, including whether they hide them with hair or hats.",
+          "severity_signals": {
+            "none": "not bothered by their ears",
+            "mild": "sometimes notices; no hiding",
+            "moderate": "often bothered; hides ears with hair or hats",
+            "severe": "ears are a major upset; refuses haircuts, swimming or activities that expose them"
+          },
+          "drill_down": [
+            "Size, shape, position or one side versus the other",
+            "Whether they hide their ears (hair, hats)",
+            "Whether hearing aids or hearing are part of it",
+            "Whether other children comment"
+          ],
+          "priority": "standard",
+          "source_refs": [
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Appearance: Ears"
+            }
+          ]
+        },
+        {
+          "id": "appearance.cheeks",
+          "label": "How the child feels about their cheeks and mid-face",
+          "description": "How the child feels about the shape and evenness of their cheeks and the middle part of the face, including whether one side looks different.",
+          "severity_signals": {
+            "none": "not bothered",
+            "mild": "sometimes notices flatness or unevenness",
+            "moderate": "often bothered by unevenness",
+            "severe": "cheek appearance is a major upset; avoids photos or certain angles"
+          },
+          "drill_down": [
+            "Whether one side looks different",
+            "Whether it is more noticeable when smiling",
+            "Whether it has changed with growth or treatment"
+          ],
+          "priority": "optional",
+          "source_refs": [
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Appearance: Cheeks"
+            }
+          ]
+        },
+        {
+          "id": "appearance.chin_jawline",
+          "label": "How the child feels about their chin and jaw",
+          "description": "How the child feels about the size, shape and position of their chin and jaw, including whether the jaw looks uneven or set back.",
+          "severity_signals": {
+            "none": "not bothered",
+            "mild": "sometimes notices",
+            "moderate": "often bothered; unevenness or profile is a regular worry",
+            "severe": "chin or jaw is a major upset; avoids side views or photos"
+          },
+          "drill_down": [
+            "Chin size, jaw evenness or profile",
+            "Whether chewing or bite is also affected",
+            "Whether it has changed with growth"
+          ],
+          "priority": "optional",
+          "source_refs": [
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Appearance: Chin"
+            },
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Appearance: Jaw"
+            }
+          ]
+        },
+        {
+          "id": "appearance.smile_teeth",
+          "label": "How the child feels about their smile and teeth",
+          "description": "How the child feels about their smile and teeth: whether the smile looks even and natural, and whether teeth, gums or the lip line make them hold back from smiling.",
+          "severity_signals": {
+            "none": "smiles freely",
+            "mild": "sometimes self-conscious about smiling",
+            "moderate": "often holds back or covers their smile",
+            "severe": "avoids smiling or laughing in front of others"
+          },
+          "drill_down": [
+            "Teeth, gums, evenness or lip movement",
+            "Whether they cover their mouth when laughing",
+            "Whether braces or dental treatment are involved",
+            "Whether it matters more in photos or with friends"
+          ],
+          "priority": "standard",
+          "source_refs": [
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Appearance: Smile"
+            },
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Appearance: Teeth"
+            }
+          ]
+        },
+        {
+          "id": "appearance.skin",
+          "label": "How the child feels about the skin on their face",
+          "description": "How the child feels about the colour, texture and evenness of the skin on their face, including birthmarks, patches or changes after treatment.",
+          "severity_signals": {
+            "none": "not bothered",
+            "mild": "sometimes notices",
+            "moderate": "often bothered; wants to cover it",
+            "severe": "skin is a major upset; avoids being seen without covering it"
+          },
+          "drill_down": [
+            "Colour, patches, texture or marks",
+            "Whether other children ask about it",
+            "Whether they try to cover it"
+          ],
+          "priority": "optional",
+          "source_refs": [
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Appearance: Skin"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "psychological",
+      "label": "Psychological function",
+      "weight": 1.0,
+      "constructs": [
+        {
+          "id": "psych.self_confidence",
+          "label": "Confidence and feeling good about oneself",
+          "description": "How sure of themselves the child feels around other children and adults, whether they feel 'like everyone else', and whether their face makes them feel different or less good about themselves. Guardian view: how the child's confidence shows at home and out and about.",
+          "severity_signals": {
+            "none": "confident; feels like the other kids",
+            "mild": "confidence dips in some situations (new people, performances)",
+            "moderate": "often lacks confidence because of their face; hangs back",
+            "severe": "very low confidence; says or shows they feel different or not good enough most of the time"
+          },
+          "drill_down": [
+            "Situations where confidence drops (new class, sports, performances)",
+            "Activities where they feel good about themselves",
+            "Whether the guardian has noticed a change over the past months",
+            "Whether the child says they feel different from other children"
+          ],
+          "priority": "core",
+          "source_refs": [
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Psychological Function"
+            }
+          ]
+        },
+        {
+          "id": "psych.self_acceptance",
+          "label": "Accepting how they look",
+          "description": "Whether the child accepts their face as part of who they are, or often wishes they looked different; how they talk about their face when it comes up.",
+          "severity_signals": {
+            "none": "accepts their face; talks about it matter-of-factly",
+            "mild": "mostly accepting; occasional wishes to look different",
+            "moderate": "often wishes they looked different; upset when it comes up",
+            "severe": "cannot accept how they look; strong sense of being defined by their face"
+          },
+          "drill_down": [
+            "How the child explains their face to others",
+            "Whether they ask why they look different",
+            "What helps them feel okay about it"
+          ],
+          "priority": "standard",
+          "source_refs": [
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Psychological Function"
+            },
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Appearance Distress"
+            }
+          ]
+        },
+        {
+          "id": "psych.mood",
+          "label": "Sadness, worry or anger about their face",
+          "description": "Whether the child seems sad, worried, frustrated or angry because of their face or its treatment; how often, and how the guardian sees it affecting them at home (sleep, tears, withdrawal, anger).",
+          "severity_signals": {
+            "none": "mood not affected by their face",
+            "mild": "occasional bad days linked to their face or appointments",
+            "moderate": "regular sadness or worry about their face; recovers with comfort or distraction",
+            "severe": "persistent sadness, worry or anger affecting sleep, appetite, school or play"
+          },
+          "drill_down": [
+            "Signs the guardian notices (withdrawal, tears, anger, sleep)",
+            "Whether it is worse around school events, photos or hospital visits",
+            "Whether the child has talked to anyone about it",
+            "Whether treatment has changed this"
+          ],
+          "priority": "core",
+          "source_refs": [
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Psychological Function"
+            },
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Appearance Distress"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "social",
+      "label": "Social function",
+      "weight": 1.0,
+      "constructs": [
+        {
+          "id": "social.comfort",
+          "label": "Comfort with friends and in play",
+          "description": "How comfortable the child is with friends, at parties, in group play and sport, and meeting new children; whether they join in or hang back.",
+          "severity_signals": {
+            "none": "joins in freely; has friends they feel relaxed with",
+            "mild": "slightly shy with new children; fine with friends",
+            "moderate": "often hangs back; prefers one or two familiar friends or adults",
+            "severe": "very uncomfortable with other children; isolated or refuses group activities"
+          },
+          "drill_down": [
+            "Whether they have close friends",
+            "Whether they join in at break time, parties, sport",
+            "Whether new settings (new class, clubs) are hard",
+            "What helps them feel comfortable"
+          ],
+          "priority": "core",
+          "source_refs": [
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Social Function"
+            }
+          ]
+        },
+        {
+          "id": "social.school",
+          "label": "School participation",
+          "description": "How the child is doing at school: attendance, taking part in class and activities, concentration, and whether their face, its treatment or other children's reactions get in the way.",
+          "severity_signals": {
+            "none": "attends and takes part fully",
+            "mild": "occasional reluctance (class photos, presentations)",
+            "moderate": "regularly avoids some school activities or misses days because of their face or treatment",
+            "severe": "school refusal, frequent absence or major withdrawal linked to their face"
+          },
+          "drill_down": [
+            "Days missed and why",
+            "Activities they avoid (speaking in class, sport, photos)",
+            "Whether the school knows and helps",
+            "Whether schoolwork or concentration is affected"
+          ],
+          "priority": "core",
+          "source_refs": [
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "School Function"
+            }
+          ]
+        },
+        {
+          "id": "social.teasing_comments",
+          "label": "Teasing, staring and questions from others",
+          "description": "Whether the child is teased, stared at, asked questions or left out at school or in play because of their face; how they respond and whether they tell the guardian.",
+          "severity_signals": {
+            "none": "no teasing or comments that bother them",
+            "mild": "occasional questions or looks they handle well",
+            "moderate": "regular comments or teasing that upset them or that they plan around",
+            "severe": "bullying or exclusion; significant hurt, fear or avoidance of school"
+          },
+          "drill_down": [
+            "Who it comes from and where it happens",
+            "Whether the child tells the guardian or a teacher",
+            "Whether the school knows and what they have done",
+            "Whether the child has a comeback or plan for questions"
+          ],
+          "priority": "core",
+          "source_refs": [
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Social Function"
+            },
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Appearance Distress"
+            }
+          ]
+        },
+        {
+          "id": "social.avoidance",
+          "label": "Avoiding activities because of their face",
+          "description": "Whether the child avoids photos, parties, swimming, sport, performances or meeting new people because of how their face looks or works.",
+          "severity_signals": {
+            "none": "no avoidance",
+            "mild": "occasionally opts out of photos or new activities",
+            "moderate": "regularly avoids some activities because of their face",
+            "severe": "withdrawn from most activities outside home"
+          },
+          "drill_down": [
+            "Specific activities skipped recently",
+            "How often in the last month",
+            "Whether the guardian has changed family plans because of it"
+          ],
+          "priority": "standard",
+          "source_refs": [
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Social Function"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "distress",
+      "label": "Appearance-related distress",
+      "weight": 1.0,
+      "constructs": [
+        {
+          "id": "distress.preoccupation",
+          "label": "Worrying about or checking their face",
+          "description": "How often the child talks about, checks, or worries about their face; whether they compare themselves with others; whether the guardian sees this taking up a lot of the child's attention.",
+          "severity_signals": {
+            "none": "rarely mentions or thinks about it",
+            "mild": "brings it up now and then; easily reassured",
+            "moderate": "brings it up most days; checks mirrors or photos; needs reassurance",
+            "severe": "constant worry or checking that is hard to interrupt; upset when reassured"
+          },
+          "drill_down": [
+            "How often it comes up in a typical week",
+            "Mirror or photo checking, comparing with others",
+            "Whether it affects sleep or concentration",
+            "When it started or got worse"
+          ],
+          "priority": "core",
+          "source_refs": [
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Appearance Distress"
+            }
+          ]
+        },
+        {
+          "id": "distress.hiding",
+          "label": "Hiding their face or a feature",
+          "description": "Whether the child tries to hide their face or a feature: hair over the face or ears, hats, hands over the mouth, turning away in photos, or refusing haircuts or swimming.",
+          "severity_signals": {
+            "none": "no hiding",
+            "mild": "hides sometimes (photos, new people)",
+            "moderate": "hides most days; upset if they cannot",
+            "severe": "will not be seen without hiding; refuses activities that would expose the feature"
+          },
+          "drill_down": [
+            "What they hide and how",
+            "Whether it affects haircuts, swimming, sport or uniform rules",
+            "How they react if they cannot hide"
+          ],
+          "priority": "standard",
+          "source_refs": [
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Appearance Distress"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "function",
+      "label": "Facial function",
+      "weight": 1.0,
+      "constructs": [
+        {
+          "id": "function.breathing",
+          "label": "Breathing through the nose",
+          "description": "Whether the child breathes easily through their nose during the day, during play or sport, and at night; mouth breathing, snoring or disturbed sleep.",
+          "severity_signals": {
+            "none": "breathes easily through the nose",
+            "mild": "occasional blockage (colds, one side, at night)",
+            "moderate": "regularly mouth-breathes, snores or tires during play",
+            "severe": "constant obstruction; poor sleep, restless nights or limits on activity"
+          },
+          "drill_down": [
+            "One side or both; day or night",
+            "Snoring, restless sleep or tiredness",
+            "Whether it limits running or sport",
+            "Whether it changed after surgery"
+          ],
+          "priority": "standard",
+          "source_refs": [
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Breathing"
+            }
+          ]
+        },
+        {
+          "id": "function.eating_drinking",
+          "label": "Eating and drinking",
+          "description": "Whether the child can bite, chew, keep food and drink in the mouth, eat a normal range of foods, and eat comfortably at school or with others; food or liquid coming out of the nose.",
+          "severity_signals": {
+            "none": "eats and drinks normally",
+            "mild": "avoids a few foods or is a slow eater",
+            "moderate": "regular difficulty chewing, spilling or leaking; avoids eating in front of others",
+            "severe": "eating is a daily struggle; growth, nutrition or school meals significantly affected"
+          },
+          "drill_down": [
+            "Which foods or textures are hard",
+            "Spilling, leaking or food coming through the nose",
+            "Whether they avoid eating at school or with friends",
+            "Growth or weight concerns"
+          ],
+          "priority": "standard",
+          "source_refs": [
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Eating and Drinking"
+            }
+          ]
+        },
+        {
+          "id": "function.speaking",
+          "label": "Speaking and being understood",
+          "description": "How clearly the child speaks, whether strangers, teachers and other children understand them, whether speech sounds nasal, and whether they hold back from talking because of it.",
+          "severity_signals": {
+            "none": "speech is clear and easy",
+            "mild": "occasionally asked to repeat; a few sounds are harder",
+            "moderate": "regularly not understood by people outside the family; holds back in class",
+            "severe": "speech seriously limits communication at school; relies on family to interpret"
+          },
+          "drill_down": [
+            "Which sounds or situations are hardest",
+            "Whether teachers or other children understand them",
+            "Whether they avoid speaking up or reading aloud",
+            "Speech therapy and progress"
+          ],
+          "priority": "standard",
+          "source_refs": [
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Speaking"
+            }
+          ]
+        },
+        {
+          "id": "function.facial_expression",
+          "label": "Facial expression and movement",
+          "description": "Whether the child can smile, frown, raise their eyebrows, close their eyes and show feelings with their face; whether expressions look even and whether others misread them.",
+          "severity_signals": {
+            "none": "full, natural expression",
+            "mild": "slight unevenness the family notices",
+            "moderate": "expressions look uneven or limited; others misread their mood",
+            "severe": "cannot show feelings with the face; eye closure or lip problems"
+          },
+          "drill_down": [
+            "Which movements are affected",
+            "Whether others misread their expression",
+            "Eye closure, dryness or drooling",
+            "Whether it is improving, stable or worsening"
+          ],
+          "priority": "standard",
+          "source_refs": [
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Facial Expression"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "adverse",
+      "label": "Adverse effects and symptoms",
+      "weight": 0.8,
+      "constructs": [
+        {
+          "id": "adverse.pain_discomfort",
+          "label": "Pain or discomfort",
+          "description": "Whether the child says it hurts or shows signs of pain (rubbing, crying, not wanting to be touched, not eating) in the face or treated area; how constant it is and what it stops them doing.",
+          "severity_signals": {
+            "none": "no pain or discomfort",
+            "mild": "occasional mild discomfort; no pain relief needed",
+            "moderate": "regular pain needing pain relief or limiting play or eating",
+            "severe": "constant or severe pain affecting sleep, eating or daily function"
+          },
+          "drill_down": [
+            "Where it hurts and how the child shows it",
+            "What makes it better or worse",
+            "Pain relief used and whether it helps",
+            "Whether it is improving"
+          ],
+          "priority": "core",
+          "source_refs": [
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Recovery Early Symptoms"
+            },
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Adverse Effects: Face Overall"
+            }
+          ]
+        },
+        {
+          "id": "adverse.swelling_bruising",
+          "label": "Swelling, bruising and redness",
+          "description": "Swelling, bruising, redness or lumpiness in the treated area; how visible it is and whether it is settling as the family was told to expect.",
+          "severity_signals": {
+            "none": "none, or fully settled",
+            "mild": "slight swelling only the family notices",
+            "moderate": "visible swelling or bruising that other children comment on",
+            "severe": "marked swelling affecting eating, breathing or vision, or keeping the child home"
+          },
+          "drill_down": [
+            "Which areas and whether it is one-sided",
+            "Trend since treatment",
+            "Whether it affects eating, breathing or vision",
+            "What the family was told to expect"
+          ],
+          "priority": "standard",
+          "source_refs": [
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Recovery Early Symptoms"
+            },
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Adverse Effects: Face Overall"
+            }
+          ]
+        },
+        {
+          "id": "adverse.numbness_sensation",
+          "label": "Numbness, tingling or itching",
+          "description": "Numb, tingly, itchy or strange feelings in the face or treated area; whether the child mentions it or touches or picks at the area.",
+          "severity_signals": {
+            "none": "normal sensation",
+            "mild": "small numb patch rarely mentioned",
+            "moderate": "noticeable numbness or itching that bothers the child daily",
+            "severe": "widespread or painful altered sensation affecting eating or comfort"
+          },
+          "drill_down": [
+            "Location and extent",
+            "Whether it is changing over time",
+            "Whether it affects eating or drinking"
+          ],
+          "priority": "standard",
+          "source_refs": [
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Adverse Effects: Face Overall"
+            }
+          ]
+        },
+        {
+          "id": "adverse.scarring",
+          "label": "Scars",
+          "description": "How the child and guardian feel about the child's scars (for example a cleft lip scar or surgical scars): visibility, colour, texture, and whether other children notice or ask.",
+          "severity_signals": {
+            "none": "scars not noticeable or not a concern",
+            "mild": "notices the scar but it does not bother them much",
+            "moderate": "scar is visible and bothers the child; some hiding; other children ask",
+            "severe": "scar dominates how the child sees their face; significant upset or avoidance"
+          },
+          "drill_down": [
+            "Which scars and where",
+            "Colour, texture or raised areas",
+            "Whether other children ask about the scar",
+            "Whether the child wants to hide it",
+            "Scar care being used"
+          ],
+          "priority": "standard",
+          "source_refs": [
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Appearance: Cleft Lip Scar"
+            },
+            {
+              "instrument": "face-q-skin-cancer",
+              "scale": "Appraisal of Scars"
+            }
+          ]
+        },
+        {
+          "id": "adverse.asymmetry",
+          "label": "Unevenness or asymmetry",
+          "description": "Whether the child or guardian sees one side of the face or a feature as different from the other, and how much this bothers the child.",
+          "severity_signals": {
+            "none": "no asymmetry that concerns them",
+            "mild": "slight unevenness only the family notices",
+            "moderate": "unevenness seen in most photos; other children may notice",
+            "severe": "asymmetry is highly visible to the child; strong upset or avoidance"
+          },
+          "drill_down": [
+            "Which feature or side",
+            "Whether it is worse when smiling or talking",
+            "Whether it has changed with growth or treatment"
+          ],
+          "priority": "standard",
+          "source_refs": [
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "Appearance: Face"
+            },
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Adverse Effects: Face Overall"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "recovery",
+      "label": "Recovery and early life impact",
+      "weight": 0.6,
+      "constructs": [
+        {
+          "id": "recovery.daily_activities",
+          "label": "Getting back to school, play and normal routines",
+          "description": "In the weeks after treatment: whether the child is back to school, play, sport, normal eating and sleep; how much help they need; and how the family is managing care and time off.",
+          "severity_signals": {
+            "none": "back to normal routines",
+            "mild": "minor limits (e.g., no contact sport yet)",
+            "moderate": "missing school or regular activities; needs help with some tasks; family routines disrupted",
+            "severe": "largely at home or dependent on carers; recovery much harder than the family expected"
+          },
+          "drill_down": [
+            "Days of school missed",
+            "Whether they can play and sleep as usual",
+            "How the family is coping with care and time off",
+            "Whether recovery matches what the family was told"
+          ],
+          "priority": "standard",
+          "applicable_timepoints": [
+            "post-op-2w",
+            "post-op-6w"
+          ],
+          "source_refs": [
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Recovery Early Life Impact"
+            },
+            {
+              "instrument": "face-q-craniofacial",
+              "scale": "School Function"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outcome",
+      "label": "Satisfaction with outcome, decision and information",
+      "weight": 1.0,
+      "constructs": [
+        {
+          "id": "outcome.result",
+          "label": "Satisfaction with the result",
+          "description": "After treatment: whether the child and guardian are pleased with the result, whether it looks the way they hoped and natural, and whether they feel it was worth it.",
+          "severity_signals": {
+            "none": "pleased; result met or exceeded hopes",
+            "mild": "mostly pleased with a small reservation",
+            "moderate": "mixed; clear disappointment in one or more aspects",
+            "severe": "regret, or the child or guardian feel things are worse than before"
+          },
+          "drill_down": [
+            "What the child says about the change",
+            "Whether the guardian's hopes were met",
+            "Which aspect disappoints, if any",
+            "Whether their view is shifting as healing progresses"
+          ],
+          "priority": "core",
+          "applicable_timepoints": [
+            "post-op-2w",
+            "post-op-6w",
+            "post-op-6m",
+            "post-op-12m",
+            "follow-up"
+          ],
+          "source_refs": [
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Satisfaction with Outcome"
+            },
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Expectations"
+            }
+          ]
+        },
+        {
+          "id": "outcome.decision",
+          "label": "Satisfaction with the decision to have treatment",
+          "description": "Whether the guardian (and child, where old enough) feel the decision to have treatment, and its timing, was right for the child and made with enough information and time.",
+          "severity_signals": {
+            "none": "confident the decision and timing were right",
+            "mild": "small doubts but glad overall",
+            "moderate": "meaningful second thoughts about the decision or its timing",
+            "severe": "regrets the decision or felt pressured"
+          },
+          "drill_down": [
+            "What influenced the decision",
+            "Whether the child was involved and how they felt about it",
+            "Whether they felt rushed or pressured"
+          ],
+          "priority": "standard",
+          "applicable_timepoints": [
+            "post-op-2w",
+            "post-op-6w",
+            "post-op-6m",
+            "post-op-12m",
+            "follow-up"
+          ],
+          "source_refs": [
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Satisfaction with Decision"
+            }
+          ]
+        },
+        {
+          "id": "outcome.information",
+          "label": "Satisfaction with information received",
+          "description": "Whether the family felt well informed before and after treatment about what to expect, recovery, risks and care at home, and whether the child had things explained at their level.",
+          "severity_signals": {
+            "none": "felt fully informed",
+            "mild": "a few things they wish they had been told",
+            "moderate": "important gaps; surprised by parts of recovery or result",
+            "severe": "felt uninformed or misled; major unexpected consequences"
+          },
+          "drill_down": [
+            "What the family wishes they had known",
+            "Whether the child had things explained at their level",
+            "Questions they still have for the team"
+          ],
+          "priority": "standard",
+          "applicable_timepoints": [
+            "post-op-2w",
+            "post-op-6w",
+            "post-op-6m",
+            "post-op-12m",
+            "follow-up"
+          ],
+          "source_refs": [
+            {
+              "instrument": "face-q-aesthetics",
+              "scale": "Satisfaction with Information"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "coverage_rules": {
+    "min_confidence_to_count": 0.6,
+    "drill_down_threshold": "moderate",
+    "core_constructs_required": true,
+    "max_constructs_per_session": 18
+  }
+}$seed$::jsonb,
+  'approved',
+  null,
+  now()
+)
+on conflict (slug, version) do update set
+  population = excluded.population,
+  source_instrument_ids = excluded.source_instrument_ids,
+  map = excluded.map,
+  status = 'approved',
+  approved_at = coalesce(public.construct_maps.approved_at, now());
+
+commit;
