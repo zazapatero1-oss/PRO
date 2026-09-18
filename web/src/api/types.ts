@@ -65,6 +65,8 @@ export interface Api {
     instrument_slug: string
     text: string
     population: 'adult' | 'pediatric'
+    /** Extend an existing draft (chunked ingestion) instead of starting from the approved map. */
+    base_map_id?: string
   }): Promise<IngestResult>
   approveConstructMap(constructMapId: string): Promise<ConstructMapRow>
 }

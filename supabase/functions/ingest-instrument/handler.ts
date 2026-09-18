@@ -279,7 +279,18 @@ export async function handleIngestInstrument(
   if (text.length > 200_000) throw badRequest("text is too long");
   if (!population) throw badRequest("population must be adult or pediatric");
 
-  const base = await db.getLatestApprovedMapForPopulation(population);
+  // Long questionnaires arrive in chunks: chunks after the first name the draft to extend.
+  const baseMapId = typeof body.base_map_id === "string" ? body.base_map_id : "";
+  let draft: ConstructMapRow | null = null;
+  if (baseMapId) {
+    draft = await db.getConstructMap(baseMapId);
+    if (!draft) throw notFound("Draft construct map not found");
+    if (draft.status !== "draft") {
+      throw conflict("base_map_id must be a draft map.", "invalid_status");
+    }
+    if (draft.population !== population) throw badRequest("population does not match the draft");
+  }
+  const base = draft ?? await db.getLatestApprovedMapForPopulation(population);
   if (!base) {
     throw conflict(
       `No approved ${population} construct map to merge into.`,
@@ -304,7 +315,7 @@ export async function handleIngestInstrument(
   });
 
   const merged = mergeProposal(base.map, res.value, text);
-  const version = (await db.getMaxMapVersion(base.slug)) + 1;
+  const version = draft ? draft.version : (await db.getMaxMapVersion(base.slug)) + 1;
   const map: ConstructMap = {
     ...merged.map,
     slug: base.slug,
@@ -312,18 +323,28 @@ export async function handleIngestInstrument(
     population,
     language: merged.map.language || base.map.language || "en",
   };
-  const row: ConstructMapRow = await db.insertConstructMap({
-    slug: base.slug,
-    version,
-    population,
-    source_instrument_ids: [
-      ...new Set([...(base.source_instrument_ids ?? []), ...(instrument ? [instrument.id] : [])]),
-    ],
-    map,
-    status: "draft",
-    approved_by: null,
-    approved_at: null,
-  });
+  const row: ConstructMapRow = draft
+    ? await db.updateConstructMap(draft.id, {
+      map,
+      source_instrument_ids: [
+        ...new Set([
+          ...(draft.source_instrument_ids ?? []),
+          ...(instrument ? [instrument.id] : []),
+        ]),
+      ],
+    })
+    : await db.insertConstructMap({
+      slug: base.slug,
+      version,
+      population,
+      source_instrument_ids: [
+        ...new Set([...(base.source_instrument_ids ?? []), ...(instrument ? [instrument.id] : [])]),
+      ],
+      map,
+      status: "draft",
+      approved_by: null,
+      approved_at: null,
+    });
   await writeAudit(db, {
     actor_type: "clinician",
     actor_id: clinician.clinicianId,

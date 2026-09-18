@@ -3,7 +3,7 @@ import { api } from '../api'
 import { ErrorBox, Loading } from '../components/ui'
 import { useT } from '../i18n'
 import { diffConstructMaps, type MapDiffDetail } from '../lib/mapDiff'
-import type { ConstructMapRow, IngestDiff, InstrumentRow } from '../types'
+import type { ConstructMapRow, IngestDiff, IngestResult, InstrumentRow } from '../types'
 
 export function InstrumentsPage() {
   const { t } = useT()
@@ -17,6 +17,7 @@ export function InstrumentsPage() {
   const [busy, setBusy] = useState<'propose' | 'approve' | null>(null)
   const [proposed, setProposed] = useState<ConstructMapRow | null>(null)
   const [diff, setDiff] = useState<IngestDiff | null>(null)
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null)
 
   const load = useCallback(() => {
     setError(null)
@@ -35,9 +36,24 @@ export function InstrumentsPage() {
     setBusy('propose')
     setError(null)
     try {
-      const result = await api.ingestInstrument({ instrument_slug: slug, text, population })
-      setProposed(result.construct_map)
-      setDiff(result.diff)
+      // Long questionnaires are sent in chunks; each chunk extends the same draft.
+      const chunks = splitForIngestion(text)
+      let draftId: string | undefined
+      let last: IngestResult | null = null
+      const total: IngestDiff = { facets_added: 0, constructs_added: [], triage_added: 0 }
+      for (let i = 0; i < chunks.length; i++) {
+        setProgress({ done: i, total: chunks.length })
+        last = await api.ingestInstrument({ instrument_slug: slug, text: chunks[i], population, base_map_id: draftId })
+        draftId = last.construct_map.id
+        total.facets_added += last.diff.facets_added
+        total.constructs_added.push(...last.diff.constructs_added)
+        total.triage_added += last.diff.triage_added
+      }
+      setProgress(null)
+      if (last) {
+        setProposed(last.construct_map)
+        setDiff(total)
+      }
       load()
     } catch (err) {
       setError(err)
@@ -165,7 +181,7 @@ export function InstrumentsPage() {
           <textarea className="textarea" rows={8} value={text} onChange={(e) => setText(e.target.value)} required />
         </label>
         <button type="submit" className="btn btn--primary" disabled={busy !== null || !text.trim() || !slug}>
-          {busy === 'propose' ? t('clinician.instruments.proposing') : t('clinician.instruments.propose')}
+          {busy === 'propose' ? `${t('clinician.instruments.proposing')}${progress ? ` ${progress.done + 1}/${progress.total}` : ''}` : t('clinician.instruments.propose')}
         </button>
       </form>
 
@@ -303,4 +319,21 @@ export function IngestDiffView({
       </div>
     </div>
   )
+}
+
+/** Splits pasted questionnaire text into ~6k-character chunks at blank lines, preferring section headings. */
+export function splitForIngestion(text: string, max = 6000): string[] {
+  const paras = text.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean)
+  const chunks: string[] = []
+  let cur = ''
+  for (const p of paras) {
+    const heading = /^[A-Z][A-Z0-9 ™\-–—:]{6,}$/.test(p.split('\n')[0])
+    if (cur && (cur.length + p.length + 2 > max || (heading && cur.length > max / 2))) {
+      chunks.push(cur)
+      cur = ''
+    }
+    cur = cur ? `${cur}\n\n${p}` : p
+  }
+  if (cur) chunks.push(cur)
+  return chunks.length ? chunks : [text]
 }
