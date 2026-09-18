@@ -18,7 +18,8 @@ import type {
   Respondent,
   SessionRow,
 } from "./types.ts";
-import { computeCoverage, selectActiveConstructs } from "./tracker.ts";
+import { computeCoverage, computeTrackerState, selectActiveConstructs } from "./tracker.ts";
+import type { TrackerState } from "./types.ts";
 import { notFound } from "./errors.ts";
 import { isMinorBand } from "./safety_messages.ts";
 
@@ -67,6 +68,27 @@ export async function loadSessionContext(db: Db, session: SessionRow): Promise<S
     messages,
     coverage,
   };
+}
+
+/**
+ * v1.1 §B state for a loaded session. `session` is passed separately because chat-turn holds a
+ * fresher row than the one the context was built from.
+ */
+export function trackerStateFor(
+  ctx: SessionContext,
+  session: SessionRow,
+  budgetFraction = 0,
+): TrackerState {
+  return computeTrackerState({
+    map: ctx.mapRow.map,
+    session,
+    active: ctx.activeConstructs,
+    evidence: ctx.evidence,
+    findings: ctx.findings,
+    diagnosisFocus: ctx.diagnosis?.focus_constructs ?? [],
+    assistantTurns: countAssistantTurns(ctx.messages),
+    budgetFraction,
+  });
 }
 
 export function countAssistantTurns(messages: MessageRow[]): number {

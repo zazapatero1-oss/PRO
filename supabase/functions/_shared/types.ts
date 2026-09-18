@@ -65,6 +65,8 @@ export type ConstructPriority = "core" | "standard" | "optional";
 export type MapStatus = "draft" | "approved" | "retired";
 export type ActorType = "clinician" | "participant" | "system";
 export type EndReason = "coverage_complete" | "turn_budget" | "patient_requested";
+/** v1.1 §B: the conversation walks triage → explore → wrap-up. */
+export type SessionPhase = "triage" | "explore" | "wrap-up";
 
 // ---------------------------------------------------------------------------
 // §6 Construct map (jsonb)
@@ -88,12 +90,29 @@ export interface SourceRef {
   scale: string;
 }
 
+/** v1.1 §A: one clinician-relevant detail of a construct; 5–8 per construct. Paraphrased. */
+export interface Facet {
+  id: string;
+  label: string;
+}
+
+/** v1.1 §A: one item of the stock opening screen. `intent` is what to find out, never wording. */
+export interface TriageItem {
+  id: string;
+  intent: string;
+  maps_to: string[];
+  /** When present the item only applies at these timepoints (e.g. recovery questions). */
+  timepoints?: Timepoint[];
+}
+
 export interface Construct {
   id: string;
   label: string;
   description: string;
   severity_signals: SeveritySignals;
   drill_down: string[];
+  /** v1.1 §A: details to cover when this construct is a focus. Older maps may omit it. */
+  facets?: Facet[];
   age_variants?: { pediatric?: ConstructAgeVariant };
   priority: ConstructPriority;
   source_refs?: SourceRef[];
@@ -113,6 +132,8 @@ export interface CoverageRules {
   drill_down_threshold: RankedSeverity;
   core_constructs_required: boolean;
   max_constructs_per_session: number;
+  /** v1.1 §A: fraction of a focus construct's facets that must carry evidence (default 0.7). */
+  focus_facet_threshold?: number;
 }
 
 export interface ConstructMap {
@@ -122,6 +143,8 @@ export interface ConstructMap {
   language: string;
   domains: Domain[];
   coverage_rules: CoverageRules;
+  /** v1.1 §A: the stock opening screen, asked in order. Older maps may omit it. */
+  triage?: TriageItem[];
 }
 
 /** A construct selected for this session, with its domain and focus flag attached. */
@@ -196,6 +219,10 @@ export interface SessionRow {
   prompt_version: string;
   model_id: string;
   status: SessionStatus;
+  /** v1.1 §D: triage → explore → wrap-up; recomputed by the tracker every turn. */
+  phase: SessionPhase;
+  /** v1.1 §D: the ≤8 constructs explored in depth; derived when triage ends. */
+  focus_constructs: string[];
   resume_token_hash: string;
   /** Links stop working after this; set on creation (SPEC §4). */
   resume_token_expires_at: string | null;
@@ -244,6 +271,10 @@ export interface ConstructEvidenceRow {
   severity: Severity;
   confidence: number;
   interference: string[];
+  /** v1.1 §D: facet ids of the construct this row speaks to. */
+  facets: string[];
+  /** v1.1 §D: set when the row answers a triage item. */
+  triage_item: string | null;
   note: string | null;
   superseded_by: string | null;
   created_at: string;
@@ -303,7 +334,10 @@ export type ParticipantInsert = Insert<ParticipantRow>;
 export type SessionInsert = Insert<SessionRow>;
 export type ClinicianNoteInsert = Insert<ClinicianNoteRow>;
 export type MessageInsert = Insert<MessageRow>;
-export type ConstructEvidenceInsert = Insert<ConstructEvidenceRow>;
+// The DB defaults facets to '{}' and triage_item to null, so callers may leave them out.
+export type ConstructEvidenceInsert =
+  & Omit<Insert<ConstructEvidenceRow>, "facets" | "triage_item">
+  & { facets?: string[]; triage_item?: string | null };
 export type ProbeFindingInsert = Insert<ProbeFindingRow>;
 export type SafetyFlagInsert = Insert<SafetyFlagRow>;
 export type ConstructMapInsert = Insert<ConstructMapRow>;
@@ -347,7 +381,46 @@ export interface CoverageState {
 }
 
 // ---------------------------------------------------------------------------
-// §7.3 Tool inputs
+// v1.1 §B Phases, triage and focus (computed by _shared/tracker.ts)
+// ---------------------------------------------------------------------------
+
+export interface TriageState {
+  /** Triage items that apply to this session's timepoint, in map order. */
+  items: TriageItem[];
+  answered: string[];
+  next: TriageItem | null;
+  done: boolean;
+}
+
+export type FocusStatus = "untouched" | "in_progress" | "confirmed" | "declined";
+
+export interface FocusConstructState {
+  construct_id: string;
+  label: string;
+  status: FocusStatus;
+  facets_total: number;
+  facets_covered: string[];
+  facets_missing: string[];
+  /** Facet coverage has reached `coverage_rules.focus_facet_threshold`: time to reflect back. */
+  ready_to_confirm: boolean;
+}
+
+export interface TrackerState {
+  phase: SessionPhase;
+  triage: TriageState;
+  focus: FocusConstructState[];
+  focus_constructs: string[];
+  current_focus: FocusConstructState | null;
+  focus_progress: { confirmed: number; total: number };
+  coverage: CoverageState;
+  /** Focus work and triage are done; light constructs never block. */
+  complete: boolean;
+  /** Non-null when the handler should say goodbye and emit `ended` after this turn. */
+  end_reason: EndReason | null;
+}
+
+// ---------------------------------------------------------------------------
+// v1.1 §C Extraction (the second, non-streaming call of each turn)
 // ---------------------------------------------------------------------------
 
 export interface RecordEvidenceInput {
@@ -360,35 +433,30 @@ export interface RecordEvidenceInput {
   note?: string | null;
 }
 
-export interface RecordProbeFindingInput {
+/** An evidence row as the extraction model proposes it (validated before it is stored). */
+export interface ExtractedEvidence extends RecordEvidenceInput {
+  facets: string[];
+  triage_item?: string | null;
+}
+
+export interface ExtractedFinding {
   construct_id: string;
   category: FindingCategory;
   finding: string;
 }
 
-export interface MarkDeclinedInput {
-  construct_id: string;
-  reason: string;
+export interface ExtractionResult {
+  evidence: ExtractedEvidence[];
+  findings: ExtractedFinding[];
+  declined: string[];
+  triage_answered: string[];
+  /** Constructs the patient just confirmed when the assistant reflected them back. */
+  confirmed: string[];
+  patient_questions: string[];
 }
-
-export interface RaiseSafetyFlagInput {
-  trigger: SafetyTrigger;
-  rationale: string;
-}
-
-export interface EndSessionInput {
-  reason: EndReason;
-}
-
-export type ToolName =
-  | "record_evidence"
-  | "record_probe_finding"
-  | "mark_declined"
-  | "raise_safety_flag"
-  | "end_session";
 
 // ---------------------------------------------------------------------------
-// §7.6 SSE events
+// §7.6 SSE events (status shape per v1.1 §C)
 // ---------------------------------------------------------------------------
 
 export type SseEvent =
@@ -398,6 +466,9 @@ export type SseEvent =
     event: "status";
     data: {
       coverage: { covered: number; total_active: number };
+      phase: SessionPhase;
+      current_focus: string | null;
+      focus_progress: { confirmed: number; total: number };
       turns_used: number;
       max_turns: number;
     };
@@ -430,6 +501,10 @@ export interface ProfileConstruct {
   quotes: ProfileQuote[];
   findings: ProfileFinding[];
   status: CoverageStatus;
+  /** v1.1 §D: facet ids with evidence / still missing, and whether the patient confirmed it. */
+  facets_covered: string[];
+  facets_missing: string[];
+  confirmed: boolean;
 }
 
 export interface ProfileDomain {
@@ -537,6 +612,9 @@ export interface SessionStateResponse {
   consent_variant_needed: ConsentVariant;
   messages: { seq: number; role: MessageRole; content: string; created_at: string }[];
   coverage: { covered: number; total_active: number };
+  phase: SessionPhase;
+  current_focus: string | null;
+  focus_progress: { confirmed: number; total: number };
   turns_used: number;
   max_turns: number;
   patient_summary: string | null;
@@ -583,6 +661,18 @@ export interface IngestInstrumentRequest {
   population: Population;
 }
 
+/** v1.1 §E: what the merge added to the approved map the draft was built from. */
+export interface IngestDiff {
+  facets_added: number;
+  constructs_added: string[];
+  triage_added: number;
+}
+
+export interface IngestInstrumentResponse {
+  construct_map: ConstructMapRow;
+  diff: IngestDiff;
+}
+
 export interface ApproveMapRequest {
   action: "approve";
   construct_map_id: string;
@@ -615,6 +705,8 @@ export interface Db {
   getInstrumentBySlug(slug: string): Promise<InstrumentRow | null>;
   getConstructMap(id: string): Promise<ConstructMapRow | null>;
   getLatestApprovedMap(slug: string): Promise<ConstructMapRow | null>;
+  /** v1.1 §E: ingestion merges into the most recently approved map of a population. */
+  getLatestApprovedMapForPopulation(population: Population): Promise<ConstructMapRow | null>;
   getMaxMapVersion(slug: string): Promise<number>;
   insertConstructMap(row: ConstructMapInsert): Promise<ConstructMapRow>;
   updateConstructMap(id: string, patch: Partial<ConstructMapInsert>): Promise<ConstructMapRow>;

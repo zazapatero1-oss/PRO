@@ -1,7 +1,23 @@
 import { assertEquals, assertRejects } from "@std/assert";
 import { completeJson, parseJsonLoose, streamTurn } from "./anthropic.ts";
-import { buildToolDefinitions } from "./prompt.ts";
 import { FakeAnthropic } from "./testing.ts";
+import type Anthropic from "@anthropic-ai/sdk";
+
+// v1.1 removed the conversational tools; streamTurn still supports a tool loop, so the loop
+// tests carry their own minimal schemas.
+const TOOLS: Anthropic.Tool[] = [
+  {
+    name: "record_evidence",
+    description: "test",
+    input_schema: { type: "object", properties: { construct_id: { type: "string" } } },
+  },
+  {
+    name: "record_probe_finding",
+    description: "test",
+    input_schema: { type: "object", properties: { construct_id: { type: "string" } } },
+  },
+  { name: "end_session", description: "test", input_schema: { type: "object", properties: {} } },
+];
 
 Deno.test("streamTurn: runs the tool loop, feeds tool_result back, stops at end_turn", async () => {
   const client = new FakeAnthropic([
@@ -21,7 +37,7 @@ Deno.test("streamTurn: runs the tool loop, feeds tool_result back, stops at end_
     model: "fake",
     system: "sys",
     messages: [{ role: "user", content: "hi" }],
-    tools: buildToolDefinitions(),
+    tools: TOOLS,
     maxTokens: 600,
     onText: (d) => deltas.push(d),
     onToolUse: (name) => {
@@ -58,7 +74,7 @@ Deno.test("streamTurn: after 3 tool-only rounds, one forced tools-off reply give
     model: "fake",
     system: "",
     messages: [{ role: "user", content: "hi" }],
-    tools: [],
+    tools: TOOLS,
     maxTokens: 10,
     onText: () => {},
     onToolUse: () => {
@@ -86,7 +102,7 @@ Deno.test("streamTurn: a tool that throws becomes an is_error tool_result; refus
     model: "fake",
     system: "",
     messages: [{ role: "user", content: "hi" }],
-    tools: [],
+    tools: TOOLS,
     maxTokens: 10,
     onText: () => {},
     onToolUse: () => Promise.reject(new Error("db down")),
@@ -102,7 +118,7 @@ Deno.test("streamTurn: a tool that throws becomes an is_error tool_result; refus
     model: "fake",
     system: "",
     messages: [{ role: "user", content: "hi" }],
-    tools: [],
+    tools: TOOLS,
     maxTokens: 10,
     onText: () => {},
     onToolUse: () => {
@@ -135,4 +151,22 @@ Deno.test("completeJson: retries once on invalid JSON, then throws", async () =>
   await assertRejects(() =>
     completeJson({ client: bad, model: "fake", system: "s", user: "u", maxTokens: 100 })
   );
+});
+
+Deno.test("streamTurn: with no tools, neither `tools` nor `tool_choice` is sent (v1.1 §C)", async () => {
+  const client = new FakeAnthropic([{ text: "hello", stopReason: "max_tokens" }]);
+  const result = await streamTurn({
+    client,
+    model: "fake",
+    system: "",
+    messages: [{ role: "user", content: "hi" }],
+    tools: [],
+    maxTokens: 400,
+    onText: () => {},
+  });
+  assertEquals(result.rounds, 1);
+  const params = client.calls[0].params as { tools?: unknown; tool_choice?: unknown };
+  assertEquals(params.tools, undefined);
+  assertEquals(params.tool_choice, undefined);
+  assertEquals(client.calls.length, 1);
 });

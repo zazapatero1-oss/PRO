@@ -6,8 +6,9 @@ import {
   generateProfile,
 } from "./profile.ts";
 import { computeCoverage, selectActiveConstructs } from "./tracker.ts";
+import { confirmationText } from "./tracker.ts";
 import { FakeAnthropic, fixtureMap } from "./testing.ts";
-import type { ConstructEvidenceRow, ProfileJson } from "./types.ts";
+import type { ConstructEvidenceRow, ProbeFindingRow, ProfileJson } from "./types.ts";
 
 Deno.test("domainSeverity: single construct → worst; ≥2 → median with worst noted", () => {
   assertEquals(domainSeverity([{ severity: "severe", confidence: 0.8 }]), {
@@ -51,6 +52,8 @@ function ev(
     severity,
     confidence,
     interference: [],
+    facets: [],
+    triage_item: null,
     note: null,
     superseded_by: null,
     created_at: "",
@@ -113,6 +116,9 @@ Deno.test("computeChange: compares construct severities with the prior profile",
         quotes: [],
         findings: [],
         status: "covered",
+        facets_covered: [],
+        facets_missing: [],
+        confirmed: false,
       }],
     }],
     needs_clarification: [],
@@ -136,6 +142,9 @@ Deno.test("computeChange: compares construct severities with the prior profile",
       quotes: [],
       findings: [],
       status: "covered" as const,
+      facets_covered: [],
+      facets_missing: [],
+      confirmed: false,
     }],
   }];
   assertEquals(computeChange(now, prior), [{
@@ -170,4 +179,46 @@ Deno.test("generateProfile: merges model narrative, falls back when the model ou
   const r2 = await generateProfile(base, { client: bad, model: "m" });
   assertEquals(r2.narrativeOk, false);
   assertEquals(r2.profile.domains[0].severity, "mild");
+});
+
+Deno.test("buildDeterministicProfile: v1.1 facet coverage, confirmation and unconfirmed focus", () => {
+  const evidence = [
+    { ...ev("appearance.overall", "moderate"), facets: ["mirror", "photos"] },
+    { ...ev("appearance.nose", "mild"), facets: ["shape"] },
+  ];
+  const findings: ProbeFindingRow[] = [
+    {
+      id: "f1",
+      session_id: "s",
+      construct_id: "appearance.overall",
+      finding: confirmationText("the mirror is the hard part"),
+      category: "other",
+      message_id: null,
+      created_at: "",
+    },
+  ];
+  const p = buildDeterministicProfile({
+    activeConstructs: active,
+    coverage: computeCoverage(map, active, evidence, findings),
+    evidence,
+    findings,
+    language: "en",
+    timepoint: "baseline",
+    priorProfile: null,
+    focusConstructs: ["appearance.overall", "appearance.nose"],
+    generatedWith: { model: "m", prompt_version: "v", map: "test-map@1" },
+  });
+  const constructs = p.domains.flatMap((d) => d.constructs);
+  const overall = constructs.find((c) => c.id === "appearance.overall")!;
+  assertEquals(overall.facets_covered, ["mirror", "photos"]);
+  assertEquals(overall.facets_missing, ["wanted_change"]);
+  assertEquals(overall.confirmed, true);
+  // The confirmation marker is tracker bookkeeping, not a clinical finding.
+  assertEquals(overall.findings, []);
+
+  const nose = constructs.find((c) => c.id === "appearance.nose")!;
+  assertEquals(nose.facets_covered, ["shape"]);
+  assertEquals(nose.confirmed, false);
+  // An unconfirmed focus construct is handed to the clinician.
+  assertEquals(p.needs_clarification.map((n) => n.construct_id), ["appearance.nose"]);
 });

@@ -149,6 +149,8 @@ export async function handleStartSession(
     prompt_version: deps.promptVersion,
     model_id: deps.model,
     status: "intake",
+    phase: "triage",
+    focus_constructs: [],
     resume_token_hash: await hashToken(token),
     resume_token_expires_at: new Date(Date.now() + RESUME_TOKEN_TTL_MS).toISOString(),
     max_turns: DEFAULT_MAX_TURNS,

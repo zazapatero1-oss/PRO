@@ -1,21 +1,82 @@
-import { assert, assertEquals, assertStringIncludes } from "@std/assert";
+import { assert, assertStringIncludes } from "@std/assert";
 import {
+  buildExtractionPrompt,
+  buildIngestMergePrompt,
   buildPatientSummaryPrompt,
   buildSystemPrompt,
-  buildToolDefinitions,
+  EXPLORE_GUIDANCE,
   PRIORITY_GUIDANCE,
   renderPriorBrief,
   renderTurnBudget,
   type SystemPromptInput,
+  TRIAGE_GUIDANCE_SUFFIX,
   WRAP_UP_100,
   WRAP_UP_80,
 } from "./prompt.ts";
-import { computeCoverage, selectActiveConstructs } from "./tracker.ts";
+import { computeTrackerState, selectActiveConstructs } from "./tracker.ts";
 import { fixtureMap } from "./testing.ts";
-import type { ProfileJson } from "./types.ts";
+import type {
+  ConstructEvidenceRow,
+  ProbeFindingRow,
+  ProfileJson,
+  SessionRow,
+  Severity,
+  TrackerState,
+} from "./types.ts";
 
 const map = fixtureMap({ population: "pediatric" });
 const active = selectActiveConstructs(map, [], ["psych.self_consciousness"], "baseline");
+
+let n = 0;
+function ev(
+  construct_id: string,
+  severity: Severity,
+  extra: Partial<ConstructEvidenceRow> = {},
+): ConstructEvidenceRow {
+  n++;
+  return {
+    id: `ev-${n}`,
+    session_id: "s",
+    construct_id,
+    message_id: "m",
+    patient_quote: "q",
+    quote_gloss_en: "q",
+    severity,
+    confidence: 0.9,
+    interference: [],
+    facets: [],
+    triage_item: null,
+    note: null,
+    superseded_by: null,
+    created_at: new Date(1000 * n).toISOString(),
+    ...extra,
+  };
+}
+
+function tracker(
+  opts: {
+    evidence?: ConstructEvidenceRow[];
+    findings?: ProbeFindingRow[];
+    phase?: SessionRow["phase"];
+    focus?: string[];
+    turns?: number;
+    fraction?: number;
+  } = {},
+): TrackerState {
+  return computeTrackerState({
+    map,
+    session: {
+      timepoint: "baseline",
+      phase: opts.phase ?? "triage",
+      focus_constructs: opts.focus ?? [],
+    },
+    active,
+    evidence: opts.evidence ?? [],
+    findings: opts.findings ?? [],
+    assistantTurns: opts.turns ?? 1,
+    budgetFraction: opts.fraction ?? 0,
+  });
+}
 
 function input(overrides: Partial<SystemPromptInput> = {}): SystemPromptInput {
   return {
@@ -33,7 +94,7 @@ function input(overrides: Partial<SystemPromptInput> = {}): SystemPromptInput {
     },
     population: "pediatric",
     activeConstructs: active,
-    coverage: computeCoverage(map, active, [], []),
+    tracker: tracker(),
     budget: { turnsUsed: 3, maxTurns: 40, minutesElapsed: 2, targetMinutes: 12 },
     ...overrides,
   };
@@ -47,8 +108,9 @@ Deno.test("system prompt: stable sections first, per-turn sections last (SPEC §
     "# Patient context",
     "# Clinician focus note",
     "# What matters to understand",
-    "# Tools and how to use them",
+    "# How to talk",
     "# Control phrases",
+    "# This phase",
     "# Coverage status",
     "# Turn budget",
   ];
@@ -146,6 +208,9 @@ Deno.test("prior brief is ≤200 words and included for non-baseline sessions", 
         quotes: [{ text: "hola", lang: "es", gloss_en: "hello" }],
         findings: [],
         status: "covered",
+        facets_covered: [],
+        facets_missing: [],
+        confirmed: false,
       }],
     })),
     needs_clarification: [],
@@ -162,25 +227,98 @@ Deno.test("prior brief is ≤200 words and included for non-baseline sessions", 
   assertStringIncludes(p, "Reference change naturally");
 });
 
-Deno.test("tool definitions: the five SPEC §7.3 tools with required fields", () => {
-  const tools = buildToolDefinitions();
-  assertEquals(tools.map((t) => t.name), [
-    "record_evidence",
-    "record_probe_finding",
-    "mark_declined",
-    "raise_safety_flag",
-    "end_session",
-  ]);
-  const ev = tools[0].input_schema;
-  assertEquals(ev.required, [
-    "construct_id",
-    "patient_quote",
-    "quote_gloss_en",
-    "severity",
-    "confidence",
-    "interference",
-  ]);
-  assertEquals(tools[4].input_schema.required, ["reason"]);
+Deno.test("no tool instructions survive in the conversational prompt (v1.1 §C)", () => {
+  const p = buildSystemPrompt(input());
+  for (
+    const forbidden of [
+      "record_evidence",
+      "record_probe_finding",
+      "mark_declined",
+      "raise_safety_flag",
+      "end_session",
+      "tool",
+    ]
+  ) {
+    assert(!p.toLowerCase().includes(forbidden), `prompt still mentions "${forbidden}"`);
+  }
+});
+
+Deno.test("phase guidance: triage names the next unanswered item and forbids exploring", () => {
+  const p = buildSystemPrompt(input());
+  assertStringIncludes(p, "# This phase");
+  assertStringIncludes(
+    p,
+    `Ask about: How they feel overall about how their face looks right now ${TRIAGE_GUIDANCE_SUFFIX}`,
+  );
+  // Second item once the first is answered.
+  const answered = tracker({
+    evidence: [ev("appearance.overall", "mild", { triage_item: "overall" })],
+  });
+  const next = buildSystemPrompt(input({ tracker: answered }));
+  assertStringIncludes(next, "Which parts of their face are on their mind most");
+});
+
+Deno.test("phase guidance: explore names the focus, the missing facet labels and the confirm step", () => {
+  const evidence = [
+    ev("psych.self_consciousness", "moderate", {
+      triage_item: "impact",
+      facets: ["situations"],
+    }),
+  ];
+  const p = buildSystemPrompt(
+    input({ tracker: tracker({ evidence, phase: "explore", turns: 6 }) }),
+  );
+  assertStringIncludes(p, "Current focus: Self-consciousness about appearance.");
+  assertStringIncludes(p, "Still to cover: Things they avoid because of it.");
+  assertStringIncludes(p, EXPLORE_GUIDANCE);
+});
+
+Deno.test("phase guidance: wrap-up closes and opens nothing new", () => {
+  const p = buildSystemPrompt(
+    input({
+      tracker: tracker({
+        evidence: [ev("appearance.overall", "none", { triage_item: "overall" })],
+        phase: "explore",
+        fraction: 1,
+      }),
+      budget: { turnsUsed: 60, maxTurns: 60, minutesElapsed: 1, targetMinutes: 20 },
+    }),
+  );
+  assertStringIncludes(p, "You are closing the conversation.");
+  assertStringIncludes(p, WRAP_UP_100);
+});
+
+Deno.test("extraction prompt: verbatim-quote rule, ids, facets, triage items", () => {
+  const { system, user } = buildExtractionPrompt({
+    lastAssistantMessage: "What bothers you most about your nose?",
+    patientMessage: "the shape, mostly in photos",
+    activeConstructs: active,
+    population: "adult",
+    triage: map.triage ?? [],
+    language: "en",
+  });
+  assertStringIncludes(system, "MUST be a verbatim substring of the patient message");
+  assertStringIncludes(system, '"triage_item"');
+  assertStringIncludes(system, "confirmed");
+  assertStringIncludes(user, "What bothers you most about your nose?");
+  assertStringIncludes(user, "the shape, mostly in photos");
+  assertStringIncludes(user, "psych.self_consciousness");
+  assertStringIncludes(user, "situations=Situations where it is worse");
+  assertStringIncludes(user, "- overall: How they feel overall");
+});
+
+Deno.test("ingest merge prompt: additions only, no copied wording, current map included", () => {
+  const { system, user } = buildIngestMergePrompt({
+    instrumentSlug: "face-q-aesthetics",
+    population: "adult",
+    currentMap: map,
+    text: "Some pasted questionnaire text.",
+  });
+  assertStringIncludes(system, "Propose ADDITIONS ONLY");
+  assertStringIncludes(system, "never copy, quote, lightly reword");
+  assertStringIncludes(user, "appearance.overall");
+  assertStringIncludes(user, "facets: mirror, photos, wanted_change");
+  assertStringIncludes(user, "Some pasted questionnaire text.");
 });
 
 Deno.test("patient summary prompt: Spanish closing line and no severity labels instruction", () => {
