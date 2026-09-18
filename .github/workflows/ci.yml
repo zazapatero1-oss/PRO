@@ -49,10 +49,15 @@ jobs:
       - run: uv run --project eval pytest -q
 
   sql:
-    name: Migrations (syntax)
+    name: Migrations (syntax + PGlite)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Apply migrations and seeds in real Postgres (PGlite), check RLS and cascades
+        run: deno test -A supabase/seed/schema.test.ts
       - uses: astral-sh/setup-uv@v5
       - name: Parse every SQL file with pglast
         run: |
