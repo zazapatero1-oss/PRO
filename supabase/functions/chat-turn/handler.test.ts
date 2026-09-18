@@ -100,7 +100,7 @@ Deno.test("chat-turn: opening message is a triage turn with no tools and no extr
   const params = call.params as { tools?: unknown; tool_choice?: unknown; max_tokens: number };
   assertEquals(params.tools, undefined);
   assertEquals(params.tool_choice, undefined);
-  assertEquals(params.max_tokens, 400);
+  assertEquals(params.max_tokens, 250);
   const sys = systemText(call.params.system);
   assertStringIncludes(sys, "# This phase");
   assertStringIncludes(sys, "Ask about: How they feel overall about how their face looks");
@@ -224,12 +224,13 @@ Deno.test("chat-turn: triage completion derives focus and moves the phase to exp
   const { events } = await turn(s, anthropic, "it gets me down");
   const status = events[events.length - 1].data as StatusData;
   assertEquals(status.phase, "explore");
-  assertEquals(status.current_focus, "appearance.overall");
+  // Equal severity: the specific feature the patient named comes before the "overall" summary.
+  assertEquals(status.current_focus, "appearance.nose");
   assertEquals(status.focus_progress, { confirmed: 0, total: 3 });
   assertEquals(s.db.sessions[0].phase, "explore");
   assertEquals(s.db.sessions[0].focus_constructs, [
-    "appearance.overall",
     "appearance.nose",
+    "appearance.overall",
     "psych.mood",
   ]);
 });

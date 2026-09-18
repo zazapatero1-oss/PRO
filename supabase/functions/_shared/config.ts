@@ -23,9 +23,11 @@ export const MAX_OUTPUT_TOKENS = 1500;
  * v1.1 §C: the conversational call has no tools and only writes one short message, so a tight
  * cap keeps time-to-last-token low. Evidence is filed by the extraction call afterwards.
  */
-export const TALK_MAX_OUTPUT_TOKENS = 400;
+export const TALK_MAX_OUTPUT_TOKENS = 250;
 /** Output budget for non-streaming JSON generations (profile, extraction). */
 export const MAX_JSON_OUTPUT_TOKENS = 4000;
+/** Per-turn extraction is small: a few evidence rows with short quotes. */
+export const EXTRACT_MAX_OUTPUT_TOKENS = 1200;
 /** v1.1 §B defaults. */
 export const DEFAULT_MAX_TURNS = 60;
 /** Patient links expire after this (SPEC §4). */

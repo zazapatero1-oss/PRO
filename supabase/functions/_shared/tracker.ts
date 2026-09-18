@@ -315,6 +315,8 @@ export function deriveFocus(
   const scored: {
     id: string;
     clinician: boolean;
+    named: boolean;
+    overall: boolean;
     rank: number;
     priority: number;
     order: number;
@@ -336,6 +338,8 @@ export function deriveFocus(
     scored.push({
       id: c.id,
       clinician: c.focus,
+      named: namedInTriage,
+      overall: c.id.endsWith(".overall"),
       rank: best,
       priority: PRIORITY_ORDER[c.priority],
       order,
@@ -346,6 +350,10 @@ export function deriveFocus(
     .sort((a, b) =>
       Number(b.clinician) - Number(a.clinician) ||
       b.rank - a.rank ||
+      // At equal severity, what the patient brought up themselves comes first.
+      Number(b.named) - Number(a.named) ||
+      // A summary construct ("overall") mostly repeats the triage answers; specific features first.
+      Number(a.overall) - Number(b.overall) ||
       a.priority - b.priority ||
       a.order - b.order
     )

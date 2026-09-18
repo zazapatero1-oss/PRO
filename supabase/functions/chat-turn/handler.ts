@@ -45,7 +45,7 @@ import { persistExtraction, validateExtraction } from "../_shared/extraction.ts"
 import {
   DEFAULT_EXTRACT_MODEL,
   estimateCostUsd,
-  MAX_JSON_OUTPUT_TOKENS,
+  EXTRACT_MAX_OUTPUT_TOKENS,
   TALK_MAX_OUTPUT_TOKENS,
 } from "../_shared/config.ts";
 import { writeAudit } from "../_shared/db.ts";
@@ -342,13 +342,15 @@ async function* runTurn(
         population: ctx.mapRow.population,
         triage: tracker.triage.items,
         language,
+        // In explore, only the focus areas need detail tags; triage tags everything.
+        facetsFor: tracker.phase === "explore" ? new Set(session.focus_constructs) : null,
       });
       const extraction = await completeJson<ExtractionResult>({
         client: deps.anthropic,
         model: deps.extractModel ?? DEFAULT_EXTRACT_MODEL,
         system,
         user,
-        maxTokens: MAX_JSON_OUTPUT_TOKENS,
+        maxTokens: EXTRACT_MAX_OUTPUT_TOKENS,
         validate: (v) =>
           validateExtraction(v, ctx.activeConstructs, tracker.triage.items, body.text ?? ""),
       });

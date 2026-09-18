@@ -40,7 +40,9 @@ export const TRIAGE_GUIDANCE_SUFFIX =
   "— in your own words, in the patient's register; one item per message; do not explore yet.";
 export const EXPLORE_GUIDANCE =
   "Stay on this topic, one detail per question, in the patient's words. When the list is covered (or they decline), " +
-  "reflect back what you heard in one or two sentences and ask if that's right; wait for their answer before moving on.";
+  "reflect back what you heard in one or two sentences and ask if that's right; wait for their answer before moving on. " +
+  "If you already asked about a detail and they did not address it, do not ask it again; move to the next detail. " +
+  "Follow the patient's thread: if they are clearly talking about a different area on the focus list, explore that one now.";
 
 // ---------------------------------------------------------------------------
 // Section 1: role and principles (fixed)
@@ -233,6 +235,23 @@ export function renderConstruct(c: ActiveConstruct, population: Population): str
   ].filter((l): l is string => l !== null).join("\n");
 }
 
+/** Compact one-construct rendering for the per-turn extraction call: no description or
+ * drill-down (the extractor only rates and tags), facets only where they are being explored. */
+export function renderConstructForExtraction(
+  c: ActiveConstruct,
+  population: Population,
+  withFacets: boolean,
+): string {
+  const variant = population === "pediatric" ? c.age_variants?.pediatric : undefined;
+  const s = c.severity_signals;
+  const facets = withFacets ? facetsOf(c) : [];
+  return [
+    `- ${c.id} — ${variant?.label ?? c.label}`,
+    `  severity: none=${s.none} | mild=${s.mild} | moderate=${s.moderate} | severe=${s.severe}`,
+    facets.length ? `  details: ${facets.map((f) => `${f.id}=${f.label}`).join("; ")}` : null,
+  ].filter((l): l is string => l !== null).join("\n");
+}
+
 function renderConstructMap(active: ActiveConstruct[], population: Population): string {
   const byDomain = new Map<string, { label: string; items: ActiveConstruct[] }>();
   for (const c of active) {
@@ -379,7 +398,7 @@ When someone asks you a medical question, acknowledge it warmly, say their care 
 "Skip", "next", "I'd rather not say", "stop", "take a break" (and their Spanish equivalents) are handled by the system before you see them, but if the patient declines in other words, respect it immediately. Never pressure, never repeat a declined topic.
 
 # Style
-Sound like a person, not a form: react to what they said before asking anything. Open with a short, friendly greeting on the first turn and one easy, open question about how things are for them at the moment. Keep to one topic per message.`;
+Sound like a person, not a form: react to what they said before asking anything. Keep every reply to two to four short sentences (under about 70 words): one brief reaction, then one question. Open with a short, friendly greeting on the first turn and one easy, open question about how things are for them at the moment. Keep to one topic per message.`;
 
 // ---------------------------------------------------------------------------
 // Assemble
@@ -463,6 +482,8 @@ export interface ExtractionPromptInput {
   population: Population;
   triage: TriageItem[];
   language: Language;
+  /** Constructs whose facets to list; null/undefined lists facets for every construct. */
+  facetsFor?: Set<string> | null;
 }
 
 const EXTRACTION_SHAPE = {
@@ -503,7 +524,8 @@ export function buildExtractionPrompt(
     "6. `triage_item` / `triage_answered` are set when the message answers one of the opening-screen items below.",
     '7. `confirmed` lists constructs the patient just agreed with when the assistant reflected an area back to them ("yes, that\'s right"). Never guess this.',
     "8. `findings` are short qualitative notes (onset, trajectory, triggers, relief, impact, expectation); medical questions go in `patient_questions` as well as a `patient_question` finding.",
-    "9. Say nothing else. Output ONLY the JSON object, no prose, no code fences. Every array may be empty.",
+    "9. When the conversation language is English, omit quote_gloss_en entirely. Omit note unless it adds something the quote does not say.",
+    "10. Say nothing else. Output ONLY the JSON object, no prose, no code fences. Every array may be empty.",
     "",
     "Shape:",
     JSON.stringify(EXTRACTION_SHAPE, null, 2),
@@ -517,8 +539,14 @@ export function buildExtractionPrompt(
   const user = [
     `Conversation language: ${input.language}.`,
     "",
-    "Constructs (id, what it captures, severity signals, details):",
-    ...input.activeConstructs.map((c) => renderConstruct(c, input.population)),
+    "Constructs (id, severity signals, details where listed):",
+    ...input.activeConstructs.map((c) =>
+      renderConstructForExtraction(
+        c,
+        input.population,
+        !input.facetsFor || input.facetsFor.has(c.id),
+      )
+    ),
     "",
     "Opening-screen items:",
     triage,
