@@ -145,6 +145,181 @@ Deno.test("seed maps are well formed and diagnosis focus constructs resolve", as
   await db.close();
 });
 
+Deno.test("every construct has 5-8 facets with unique ids (SPEC v1.1 §A)", async () => {
+  const db = await freshDb();
+  await loadSeeds(db);
+  const bad = await rows(
+    db,
+    `with constructs as (
+       select cm.slug, c->>'id' as cid, c->'facets' as facets
+       from public.construct_maps cm,
+         jsonb_array_elements(cm.map->'domains') d, jsonb_array_elements(d->'constructs') c)
+     select slug, cid,
+            coalesce(jsonb_array_length(facets), 0) as n,
+            (select count(distinct f->>'id') from jsonb_array_elements(coalesce(facets, '[]'::jsonb)) f) as distinct_ids,
+            (select count(*) from jsonb_array_elements(coalesce(facets, '[]'::jsonb)) f
+             where f->>'id' !~ '^[a-z][a-z0-9_]*$' or coalesce(f->>'label', '') = '') as malformed
+     from constructs
+     where facets is null
+        or jsonb_array_length(facets) not between 5 and 8
+        or (select count(distinct f->>'id') from jsonb_array_elements(facets) f) <> jsonb_array_length(facets)
+        or exists (select 1 from jsonb_array_elements(facets) f
+                   where f->>'id' !~ '^[a-z][a-z0-9_]*$' or coalesce(f->>'label', '') = '')`,
+  );
+  assertEquals(bad, []);
+  // Sanity: the facet total is what 33 + 31 constructs at 5-8 each should give.
+  const total = Number(await scalar(
+    db,
+    `select count(*) from public.construct_maps cm,
+       jsonb_array_elements(cm.map->'domains') d, jsonb_array_elements(d->'constructs') c,
+       jsonb_array_elements(c->'facets') f`,
+  ));
+  assert(total >= 64 * 5 && total <= 64 * 8, `facet total ${total}`);
+  await db.close();
+});
+
+Deno.test("both maps carry a triage block whose maps_to patterns resolve", async () => {
+  const db = await freshDb();
+  await loadSeeds(db);
+  const maps = await rows(
+    db,
+    `select slug, jsonb_array_length(map->'triage') as items,
+            (map->'coverage_rules'->>'focus_facet_threshold')::numeric as threshold
+     from public.construct_maps order by slug`,
+  );
+  assertEquals(maps.length, 2);
+  for (const m of maps) {
+    assert(Number(m.items) >= 4, `${m.slug} has ${m.items} triage items`);
+    assertEquals(Number(m.threshold), 0.7);
+  }
+  // Adult keeps the post-op-only recovery item.
+  assertEquals(
+    await scalar(
+      db,
+      `select t->'timepoints' from public.construct_maps cm, jsonb_array_elements(cm.map->'triage') t
+       where cm.slug = 'face-q-adult' and t->>'id' = 'recovery'`,
+    ),
+    ["post-op-2w", "post-op-6w", "post-op-6m", "post-op-12m", "follow-up"],
+  );
+  // Every maps_to pattern (exact id or `domain.*` wildcard) hits >= 1 construct.
+  const unresolved = await rows(
+    db,
+    `with ids as (
+       select cm.slug, c->>'id' as cid from public.construct_maps cm,
+         jsonb_array_elements(cm.map->'domains') d, jsonb_array_elements(d->'constructs') c),
+     patterns as (
+       select cm.slug, t->>'id' as item, p as pattern from public.construct_maps cm,
+         jsonb_array_elements(cm.map->'triage') t, jsonb_array_elements_text(t->'maps_to') p)
+     select p.slug, p.item, p.pattern from patterns p
+     where not exists (
+       select 1 from ids
+       where ids.slug = p.slug
+         and case when p.pattern like '%*'
+                  then ids.cid like replace(p.pattern, '*', '%')
+                  else ids.cid = p.pattern end)`,
+  );
+  assertEquals(unresolved, []);
+  const triageIds = await rows(
+    db,
+    `select slug, count(*) as n, count(distinct t->>'id') as distinct_ids
+     from public.construct_maps cm, jsonb_array_elements(cm.map->'triage') t
+     group by slug`,
+  );
+  for (const r of triageIds) assertEquals(Number(r.n), Number(r.distinct_ids));
+  await db.close();
+});
+
+Deno.test("v1.1 columns exist with the specified defaults and checks (SPEC v1.1 §D)", async () => {
+  const db = await freshDb();
+  await loadSeeds(db);
+  const cols = await rows(
+    db,
+    `select table_name, column_name, data_type, is_nullable, column_default
+     from information_schema.columns
+     where table_schema = 'public'
+       and (table_name, column_name) in
+         (('construct_evidence','facets'), ('construct_evidence','triage_item'),
+          ('sessions','phase'), ('sessions','focus_constructs'),
+          ('sessions','max_turns'), ('sessions','target_minutes'))
+     order by table_name, column_name`,
+  );
+  const by = (t: string, c: string) => cols.find((r) => r.table_name === t && r.column_name === c)!;
+  assertEquals(by("construct_evidence", "facets").data_type, "ARRAY");
+  assertEquals(by("construct_evidence", "facets").is_nullable, "NO");
+  assertEquals(by("construct_evidence", "triage_item").is_nullable, "YES");
+  assertEquals(by("sessions", "phase").is_nullable, "NO");
+  assert(String(by("sessions", "phase").column_default).includes("'triage'"));
+  assertEquals(by("sessions", "focus_constructs").is_nullable, "NO");
+  assertEquals(String(by("sessions", "max_turns").column_default), "60");
+  assertEquals(String(by("sessions", "target_minutes").column_default), "20");
+
+  const s1 = "d3a0c002-0000-4000-8000-000000000001";
+  assert(await fails(db, `update public.sessions set phase = 'chatting' where id = '${s1}'`));
+  for (const phase of ["triage", "explore", "wrap-up"]) {
+    await db.exec(`update public.sessions set phase = '${phase}' where id = '${s1}'`);
+  }
+  await db.exec(`update public.sessions set phase = 'wrap-up' where id = '${s1}'`);
+
+  // Defaults apply to a row that says nothing about the new columns.
+  await db.exec(
+    `insert into public.sessions (id, participant_id, timepoint, language, construct_map_id, prompt_version, model_id, resume_token_hash)
+     values ('d3a0c002-0000-4000-8000-0000000000ff', 'd3a0c001-0000-4000-8000-000000000001', 'baseline', 'en',
+             (select id from public.construct_maps where slug = 'face-q-adult' order by version desc limit 1),
+             'v', 'm', repeat('a', 64))`,
+  );
+  const fresh = (await rows(
+    db,
+    "select phase, focus_constructs, max_turns, target_minutes from public.sessions where id = 'd3a0c002-0000-4000-8000-0000000000ff'",
+  ))[0];
+  assertEquals(fresh.phase, "triage");
+  assertEquals(fresh.focus_constructs, []);
+  assertEquals(Number(fresh.max_turns), 60);
+  assertEquals(Number(fresh.target_minutes), 20);
+
+  // Evidence rows can carry facet ids and a triage item; facets default to empty.
+  await db.exec(
+    `insert into public.construct_evidence (session_id, construct_id, patient_quote, quote_gloss_en, severity, confidence, facets, triage_item)
+     values ('${s1}', 'appearance.eyes', 'q', 'q', 'mild', 0.8, array['shape','lids']::text[], 'features')`,
+  );
+  assertEquals(
+    await scalar(db, `select facets from public.construct_evidence where triage_item = 'features'`),
+    ["shape", "lids"],
+  );
+  assertEquals(
+    Number(await scalar(db, `select count(*) from public.construct_evidence where facets = '{}' and triage_item is null`)),
+    51,
+  );
+  await db.close();
+});
+
+Deno.test("demo sessions reference the seeded map version and carry phase + focus", async () => {
+  const db = await freshDb();
+  await loadSeeds(db);
+  const sessions = await rows(
+    db,
+    `select s.phase, cm.slug, cm.version, cardinality(s.focus_constructs) as focus_n
+     from public.sessions s join public.construct_maps cm on cm.id = s.construct_map_id
+     order by s.created_at`,
+  );
+  assertEquals(sessions.length, 4);
+  for (const s of sessions) {
+    assertEquals(s.phase, "wrap-up");
+    assertEquals(Number(s.version), 2);
+    assert(Number(s.focus_n) >= 1 && Number(s.focus_n) <= 8, `focus size ${s.focus_n}`);
+  }
+  // Demo focus constructs must exist in the map that session points at.
+  const unknown = await rows(
+    db,
+    `with ids as (
+       select cm.id as map_id, c->>'id' as cid from public.construct_maps cm,
+         jsonb_array_elements(cm.map->'domains') d, jsonb_array_elements(d->'constructs') c)
+     select s.id, fc from public.sessions s, unnest(s.focus_constructs) fc
+     where not exists (select 1 from ids where ids.map_id = s.construct_map_id and ids.cid = fc)`,
+  );
+  assertEquals(unknown, []);
+  await db.close();
+});
+
 Deno.test("v_participant_timeline orders sessions by timepoint and summarises profiles", async () => {
   const db = await freshDb();
   await loadSeeds(db);
@@ -174,7 +349,7 @@ Deno.test("check constraints reject invalid enum values", async () => {
   const cases: [string, string][] = [
     ["age_band", "insert into public.participants (display_name, age_band, diagnosis_code) values ('x','40-49','rhinoplasty')"],
     ["timepoint", `insert into public.sessions (participant_id, timepoint, language, construct_map_id, prompt_version, model_id, resume_token_hash)
-       values ('d3a0c001-0000-4000-8000-000000000001','week-1','en','7a1c5e20-0002-4a00-8000-000000000001','v','m',repeat('a',64))`],
+       values ('d3a0c001-0000-4000-8000-000000000001','week-1','en','7a1c5e20-0002-4a00-8000-000000000011','v','m',repeat('a',64))`],
     ["severity", `insert into public.construct_evidence (session_id, construct_id, patient_quote, quote_gloss_en, severity, confidence) values ('${s1}','x','q','g','bad',0.5)`],
     ["confidence", `insert into public.construct_evidence (session_id, construct_id, patient_quote, quote_gloss_en, severity, confidence) values ('${s1}','x','q','g','mild',1.5)`],
     ["seq unique", `insert into public.messages (session_id, seq, role, content) values ('${s1}', 1, 'patient', 'dup')`],

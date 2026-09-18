@@ -38,31 +38,40 @@ values
 -- ===========================================================================
 insert into public.sessions
   (id, participant_id, timepoint, respondent, language, construct_map_id, prompt_version, model_id, status,
-   resume_token_hash, max_turns, target_minutes, started_at, ended_at, consent_given_at, consent_variant,
+   resume_token_hash, max_turns, target_minutes, phase, focus_constructs,
+   started_at, ended_at, consent_given_at, consent_variant,
    input_tokens, output_tokens, cost_usd_estimate, created_at)
 values
   ('d3a0c002-0000-4000-8000-000000000001', 'd3a0c001-0000-4000-8000-000000000001', 'baseline',   'self',     'en',
-   (select id from public.construct_maps where slug = 'face-q-adult' and version = 1),
+   (select id from public.construct_maps where slug = 'face-q-adult' and status = 'approved'
+    order by version desc limit 1),
    'demo-seed-1', 'claude-sonnet-5', 'completed',
-   '9d585b8e94db3393f4fd68bb63a07295e91f845430803bd9f4e48a9f0ca66d9b', 40, 12,
+   '9d585b8e94db3393f4fd68bb63a07295e91f845430803bd9f4e48a9f0ca66d9b', 40, 12, 'wrap-up',
+   array['appearance.nose', 'function.breathing', 'adverse.asymmetry', 'distress.preoccupation', 'appearance.overall', 'psych.self_confidence', 'social.avoidance', 'psych.mood']::text[],
    '2026-07-20 18:02:00+00', '2026-07-20 18:15:30+00', '2026-07-20 18:01:10+00', 'adult',
    38420, 2610, 0.154, '2026-07-18 09:12:30+00'),
   ('d3a0c002-0000-4000-8000-000000000002', 'd3a0c001-0000-4000-8000-000000000001', 'post-op-6w', 'self',     'en',
-   (select id from public.construct_maps where slug = 'face-q-adult' and version = 1),
+   (select id from public.construct_maps where slug = 'face-q-adult' and status = 'approved'
+    order by version desc limit 1),
    'demo-seed-1', 'claude-sonnet-5', 'completed',
-   'bcb09d04aa1ea8d3c0f1012dbcd7eba312593c8b553c8a118b2d4225d49c3844', 40, 12,
+   'bcb09d04aa1ea8d3c0f1012dbcd7eba312593c8b553c8a118b2d4225d49c3844', 40, 12, 'wrap-up',
+   array['adverse.numbness_sensation', 'outcome.information', 'adverse.swelling_bruising', 'function.facial_expression', 'distress.preoccupation']::text[],
    '2026-09-08 19:30:00+00', '2026-09-08 19:41:45+00', '2026-09-08 19:29:20+00', 'adult',
    41880, 2490, 0.163, '2026-09-06 08:00:00+00'),
   ('d3a0c002-0000-4000-8000-000000000003', 'd3a0c001-0000-4000-8000-000000000002', 'baseline',   'self',     'es',
-   (select id from public.construct_maps where slug = 'face-q-adult' and version = 1),
+   (select id from public.construct_maps where slug = 'face-q-adult' and status = 'approved'
+    order by version desc limit 1),
    'demo-seed-1', 'claude-sonnet-5', 'completed',
-   'b1d0eb4139476fb2910d52f9e7008798bfd7fdf62dbfdd163ff3c211474506b0', 40, 12,
+   'b1d0eb4139476fb2910d52f9e7008798bfd7fdf62dbfdd163ff3c211474506b0', 40, 12, 'wrap-up',
+   array['appearance.overall', 'aging.appraisal', 'appearance.chin_jawline', 'appearance.cheeks', 'social.avoidance', 'social.comfort', 'psych.self_confidence', 'distress.preoccupation']::text[],
    '2026-08-12 16:10:00+00', '2026-08-12 16:24:10+00', '2026-08-12 16:09:05+00', 'adult',
    40150, 2880, 0.161, '2026-08-10 10:06:00+00'),
   ('d3a0c002-0000-4000-8000-000000000004', 'd3a0c001-0000-4000-8000-000000000003', 'baseline',   'guardian', 'en',
-   (select id from public.construct_maps where slug = 'face-q-pediatric' and version = 1),
+   (select id from public.construct_maps where slug = 'face-q-pediatric' and status = 'approved'
+    order by version desc limit 1),
    'demo-seed-1', 'claude-sonnet-5', 'completed',
-   'b6b50a806860bfe6b627a659be13b268953d0a47b28a083a28f5d20e6b7370fc', 40, 12,
+   'b6b50a806860bfe6b627a659be13b268953d0a47b28a083a28f5d20e6b7370fc', 40, 12, 'wrap-up',
+   array['appearance.lips', 'social.teasing_comments', 'function.speaking', 'social.avoidance', 'appearance.overall', 'psych.self_confidence', 'social.school', 'distress.preoccupation']::text[],
    '2026-08-26 17:00:00+00', '2026-08-26 17:12:20+00', '2026-08-26 16:59:00+00', 'guardian',
    36900, 2410, 0.148, '2026-08-24 14:41:00+00');
 
@@ -170,7 +179,7 @@ insert into public.probe_findings (id, session_id, construct_id, finding, catego
 insert into public.session_profiles (session_id, profile, patient_summary, patient_summary_confirmed_at, patient_corrections, generated_at) values
   ('d3a0c002-0000-4000-8000-000000000001',
    $d${
-  "generated_with": {"model": "claude-sonnet-5", "prompt_version": "demo-seed-1", "map": "face-q-adult@1"},
+  "generated_with": {"model": "claude-sonnet-5", "prompt_version": "demo-seed-1", "map": "face-q-adult@2"},
   "domains": [
     {
       "id": "appearance", "label": "Satisfaction with facial appearance",
@@ -392,7 +401,7 @@ insert into public.probe_findings (id, session_id, construct_id, finding, catego
 insert into public.session_profiles (session_id, profile, patient_summary, patient_summary_confirmed_at, patient_corrections, generated_at) values
   ('d3a0c002-0000-4000-8000-000000000002',
    $d${
-  "generated_with": {"model": "claude-sonnet-5", "prompt_version": "demo-seed-1", "map": "face-q-adult@1"},
+  "generated_with": {"model": "claude-sonnet-5", "prompt_version": "demo-seed-1", "map": "face-q-adult@2"},
   "domains": [
     {
       "id": "appearance", "label": "Satisfaction with facial appearance",
@@ -643,7 +652,7 @@ insert into public.probe_findings (id, session_id, construct_id, finding, catego
 insert into public.session_profiles (session_id, profile, patient_summary, patient_summary_confirmed_at, patient_corrections, generated_at) values
   ('d3a0c002-0000-4000-8000-000000000003',
    $d${
-  "generated_with": {"model": "claude-sonnet-5", "prompt_version": "demo-seed-1", "map": "face-q-adult@1"},
+  "generated_with": {"model": "claude-sonnet-5", "prompt_version": "demo-seed-1", "map": "face-q-adult@2"},
   "domains": [
     {
       "id": "appearance", "label": "Satisfaction with facial appearance",
@@ -867,7 +876,7 @@ insert into public.probe_findings (id, session_id, construct_id, finding, catego
 insert into public.session_profiles (session_id, profile, patient_summary, patient_summary_confirmed_at, patient_corrections, generated_at) values
   ('d3a0c002-0000-4000-8000-000000000004',
    $d${
-  "generated_with": {"model": "claude-sonnet-5", "prompt_version": "demo-seed-1", "map": "face-q-pediatric@1"},
+  "generated_with": {"model": "claude-sonnet-5", "prompt_version": "demo-seed-1", "map": "face-q-pediatric@2"},
   "respondent": "guardian",
   "domains": [
     {

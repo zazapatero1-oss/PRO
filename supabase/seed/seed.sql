@@ -391,17 +391,17 @@ on conflict (code) do update set
 -- construct_maps (status approved; approved_by null = seeded, not clinician-approved)
 insert into public.construct_maps (id, slug, version, population, source_instrument_ids, map, status, approved_by, approved_at)
 values (
-  '7a1c5e20-0002-4a00-8000-000000000001',
+  '7a1c5e20-0002-4a00-8000-000000000011',
   $seed$face-q-adult$seed$,
-  1,
+  2,
   $seed$adult$seed$,
   array['6d2f3a10-0001-4a00-8000-000000000001', '6d2f3a10-0001-4a00-8000-000000000002', '6d2f3a10-0001-4a00-8000-000000000003', '6d2f3a10-0001-4a00-8000-000000000004']::uuid[],
   $seed${
   "slug": "face-q-adult",
-  "version": 1,
+  "version": 2,
   "population": "adult",
   "language": "en",
-  "notes": "Built from publicly documented FACE-Q scale names and what those scales measure. Descriptions are paraphrased constructs; no questionnaire item text is included. For satisfaction-type constructs, 'severity' expresses the degree of dissatisfaction or concern. Constructs with 'applicable_timepoints' are only active at those timepoints (extension to SPEC §6, see seed/README.md).",
+  "notes": "Built from publicly documented FACE-Q scale names and what those scales measure. Descriptions are paraphrased constructs; no questionnaire item text is included. For satisfaction-type constructs, 'severity' expresses the degree of dissatisfaction or concern. Constructs with 'applicable_timepoints' are only active at those timepoints (extension to SPEC §6, see seed/README.md). Version 2 adds SPEC v1.1 facets (5-8 paraphrased, clinician-relevant details per construct, explored when the construct is a focus) and the top-level triage block asked at the start of every session.",
   "domains": [
     {
       "id": "appearance",
@@ -423,6 +423,36 @@ values (
             "Situations where it feels worse (photos, video calls, bright light, mornings)",
             "How long they have felt this way and whether it is changing",
             "What they hope will be different"
+          ],
+          "facets": [
+            {
+              "id": "whole_face",
+              "label": "How the face works together as a whole, not one feature"
+            },
+            {
+              "id": "features_named",
+              "label": "Which features bother them most, in their own words"
+            },
+            {
+              "id": "mirror_vs_photos",
+              "label": "How it looks in the mirror versus photos and video"
+            },
+            {
+              "id": "situations",
+              "label": "Situations, lighting or times of day when it feels worse"
+            },
+            {
+              "id": "fits_self",
+              "label": "Whether their face fits how they feel inside or their age"
+            },
+            {
+              "id": "wanted_change",
+              "label": "What specifically they would want different"
+            },
+            {
+              "id": "since_when",
+              "label": "How long they have felt this way and whether it is changing"
+            }
           ],
           "age_variants": {
             "pediatric": {
@@ -465,6 +495,40 @@ values (
             "Whether breathing is also a concern",
             "How long it has bothered them"
           ],
+          "facets": [
+            {
+              "id": "bridge",
+              "label": "The bridge: bumps, straightness, height"
+            },
+            {
+              "id": "tip",
+              "label": "The tip: shape, droop, definition"
+            },
+            {
+              "id": "width",
+              "label": "Width of the nose and how it sits in the face"
+            },
+            {
+              "id": "nostrils",
+              "label": "Nostrils: size, shape, whether they match"
+            },
+            {
+              "id": "profile_vs_front",
+              "label": "How it looks from the side versus straight on"
+            },
+            {
+              "id": "breathing_link",
+              "label": "Whether breathing through the nose is also a concern"
+            },
+            {
+              "id": "wanted_change",
+              "label": "What specifically they would want different"
+            },
+            {
+              "id": "since_when",
+              "label": "How long it has bothered them, and any injury or surgery behind it"
+            }
+          ],
           "priority": "standard",
           "source_refs": [
             {
@@ -497,6 +561,36 @@ values (
             "Vision or eye comfort concerns",
             "Time of day or situations where it is worse"
           ],
+          "facets": [
+            {
+              "id": "shape",
+              "label": "Shape of the eyes"
+            },
+            {
+              "id": "symmetry",
+              "label": "Whether the two eyes match"
+            },
+            {
+              "id": "position",
+              "label": "Where they sit on the face and how far apart"
+            },
+            {
+              "id": "lids",
+              "label": "Eyelids and the under-eye area: hoods, bags, hollows, dark circles"
+            },
+            {
+              "id": "photos_vs_mirror",
+              "label": "How they look in photos versus the mirror"
+            },
+            {
+              "id": "wanted_change",
+              "label": "What specifically they would want different"
+            },
+            {
+              "id": "since_when",
+              "label": "How long this has bothered them"
+            }
+          ],
           "priority": "standard",
           "source_refs": [
             {
@@ -527,6 +621,36 @@ values (
             "Fullness, shape, symmetry or lines around the mouth",
             "Whether smiling or speaking makes it more noticeable",
             "Previous treatments and how they felt about them"
+          ],
+          "facets": [
+            {
+              "id": "fullness",
+              "label": "Fullness of the upper and lower lip"
+            },
+            {
+              "id": "shape",
+              "label": "Shape and definition of the lip border"
+            },
+            {
+              "id": "symmetry",
+              "label": "Whether the two sides match"
+            },
+            {
+              "id": "lines_around_mouth",
+              "label": "Lines and creases around the mouth"
+            },
+            {
+              "id": "movement",
+              "label": "Whether smiling or speaking makes it more noticeable"
+            },
+            {
+              "id": "prior_treatment",
+              "label": "Any previous lip treatment and how they felt about it"
+            },
+            {
+              "id": "wanted_change",
+              "label": "What specifically they would want different"
+            }
           ],
           "priority": "standard",
           "source_refs": [
@@ -559,6 +683,32 @@ values (
             "Whether it is worse on one side",
             "How it changed over time"
           ],
+          "facets": [
+            {
+              "id": "volume",
+              "label": "Fullness or hollowness of the cheeks"
+            },
+            {
+              "id": "contour",
+              "label": "Cheekbone shape and mid-face contour"
+            },
+            {
+              "id": "symmetry",
+              "label": "Whether one side looks different from the other"
+            },
+            {
+              "id": "heaviness",
+              "label": "Heaviness or sagging towards the mouth"
+            },
+            {
+              "id": "change_over_time",
+              "label": "How it has changed with age, weight or treatment"
+            },
+            {
+              "id": "wanted_change",
+              "label": "What specifically they would want different"
+            }
+          ],
           "priority": "standard",
           "source_refs": [
             {
@@ -585,6 +735,36 @@ values (
             "Jawline definition, chin size or neck laxity",
             "Whether it is more noticeable from the side or in photos",
             "How it affects clothing choices or posture"
+          ],
+          "facets": [
+            {
+              "id": "projection",
+              "label": "Chin size and how far it comes forward"
+            },
+            {
+              "id": "definition",
+              "label": "How sharp or blurred the jawline is"
+            },
+            {
+              "id": "symmetry",
+              "label": "Whether the jaw sits evenly"
+            },
+            {
+              "id": "neck",
+              "label": "Looseness or fullness under the chin and in the neck"
+            },
+            {
+              "id": "profile_views",
+              "label": "How it looks from the side and in photos"
+            },
+            {
+              "id": "daily_impact",
+              "label": "Whether it changes posture, collars or how they angle for photos"
+            },
+            {
+              "id": "wanted_change",
+              "label": "What specifically they would want different"
+            }
           ],
           "priority": "standard",
           "source_refs": [
@@ -625,6 +805,36 @@ values (
             "Sun-related or treatment-related changes",
             "How much effort goes into concealing it"
           ],
+          "facets": [
+            {
+              "id": "texture",
+              "label": "Texture: roughness, pores, bumps"
+            },
+            {
+              "id": "tone_colour",
+              "label": "Tone and colour: redness, patchiness, pigmentation"
+            },
+            {
+              "id": "lines",
+              "label": "Lines and creases"
+            },
+            {
+              "id": "marks_scars",
+              "label": "Marks, blemishes or scars on the skin"
+            },
+            {
+              "id": "areas",
+              "label": "Which specific areas of the face"
+            },
+            {
+              "id": "covering",
+              "label": "Makeup or other covering, and how much effort it takes"
+            },
+            {
+              "id": "history",
+              "label": "Sun exposure, skin conditions or treatments behind it"
+            }
+          ],
           "priority": "standard",
           "source_refs": [
             {
@@ -651,6 +861,32 @@ values (
             "Symmetry, teeth, gums or lip movement",
             "Whether they cover their mouth when laughing",
             "Situations where it matters most (photos, meeting people)"
+          ],
+          "facets": [
+            {
+              "id": "teeth_show",
+              "label": "How much of the teeth shows when smiling"
+            },
+            {
+              "id": "lip_movement",
+              "label": "How the lips move when smiling or laughing"
+            },
+            {
+              "id": "gums",
+              "label": "How much gum shows and how the gums look"
+            },
+            {
+              "id": "symmetry",
+              "label": "Whether the smile is even on both sides"
+            },
+            {
+              "id": "covering_mouth",
+              "label": "Whether they cover their mouth when laughing or in photos"
+            },
+            {
+              "id": "situations",
+              "label": "Situations where it matters most"
+            }
           ],
           "priority": "optional",
           "source_refs": [
@@ -690,6 +926,32 @@ values (
             "Whether this has changed over the past months",
             "What helps them feel more confident",
             "Whether it affects work or study"
+          ],
+          "facets": [
+            {
+              "id": "situations",
+              "label": "Situations where confidence drops most"
+            },
+            {
+              "id": "frequency",
+              "label": "How often this comes up in a typical week"
+            },
+            {
+              "id": "at_ease",
+              "label": "How attractive or at ease they feel in themselves"
+            },
+            {
+              "id": "work_study",
+              "label": "Whether it affects work, study or opportunities they take"
+            },
+            {
+              "id": "what_helps",
+              "label": "What helps them feel more confident"
+            },
+            {
+              "id": "trend",
+              "label": "Whether it has changed over recent months"
+            }
           ],
           "age_variants": {
             "pediatric": {
@@ -731,6 +993,32 @@ values (
             "What would need to change for them to feel at peace",
             "Whether others' reassurance helps"
           ],
+          "facets": [
+            {
+              "id": "gap",
+              "label": "The gap between how they look and how they want to look"
+            },
+            {
+              "id": "variability",
+              "label": "Whether acceptance varies by day or situation"
+            },
+            {
+              "id": "reassurance",
+              "label": "Whether reassurance from others helps or not"
+            },
+            {
+              "id": "comparisons",
+              "label": "Comparing themselves with others or with old photos"
+            },
+            {
+              "id": "what_would_change",
+              "label": "What would need to change for them to feel at peace"
+            },
+            {
+              "id": "trend",
+              "label": "Whether this has shifted over time"
+            }
+          ],
           "priority": "standard",
           "source_refs": [
             {
@@ -758,6 +1046,36 @@ values (
             "Whether sleep, appetite or energy are affected",
             "Whether they have talked to anyone about it",
             "Whether treatment has changed this"
+          ],
+          "facets": [
+            {
+              "id": "frequency",
+              "label": "How often mood is affected in a typical week"
+            },
+            {
+              "id": "quality",
+              "label": "Whether it shows as low mood, worry, frustration or anger"
+            },
+            {
+              "id": "triggers",
+              "label": "Situations that set it off"
+            },
+            {
+              "id": "sleep_appetite",
+              "label": "Whether sleep, appetite or energy are affected"
+            },
+            {
+              "id": "coping",
+              "label": "What they do when they feel that way"
+            },
+            {
+              "id": "support",
+              "label": "Whether they have talked to anyone about it"
+            },
+            {
+              "id": "trend",
+              "label": "Whether time or treatment has changed this"
+            }
           ],
           "age_variants": {
             "pediatric": {
@@ -806,6 +1124,32 @@ values (
             "Whether this is new or long-standing",
             "What they do to cope in those moments"
           ],
+          "facets": [
+            {
+              "id": "settings",
+              "label": "Which settings are hardest: work, family, strangers, groups"
+            },
+            {
+              "id": "being_looked_at",
+              "label": "Being looked at, photographed or on video"
+            },
+            {
+              "id": "new_people",
+              "label": "Meeting people for the first time"
+            },
+            {
+              "id": "frequency",
+              "label": "How often these situations come up"
+            },
+            {
+              "id": "coping",
+              "label": "What they do to cope in the moment"
+            },
+            {
+              "id": "trend",
+              "label": "Whether this is new or long-standing"
+            }
+          ],
           "age_variants": {
             "pediatric": {
               "description": "How comfortable the child is with friends, in play and at parties or group activities.",
@@ -847,6 +1191,32 @@ values (
             "Whether it affects work, study or family life",
             "Whether treatment has changed this"
           ],
+          "facets": [
+            {
+              "id": "activities",
+              "label": "Specific activities or events they have skipped"
+            },
+            {
+              "id": "frequency",
+              "label": "How often in the last month"
+            },
+            {
+              "id": "photos_video",
+              "label": "Avoiding photos, video calls or being in the frame"
+            },
+            {
+              "id": "life_impact",
+              "label": "Whether it affects work, study or family life"
+            },
+            {
+              "id": "workarounds",
+              "label": "What they do instead, or the conditions they need to go"
+            },
+            {
+              "id": "trend",
+              "label": "Whether this has changed with time or treatment"
+            }
+          ],
           "priority": "core",
           "source_refs": [
             {
@@ -873,6 +1243,32 @@ values (
             "Who it comes from (strangers, colleagues, family, online)",
             "How they respond in the moment",
             "Whether it has changed over time"
+          ],
+          "facets": [
+            {
+              "id": "source",
+              "label": "Who it comes from: strangers, colleagues, family, online"
+            },
+            {
+              "id": "nature",
+              "label": "Stares, questions, comments, teasing or being left out"
+            },
+            {
+              "id": "frequency",
+              "label": "How often it happens"
+            },
+            {
+              "id": "response",
+              "label": "How they respond in the moment"
+            },
+            {
+              "id": "aftereffect",
+              "label": "How they feel afterwards and what they do"
+            },
+            {
+              "id": "trend",
+              "label": "Whether it has changed over time"
+            }
           ],
           "age_variants": {
             "pediatric": {
@@ -911,6 +1307,32 @@ values (
             "Whether they avoid dating or affection",
             "What support they have"
           ],
+          "facets": [
+            {
+              "id": "partner",
+              "label": "How it affects a current relationship"
+            },
+            {
+              "id": "dating",
+              "label": "Whether they avoid dating or meeting new people"
+            },
+            {
+              "id": "affection",
+              "label": "Physical closeness and being seen up close"
+            },
+            {
+              "id": "family_friends",
+              "label": "Closeness with family and close friends"
+            },
+            {
+              "id": "disclosure",
+              "label": "Whether they talk about it with the people close to them"
+            },
+            {
+              "id": "support",
+              "label": "What support they have"
+            }
+          ],
           "priority": "optional",
           "source_refs": [
             {
@@ -945,6 +1367,36 @@ values (
             "Checking, comparing or reassurance-seeking behaviours",
             "When it started or intensified",
             "Whether it affects concentration or sleep"
+          ],
+          "facets": [
+            {
+              "id": "time_occupied",
+              "label": "How much of the day it takes up"
+            },
+            {
+              "id": "checking",
+              "label": "Mirror, camera or photo checking"
+            },
+            {
+              "id": "comparing",
+              "label": "Comparing with other people or with old photos"
+            },
+            {
+              "id": "reassurance",
+              "label": "Asking others for reassurance"
+            },
+            {
+              "id": "interference",
+              "label": "Whether it affects concentration, work or sleep"
+            },
+            {
+              "id": "control",
+              "label": "Whether they can put it aside when they want to"
+            },
+            {
+              "id": "onset",
+              "label": "When it started or intensified"
+            }
           ],
           "age_variants": {
             "pediatric": {
@@ -990,6 +1442,32 @@ values (
             "Whether anyone has seen them without it",
             "How they would feel if they could not conceal"
           ],
+          "facets": [
+            {
+              "id": "methods",
+              "label": "What they use: makeup, hair, glasses, hats, masks"
+            },
+            {
+              "id": "time_cost",
+              "label": "How long it takes and what it costs them"
+            },
+            {
+              "id": "situations",
+              "label": "Situations where they will not go without it"
+            },
+            {
+              "id": "photos_angles",
+              "label": "Angles, filters or lighting they rely on in photos"
+            },
+            {
+              "id": "seen_without",
+              "label": "Whether anyone has seen them without it"
+            },
+            {
+              "id": "if_unable",
+              "label": "How they would feel if they could not conceal it"
+            }
+          ],
           "priority": "core",
           "source_refs": [
             {
@@ -1017,6 +1495,32 @@ values (
             "Whether check-ups or news stories trigger it",
             "Whether they self-examine and how often",
             "Whether they have asked their team about it"
+          ],
+          "facets": [
+            {
+              "id": "content",
+              "label": "What specifically they worry about"
+            },
+            {
+              "id": "frequency",
+              "label": "How often the worry comes and how long it stays"
+            },
+            {
+              "id": "triggers",
+              "label": "What sets it off: check-ups, scans, news, a new mark"
+            },
+            {
+              "id": "self_checking",
+              "label": "Whether they examine their skin or face, and how often"
+            },
+            {
+              "id": "interference",
+              "label": "Whether it affects sleep, mood or plans"
+            },
+            {
+              "id": "team",
+              "label": "Whether they have raised it with their team"
+            }
           ],
           "priority": "optional",
           "source_refs": [
@@ -1053,6 +1557,36 @@ values (
             "Whether it changed after injury, surgery or treatment",
             "Sprays or aids they rely on"
           ],
+          "facets": [
+            {
+              "id": "sides",
+              "label": "One side or both"
+            },
+            {
+              "id": "day_night",
+              "label": "Daytime versus lying down and at night"
+            },
+            {
+              "id": "exertion",
+              "label": "Breathing during exercise or exertion"
+            },
+            {
+              "id": "sleep",
+              "label": "Snoring, mouth breathing, disturbed sleep, daytime tiredness"
+            },
+            {
+              "id": "aids",
+              "label": "Sprays, strips or other things they rely on"
+            },
+            {
+              "id": "onset",
+              "label": "Whether it followed injury, surgery or treatment"
+            },
+            {
+              "id": "workarounds",
+              "label": "What they avoid or change because of it"
+            }
+          ],
           "priority": "standard",
           "source_refs": [
             {
@@ -1080,6 +1614,36 @@ values (
             "Leaking, spilling or drooling",
             "Whether they avoid eating with others",
             "Weight change"
+          ],
+          "facets": [
+            {
+              "id": "foods",
+              "label": "Which foods or textures are hard"
+            },
+            {
+              "id": "chewing",
+              "label": "Biting and chewing"
+            },
+            {
+              "id": "containment",
+              "label": "Keeping food and drink in the mouth; leaking or spilling"
+            },
+            {
+              "id": "effort_time",
+              "label": "How long meals take and how tiring they are"
+            },
+            {
+              "id": "social_eating",
+              "label": "Eating in front of other people"
+            },
+            {
+              "id": "weight",
+              "label": "Weight change or skipping meals"
+            },
+            {
+              "id": "workarounds",
+              "label": "How they adapt: cutting up, soft foods, drinks, aids"
+            }
           ],
           "priority": "standard",
           "source_refs": [
@@ -1113,6 +1677,36 @@ values (
             "Whether they hold back from speaking",
             "Speech therapy or aids"
           ],
+          "facets": [
+            {
+              "id": "clarity",
+              "label": "How clear their speech is"
+            },
+            {
+              "id": "hard_sounds",
+              "label": "Which sounds or words are hardest"
+            },
+            {
+              "id": "listeners",
+              "label": "Strangers and the phone versus family who know them"
+            },
+            {
+              "id": "effort",
+              "label": "Effort or tiredness when talking for a while"
+            },
+            {
+              "id": "holding_back",
+              "label": "Whether they say less because of it"
+            },
+            {
+              "id": "situations",
+              "label": "Situations where it matters most: work, groups, noise"
+            },
+            {
+              "id": "therapy",
+              "label": "Speech therapy or aids and whether they help"
+            }
+          ],
           "priority": "standard",
           "source_refs": [
             {
@@ -1141,6 +1735,36 @@ values (
             "Eye closure, dryness or drooling",
             "Whether it is improving, stable or worsening"
           ],
+          "facets": [
+            {
+              "id": "movements",
+              "label": "Which movements are affected: smile, brow, eye closure"
+            },
+            {
+              "id": "symmetry",
+              "label": "Whether expressions look even on both sides"
+            },
+            {
+              "id": "eye_closure",
+              "label": "Closing the eye fully; dryness or watering"
+            },
+            {
+              "id": "oral_control",
+              "label": "Drooling or the mouth not sealing"
+            },
+            {
+              "id": "misread",
+              "label": "Whether others misread how they feel"
+            },
+            {
+              "id": "situations",
+              "label": "Situations where it shows most"
+            },
+            {
+              "id": "trend",
+              "label": "Whether it is improving, stable or worsening"
+            }
+          ],
           "priority": "standard",
           "source_refs": [
             {
@@ -1168,6 +1792,32 @@ values (
             "Coughing, choking or drooling episodes",
             "Diet changes or aids",
             "Whether it affects eating with others"
+          ],
+          "facets": [
+            {
+              "id": "consistencies",
+              "label": "Liquids, solids or both"
+            },
+            {
+              "id": "choking",
+              "label": "Coughing, choking or food sticking"
+            },
+            {
+              "id": "saliva",
+              "label": "Controlling saliva and keeping the mouth closed"
+            },
+            {
+              "id": "diet_aids",
+              "label": "Diet changes, thickeners, tube or other aids"
+            },
+            {
+              "id": "social",
+              "label": "Whether it affects eating with other people"
+            },
+            {
+              "id": "trend",
+              "label": "Whether it is improving, stable or worsening"
+            }
           ],
           "priority": "optional",
           "source_refs": [
@@ -1208,6 +1858,36 @@ values (
             "Medication use",
             "Whether it is improving over time"
           ],
+          "facets": [
+            {
+              "id": "location",
+              "label": "Where it is"
+            },
+            {
+              "id": "quality",
+              "label": "What it feels like: aching, tight, sharp, pressure"
+            },
+            {
+              "id": "intensity",
+              "label": "How bad it gets at its worst and how bad it usually is"
+            },
+            {
+              "id": "pattern",
+              "label": "When it comes: constant, with movement, at certain times"
+            },
+            {
+              "id": "relief",
+              "label": "What makes it better or worse, including medication"
+            },
+            {
+              "id": "sleep_activity",
+              "label": "Whether it affects sleep or stops them doing things"
+            },
+            {
+              "id": "trajectory",
+              "label": "Whether it is improving, stable or worsening"
+            }
+          ],
           "age_variants": {
             "pediatric": {
               "description": "Whether the child says it hurts or shows signs of pain (rubbing, crying, not wanting to be touched).",
@@ -1245,6 +1925,32 @@ values (
             "Whether it affects vision, breathing or eating",
             "What they were told to expect"
           ],
+          "facets": [
+            {
+              "id": "location",
+              "label": "Which areas are affected"
+            },
+            {
+              "id": "extent",
+              "label": "How visible it is to them and to other people"
+            },
+            {
+              "id": "sidedness",
+              "label": "Whether it is worse on one side"
+            },
+            {
+              "id": "trajectory",
+              "label": "How it has changed since treatment"
+            },
+            {
+              "id": "function_effect",
+              "label": "Whether it affects vision, breathing or eating"
+            },
+            {
+              "id": "expectations",
+              "label": "What they were told to expect"
+            }
+          ],
           "priority": "standard",
           "source_refs": [
             {
@@ -1271,6 +1977,32 @@ values (
             "Location and extent",
             "Whether it is changing over time",
             "Whether it affects eating, drinking or shaving/makeup"
+          ],
+          "facets": [
+            {
+              "id": "location",
+              "label": "Where the altered feeling is"
+            },
+            {
+              "id": "extent",
+              "label": "How large an area, and whether feeling is fully or partly gone"
+            },
+            {
+              "id": "quality",
+              "label": "Numb, tingling, itching, oversensitive or burning"
+            },
+            {
+              "id": "trajectory",
+              "label": "Whether it is changing over time"
+            },
+            {
+              "id": "daily_effect",
+              "label": "Whether it affects eating, drinking, shaving or makeup"
+            },
+            {
+              "id": "bother",
+              "label": "How much it bothers them day to day"
+            }
           ],
           "priority": "standard",
           "source_refs": [
@@ -1299,6 +2031,36 @@ values (
             "Colour, texture or raised areas",
             "Whether they are still maturing",
             "Whether they use scar treatments or concealment"
+          ],
+          "facets": [
+            {
+              "id": "location",
+              "label": "Which scars and where"
+            },
+            {
+              "id": "visibility",
+              "label": "How noticeable they are to them and to other people"
+            },
+            {
+              "id": "colour",
+              "label": "Colour: red, dark or pale"
+            },
+            {
+              "id": "texture",
+              "label": "Raised, indented, firm or itchy"
+            },
+            {
+              "id": "maturity",
+              "label": "Whether they are still settling and how they have changed"
+            },
+            {
+              "id": "concealment",
+              "label": "Whether they cover them and how"
+            },
+            {
+              "id": "care",
+              "label": "Scar treatments they are using"
+            }
           ],
           "age_variants": {
             "pediatric": {
@@ -1335,6 +2097,32 @@ values (
             "Which feature or side",
             "Whether it is worse with movement or expression",
             "Whether it has changed since treatment"
+          ],
+          "facets": [
+            {
+              "id": "feature",
+              "label": "Which feature looks uneven"
+            },
+            {
+              "id": "side",
+              "label": "Which side, and how different it looks to them"
+            },
+            {
+              "id": "rest_vs_movement",
+              "label": "Whether it shows more at rest or with expression"
+            },
+            {
+              "id": "others_notice",
+              "label": "Whether other people notice or comment"
+            },
+            {
+              "id": "trajectory",
+              "label": "Whether it has changed since treatment"
+            },
+            {
+              "id": "bother",
+              "label": "How much it bothers them"
+            }
           ],
           "priority": "standard",
           "source_refs": [
@@ -1374,6 +2162,36 @@ values (
             "Sleep and energy",
             "Support at home",
             "Whether recovery matches what they were told"
+          ],
+          "facets": [
+            {
+              "id": "work",
+              "label": "Getting back to work or study"
+            },
+            {
+              "id": "driving_exercise",
+              "label": "Driving, exercise and lifting"
+            },
+            {
+              "id": "sleep_energy",
+              "label": "Sleep and energy levels"
+            },
+            {
+              "id": "caring",
+              "label": "Caring for children or others at home"
+            },
+            {
+              "id": "going_out",
+              "label": "Going out and being seen in public"
+            },
+            {
+              "id": "support",
+              "label": "Support they have at home"
+            },
+            {
+              "id": "expectations",
+              "label": "Whether recovery matches what they were told"
+            }
           ],
           "age_variants": {
             "pediatric": {
@@ -1424,6 +2242,36 @@ values (
             "Whether they would do it again or recommend it",
             "Whether their view has shifted as healing progresses"
           ],
+          "facets": [
+            {
+              "id": "expectation_vs_result",
+              "label": "What they hoped for versus what they see"
+            },
+            {
+              "id": "naturalness",
+              "label": "Whether it looks natural and still like them"
+            },
+            {
+              "id": "specific_aspect",
+              "label": "Which aspect, if any, disappoints"
+            },
+            {
+              "id": "others_reaction",
+              "label": "What other people have said"
+            },
+            {
+              "id": "worth_it",
+              "label": "Whether it was worth what it took"
+            },
+            {
+              "id": "choose_again",
+              "label": "Whether they would choose it again or recommend it"
+            },
+            {
+              "id": "view_shift",
+              "label": "Whether their view has shifted as healing progresses"
+            }
+          ],
           "age_variants": {
             "pediatric": {
               "description": "Whether the child and guardian are pleased with the result and whether it is what they expected.",
@@ -1467,6 +2315,32 @@ values (
             "Whether they felt rushed or pressured",
             "Whether they would advise someone else to do it"
           ],
+          "facets": [
+            {
+              "id": "influences",
+              "label": "What influenced the decision"
+            },
+            {
+              "id": "timing",
+              "label": "Whether the timing felt right"
+            },
+            {
+              "id": "pressure",
+              "label": "Whether they felt rushed or pressured"
+            },
+            {
+              "id": "alternatives",
+              "label": "Whether other options were considered"
+            },
+            {
+              "id": "regret",
+              "label": "Any regret, and what about"
+            },
+            {
+              "id": "advise_others",
+              "label": "Whether they would advise someone else to do it"
+            }
+          ],
           "priority": "standard",
           "applicable_timepoints": [
             "post-op-2w",
@@ -1496,6 +2370,32 @@ values (
             "What they wish they had known",
             "Whether written or spoken information was clear",
             "Questions they still have for the team"
+          ],
+          "facets": [
+            {
+              "id": "before",
+              "label": "What they were told to expect beforehand"
+            },
+            {
+              "id": "recovery_info",
+              "label": "Information about recovery and timescales"
+            },
+            {
+              "id": "risks",
+              "label": "How risks and possible complications were explained"
+            },
+            {
+              "id": "self_care",
+              "label": "How to care for themselves afterwards"
+            },
+            {
+              "id": "clarity",
+              "label": "Whether written and spoken information was clear"
+            },
+            {
+              "id": "gaps",
+              "label": "What they wish they had known, and questions still open"
+            }
           ],
           "priority": "standard",
           "applicable_timepoints": [
@@ -1539,6 +2439,32 @@ values (
             "Whether it affects work or relationships",
             "What they hope treatment will change"
           ],
+          "facets": [
+            {
+              "id": "perceived_vs_actual",
+              "label": "How old their face looks versus their age"
+            },
+            {
+              "id": "feels_inside",
+              "label": "How old they feel inside compared with how they look"
+            },
+            {
+              "id": "features",
+              "label": "Which features signal age to them: lines, sagging, tiredness"
+            },
+            {
+              "id": "comments",
+              "label": "Whether others comment on tiredness or age"
+            },
+            {
+              "id": "situations",
+              "label": "Situations where it matters: work, dating, photos"
+            },
+            {
+              "id": "wanted_change",
+              "label": "What they hope would change"
+            }
+          ],
           "priority": "standard",
           "source_refs": [
             {
@@ -1550,11 +2476,59 @@ values (
       ]
     }
   ],
+  "triage": [
+    {
+      "id": "overall",
+      "intent": "How they feel overall about how their face looks right now",
+      "maps_to": [
+        "appearance.overall"
+      ]
+    },
+    {
+      "id": "features",
+      "intent": "Which parts of their face are on their mind most (let them name features)",
+      "maps_to": [
+        "appearance.*"
+      ]
+    },
+    {
+      "id": "function",
+      "intent": "Whether anything about the face makes everyday things harder: breathing, eating, speaking, expressions",
+      "maps_to": [
+        "function.*"
+      ]
+    },
+    {
+      "id": "impact",
+      "intent": "How it affects how they feel about themselves and what they do socially",
+      "maps_to": [
+        "psych.*",
+        "social.*",
+        "distress.*"
+      ]
+    },
+    {
+      "id": "recovery",
+      "intent": "How recovery is going: pain, swelling, numbness, scarring",
+      "maps_to": [
+        "adverse.*",
+        "recovery.*"
+      ],
+      "timepoints": [
+        "post-op-2w",
+        "post-op-6w",
+        "post-op-6m",
+        "post-op-12m",
+        "follow-up"
+      ]
+    }
+  ],
   "coverage_rules": {
     "min_confidence_to_count": 0.6,
     "drill_down_threshold": "moderate",
     "core_constructs_required": true,
-    "max_constructs_per_session": 18
+    "max_constructs_per_session": 18,
+    "focus_facet_threshold": 0.7
   }
 }$seed$::jsonb,
   'approved',
@@ -1570,17 +2544,17 @@ on conflict (slug, version) do update set
 
 insert into public.construct_maps (id, slug, version, population, source_instrument_ids, map, status, approved_by, approved_at)
 values (
-  '7a1c5e20-0002-4a00-8000-000000000002',
+  '7a1c5e20-0002-4a00-8000-000000000012',
   $seed$face-q-pediatric$seed$,
-  1,
+  2,
   $seed$pediatric$seed$,
   array['6d2f3a10-0001-4a00-8000-000000000001', '6d2f3a10-0001-4a00-8000-000000000002', '6d2f3a10-0001-4a00-8000-000000000004']::uuid[],
   $seed${
   "slug": "face-q-pediatric",
-  "version": 1,
+  "version": 2,
   "population": "pediatric",
   "language": "en",
-  "notes": "Built from publicly documented FACE-Q Craniofacial Module scale names (with Aesthetics/Skin Cancer scales where they apply) and what those scales measure. Descriptions are paraphrased constructs; no questionnaire item text is included. Conversations may be with the child (self), a guardian speaking about the child (guardian), or both; drill-down cues address the guardian view where useful. For satisfaction-type constructs, 'severity' expresses the degree of dissatisfaction or concern. Constructs with 'applicable_timepoints' are only active at those timepoints (extension to SPEC §6, see seed/README.md). Construct ids are shared with face-q-adult where the construct is the same so diagnosis focus lists work across both maps.",
+  "notes": "Built from publicly documented FACE-Q Craniofacial Module scale names (with Aesthetics/Skin Cancer scales where they apply) and what those scales measure. Descriptions are paraphrased constructs; no questionnaire item text is included. Conversations may be with the child (self), a guardian speaking about the child (guardian), or both; drill-down cues address the guardian view where useful. For satisfaction-type constructs, 'severity' expresses the degree of dissatisfaction or concern. Constructs with 'applicable_timepoints' are only active at those timepoints (extension to SPEC §6, see seed/README.md). Construct ids are shared with face-q-adult where the construct is the same so diagnosis focus lists work across both maps. Version 2 adds SPEC v1.1 facets (5-8 paraphrased, clinician-relevant details per construct, explored when the construct is a focus) and the top-level triage block asked at the start of every session.",
   "domains": [
     {
       "id": "appearance",
@@ -1603,6 +2577,36 @@ values (
             "Whether they avoid photos, mirrors or activities",
             "What the child hopes will change",
             "Whether the guardian's view matches the child's"
+          ],
+          "facets": [
+            {
+              "id": "whole_face",
+              "label": "How the child feels about their face as a whole"
+            },
+            {
+              "id": "features_named",
+              "label": "Which part of the face is most on their mind"
+            },
+            {
+              "id": "compared_to_peers",
+              "label": "How they think they compare with friends and siblings"
+            },
+            {
+              "id": "photos_mirror",
+              "label": "School photos, videos and mirrors"
+            },
+            {
+              "id": "others_comments",
+              "label": "Comments or questions from other children"
+            },
+            {
+              "id": "wanted_change",
+              "label": "What the child says they would want different"
+            },
+            {
+              "id": "guardian_view",
+              "label": "Whether the guardian's view matches what the child says"
+            }
           ],
           "priority": "core",
           "source_refs": [
@@ -1631,6 +2635,36 @@ values (
             "Whether other children comment",
             "Whether breathing is also a problem"
           ],
+          "facets": [
+            {
+              "id": "shape",
+              "label": "Shape of the nose"
+            },
+            {
+              "id": "size",
+              "label": "Size and width of the nose"
+            },
+            {
+              "id": "nostrils",
+              "label": "Nostrils: shape and whether they match"
+            },
+            {
+              "id": "profile_vs_front",
+              "label": "How it looks from the side versus straight on"
+            },
+            {
+              "id": "breathing_link",
+              "label": "Whether breathing through the nose is also a problem"
+            },
+            {
+              "id": "others_comments",
+              "label": "Whether other children notice or ask about it"
+            },
+            {
+              "id": "wanted_change",
+              "label": "What the child would want different"
+            }
+          ],
           "priority": "standard",
           "source_refs": [
             {
@@ -1658,6 +2692,36 @@ values (
             "Whether glasses or patches are involved and how they feel about them",
             "Whether vision is affected"
           ],
+          "facets": [
+            {
+              "id": "shape",
+              "label": "Shape of the eyes"
+            },
+            {
+              "id": "symmetry",
+              "label": "Whether the two eyes match"
+            },
+            {
+              "id": "position",
+              "label": "Where they sit on the face and how far apart"
+            },
+            {
+              "id": "lids",
+              "label": "Eyelids and the area under the eyes"
+            },
+            {
+              "id": "vision_glasses",
+              "label": "Vision, glasses or patching and how the child feels about them"
+            },
+            {
+              "id": "others_notice",
+              "label": "Whether other children notice or ask"
+            },
+            {
+              "id": "wanted_change",
+              "label": "What the child would want different"
+            }
+          ],
           "priority": "standard",
           "source_refs": [
             {
@@ -1680,6 +2744,32 @@ values (
             "Shape, evenness or the area above the lip",
             "Whether they cover their mouth when smiling or laughing",
             "Whether other children ask about it"
+          ],
+          "facets": [
+            {
+              "id": "shape",
+              "label": "Shape and fullness of the lips"
+            },
+            {
+              "id": "evenness",
+              "label": "Whether the two sides look even"
+            },
+            {
+              "id": "above_lip",
+              "label": "The area between the lip and the nose, including any repair line"
+            },
+            {
+              "id": "movement",
+              "label": "How the lips move when smiling, talking or eating"
+            },
+            {
+              "id": "others_ask",
+              "label": "Whether other children ask about it"
+            },
+            {
+              "id": "covering",
+              "label": "Whether they cover their mouth"
+            }
           ],
           "priority": "standard",
           "source_refs": [
@@ -1705,6 +2795,36 @@ values (
             "Whether hearing aids or hearing are part of it",
             "Whether other children comment"
           ],
+          "facets": [
+            {
+              "id": "size",
+              "label": "Size of the ears"
+            },
+            {
+              "id": "shape",
+              "label": "Shape and folds of the ears"
+            },
+            {
+              "id": "position",
+              "label": "How far they stick out and where they sit"
+            },
+            {
+              "id": "sidedness",
+              "label": "Whether one ear is different from the other"
+            },
+            {
+              "id": "hiding",
+              "label": "Whether they hide their ears with hair or hats"
+            },
+            {
+              "id": "hearing",
+              "label": "Hearing, hearing aids and how the child feels about them"
+            },
+            {
+              "id": "others_comments",
+              "label": "Whether other children notice or comment"
+            }
+          ],
           "priority": "standard",
           "source_refs": [
             {
@@ -1728,6 +2848,28 @@ values (
             "Whether it is more noticeable when smiling",
             "Whether it has changed with growth or treatment"
           ],
+          "facets": [
+            {
+              "id": "shape",
+              "label": "Shape and fullness of the cheeks"
+            },
+            {
+              "id": "evenness",
+              "label": "Whether one side looks different"
+            },
+            {
+              "id": "with_smiling",
+              "label": "Whether it shows more when smiling or talking"
+            },
+            {
+              "id": "growth_change",
+              "label": "Whether it has changed with growth or treatment"
+            },
+            {
+              "id": "others_notice",
+              "label": "Whether other children notice"
+            }
+          ],
           "priority": "optional",
           "source_refs": [
             {
@@ -1750,6 +2892,32 @@ values (
             "Chin size, jaw evenness or profile",
             "Whether chewing or bite is also affected",
             "Whether it has changed with growth"
+          ],
+          "facets": [
+            {
+              "id": "chin_size",
+              "label": "Size and shape of the chin"
+            },
+            {
+              "id": "jaw_position",
+              "label": "Whether the jaw looks set back or forward"
+            },
+            {
+              "id": "evenness",
+              "label": "Whether the jaw sits evenly"
+            },
+            {
+              "id": "profile",
+              "label": "How it looks from the side"
+            },
+            {
+              "id": "bite_chewing",
+              "label": "Whether the bite or chewing is affected"
+            },
+            {
+              "id": "growth_change",
+              "label": "Whether it has changed as they grow"
+            }
           ],
           "priority": "optional",
           "source_refs": [
@@ -1779,6 +2947,36 @@ values (
             "Whether braces or dental treatment are involved",
             "Whether it matters more in photos or with friends"
           ],
+          "facets": [
+            {
+              "id": "teeth_show",
+              "label": "How the teeth look when they smile"
+            },
+            {
+              "id": "lip_movement",
+              "label": "How the lips move when smiling or laughing"
+            },
+            {
+              "id": "gums",
+              "label": "How much gum shows"
+            },
+            {
+              "id": "symmetry",
+              "label": "Whether the smile is even on both sides"
+            },
+            {
+              "id": "braces_dental",
+              "label": "Braces or dental treatment and how they feel about it"
+            },
+            {
+              "id": "covering_mouth",
+              "label": "Whether they cover their mouth when laughing or in photos"
+            },
+            {
+              "id": "situations",
+              "label": "Photos, school and being with friends"
+            }
+          ],
           "priority": "standard",
           "source_refs": [
             {
@@ -1805,6 +3003,32 @@ values (
             "Colour, patches, texture or marks",
             "Whether other children ask about it",
             "Whether they try to cover it"
+          ],
+          "facets": [
+            {
+              "id": "colour",
+              "label": "Colour and evenness of the skin"
+            },
+            {
+              "id": "texture",
+              "label": "Texture: rough, raised or smooth areas"
+            },
+            {
+              "id": "marks",
+              "label": "Birthmarks, patches or marks left after treatment"
+            },
+            {
+              "id": "areas",
+              "label": "Which parts of the face"
+            },
+            {
+              "id": "covering",
+              "label": "Whether they try to cover it"
+            },
+            {
+              "id": "others_ask",
+              "label": "Whether other children ask about it"
+            }
           ],
           "priority": "optional",
           "source_refs": [
@@ -1837,6 +3061,32 @@ values (
             "Whether the guardian has noticed a change over the past months",
             "Whether the child says they feel different from other children"
           ],
+          "facets": [
+            {
+              "id": "situations",
+              "label": "Situations where confidence drops: a new class, sport, performances"
+            },
+            {
+              "id": "feeling_different",
+              "label": "Whether they feel different from other children"
+            },
+            {
+              "id": "strengths",
+              "label": "Activities where they feel good about themselves"
+            },
+            {
+              "id": "frequency",
+              "label": "How often this shows in a typical week"
+            },
+            {
+              "id": "what_helps",
+              "label": "What helps them feel more sure of themselves"
+            },
+            {
+              "id": "trend",
+              "label": "Whether the guardian has noticed a change over recent months"
+            }
+          ],
           "priority": "core",
           "source_refs": [
             {
@@ -1859,6 +3109,28 @@ values (
             "How the child explains their face to others",
             "Whether they ask why they look different",
             "What helps them feel okay about it"
+          ],
+          "facets": [
+            {
+              "id": "self_talk",
+              "label": "How the child talks about their face when it comes up"
+            },
+            {
+              "id": "explaining",
+              "label": "How they explain their face to other children"
+            },
+            {
+              "id": "wishing_different",
+              "label": "Whether they often wish they looked different"
+            },
+            {
+              "id": "what_helps",
+              "label": "What helps them feel okay about it"
+            },
+            {
+              "id": "trend",
+              "label": "Whether this is changing as they get older"
+            }
           ],
           "priority": "standard",
           "source_refs": [
@@ -1887,6 +3159,36 @@ values (
             "Whether it is worse around school events, photos or hospital visits",
             "Whether the child has talked to anyone about it",
             "Whether treatment has changed this"
+          ],
+          "facets": [
+            {
+              "id": "signs",
+              "label": "What the guardian sees: tears, withdrawal, anger, clinginess"
+            },
+            {
+              "id": "frequency",
+              "label": "How often it happens and how long it lasts"
+            },
+            {
+              "id": "triggers",
+              "label": "School events, photos, hospital visits"
+            },
+            {
+              "id": "sleep_appetite",
+              "label": "Whether sleep or appetite are affected"
+            },
+            {
+              "id": "child_words",
+              "label": "What the child says about how they feel"
+            },
+            {
+              "id": "support",
+              "label": "Whether they have talked to anyone: guardian, teacher, counsellor"
+            },
+            {
+              "id": "trend",
+              "label": "Whether time or treatment has changed this"
+            }
           ],
           "priority": "core",
           "source_refs": [
@@ -1923,6 +3225,32 @@ values (
             "Whether new settings (new class, clubs) are hard",
             "What helps them feel comfortable"
           ],
+          "facets": [
+            {
+              "id": "friendships",
+              "label": "Whether they have close friends"
+            },
+            {
+              "id": "group_play",
+              "label": "Break time, group play and sport"
+            },
+            {
+              "id": "parties_clubs",
+              "label": "Parties, clubs and other new settings"
+            },
+            {
+              "id": "new_children",
+              "label": "Meeting children they do not know"
+            },
+            {
+              "id": "joining_in",
+              "label": "Whether they join in or hang back"
+            },
+            {
+              "id": "what_helps",
+              "label": "What helps them feel comfortable"
+            }
+          ],
           "priority": "core",
           "source_refs": [
             {
@@ -1947,6 +3275,36 @@ values (
             "Whether the school knows and helps",
             "Whether schoolwork or concentration is affected"
           ],
+          "facets": [
+            {
+              "id": "attendance",
+              "label": "Days missed and the reasons"
+            },
+            {
+              "id": "participation",
+              "label": "Speaking up in class and taking part"
+            },
+            {
+              "id": "activities_avoided",
+              "label": "Activities they avoid: sport, swimming, photos, performances"
+            },
+            {
+              "id": "concentration",
+              "label": "Whether schoolwork or concentration is affected"
+            },
+            {
+              "id": "school_support",
+              "label": "Whether the school knows and what they do to help"
+            },
+            {
+              "id": "peer_reactions",
+              "label": "How other children at school react"
+            },
+            {
+              "id": "trend",
+              "label": "Whether it is getting easier or harder"
+            }
+          ],
           "priority": "core",
           "source_refs": [
             {
@@ -1970,6 +3328,36 @@ values (
             "Whether the child tells the guardian or a teacher",
             "Whether the school knows and what they have done",
             "Whether the child has a comeback or plan for questions"
+          ],
+          "facets": [
+            {
+              "id": "source",
+              "label": "Who it comes from"
+            },
+            {
+              "id": "setting",
+              "label": "Where it happens: school, clubs, online, family"
+            },
+            {
+              "id": "nature",
+              "label": "Staring, questions, teasing or being left out"
+            },
+            {
+              "id": "frequency",
+              "label": "How often it happens"
+            },
+            {
+              "id": "child_response",
+              "label": "How the child responds, and whether they have a plan for questions"
+            },
+            {
+              "id": "telling_adults",
+              "label": "Whether they tell a guardian or teacher"
+            },
+            {
+              "id": "school_action",
+              "label": "What the school or club has done about it"
+            }
           ],
           "priority": "core",
           "source_refs": [
@@ -1997,6 +3385,32 @@ values (
             "Specific activities skipped recently",
             "How often in the last month",
             "Whether the guardian has changed family plans because of it"
+          ],
+          "facets": [
+            {
+              "id": "activities",
+              "label": "Activities they have skipped: parties, swimming, sport, performances"
+            },
+            {
+              "id": "frequency",
+              "label": "How often in the last month"
+            },
+            {
+              "id": "photos",
+              "label": "Avoiding photos or videos"
+            },
+            {
+              "id": "new_people",
+              "label": "Avoiding meeting new children or adults"
+            },
+            {
+              "id": "family_plans",
+              "label": "Whether family plans have changed because of it"
+            },
+            {
+              "id": "conditions",
+              "label": "What would need to be true for them to join in"
+            }
           ],
           "priority": "standard",
           "source_refs": [
@@ -2029,6 +3443,32 @@ values (
             "Whether it affects sleep or concentration",
             "When it started or got worse"
           ],
+          "facets": [
+            {
+              "id": "frequency",
+              "label": "How often it comes up in a typical week"
+            },
+            {
+              "id": "checking",
+              "label": "Mirror or photo checking"
+            },
+            {
+              "id": "comparing",
+              "label": "Comparing themselves with other children"
+            },
+            {
+              "id": "reassurance",
+              "label": "Asking the guardian whether they look okay"
+            },
+            {
+              "id": "interference",
+              "label": "Whether it affects sleep or concentration"
+            },
+            {
+              "id": "onset",
+              "label": "When it started or got worse"
+            }
+          ],
           "priority": "core",
           "source_refs": [
             {
@@ -2051,6 +3491,32 @@ values (
             "What they hide and how",
             "Whether it affects haircuts, swimming, sport or uniform rules",
             "How they react if they cannot hide"
+          ],
+          "facets": [
+            {
+              "id": "methods",
+              "label": "What they use: hair, hats, hands, turning away"
+            },
+            {
+              "id": "situations",
+              "label": "When they do it most"
+            },
+            {
+              "id": "haircuts_swimming",
+              "label": "Whether it affects haircuts, swimming or sport"
+            },
+            {
+              "id": "photos",
+              "label": "Turning away from or refusing photos"
+            },
+            {
+              "id": "if_unable",
+              "label": "How they react if they cannot hide it"
+            },
+            {
+              "id": "rules",
+              "label": "Whether uniform or club rules get in the way"
+            }
           ],
           "priority": "standard",
           "source_refs": [
@@ -2083,6 +3549,32 @@ values (
             "Whether it limits running or sport",
             "Whether it changed after surgery"
           ],
+          "facets": [
+            {
+              "id": "sides",
+              "label": "One side or both"
+            },
+            {
+              "id": "day_night",
+              "label": "Daytime versus at night"
+            },
+            {
+              "id": "play_sport",
+              "label": "Breathing when running, playing or doing sport"
+            },
+            {
+              "id": "sleep",
+              "label": "Snoring, restless sleep and daytime tiredness"
+            },
+            {
+              "id": "mouth_breathing",
+              "label": "Mouth breathing and a dry mouth"
+            },
+            {
+              "id": "trajectory",
+              "label": "Whether it changed after surgery or treatment"
+            }
+          ],
           "priority": "standard",
           "source_refs": [
             {
@@ -2106,6 +3598,36 @@ values (
             "Spilling, leaking or food coming through the nose",
             "Whether they avoid eating at school or with friends",
             "Growth or weight concerns"
+          ],
+          "facets": [
+            {
+              "id": "foods",
+              "label": "Which foods or textures are hard"
+            },
+            {
+              "id": "chewing",
+              "label": "Biting and chewing"
+            },
+            {
+              "id": "containment",
+              "label": "Spilling or leaking from the mouth"
+            },
+            {
+              "id": "nasal_escape",
+              "label": "Food or drink coming down the nose"
+            },
+            {
+              "id": "school_meals",
+              "label": "Eating at school or with friends"
+            },
+            {
+              "id": "time_effort",
+              "label": "How long meals take and how tiring they are"
+            },
+            {
+              "id": "growth",
+              "label": "Growth, weight and how much they get through"
+            }
           ],
           "priority": "standard",
           "source_refs": [
@@ -2131,6 +3653,36 @@ values (
             "Whether they avoid speaking up or reading aloud",
             "Speech therapy and progress"
           ],
+          "facets": [
+            {
+              "id": "clarity",
+              "label": "How clear their speech is"
+            },
+            {
+              "id": "hard_sounds",
+              "label": "Which sounds or words are hardest"
+            },
+            {
+              "id": "listeners",
+              "label": "Whether teachers, other children and strangers understand them"
+            },
+            {
+              "id": "nasal_sound",
+              "label": "Whether speech sounds nasal or air escapes"
+            },
+            {
+              "id": "speaking_up",
+              "label": "Speaking up in class or reading aloud"
+            },
+            {
+              "id": "holding_back",
+              "label": "Whether they say less because of it"
+            },
+            {
+              "id": "therapy",
+              "label": "Speech therapy and how it is going"
+            }
+          ],
           "priority": "standard",
           "source_refs": [
             {
@@ -2154,6 +3706,32 @@ values (
             "Whether others misread their expression",
             "Eye closure, dryness or drooling",
             "Whether it is improving, stable or worsening"
+          ],
+          "facets": [
+            {
+              "id": "movements",
+              "label": "Which movements are affected: smile, brow, eye closure"
+            },
+            {
+              "id": "symmetry",
+              "label": "Whether expressions look even on both sides"
+            },
+            {
+              "id": "eye_closure",
+              "label": "Closing the eye fully; dryness or watering"
+            },
+            {
+              "id": "oral_control",
+              "label": "Drooling or the mouth not sealing"
+            },
+            {
+              "id": "misread",
+              "label": "Whether other children or adults misread how they feel"
+            },
+            {
+              "id": "trend",
+              "label": "Whether it is improving, stable or worsening"
+            }
           ],
           "priority": "standard",
           "source_refs": [
@@ -2186,6 +3764,36 @@ values (
             "Pain relief used and whether it helps",
             "Whether it is improving"
           ],
+          "facets": [
+            {
+              "id": "location",
+              "label": "Where it hurts"
+            },
+            {
+              "id": "how_shown",
+              "label": "How the child shows it: words, rubbing, crying, not eating"
+            },
+            {
+              "id": "intensity",
+              "label": "How bad it gets at its worst"
+            },
+            {
+              "id": "pattern",
+              "label": "When it comes: constant, at night, with eating or moving"
+            },
+            {
+              "id": "relief",
+              "label": "Pain relief used and whether it helps"
+            },
+            {
+              "id": "sleep_activity",
+              "label": "Whether it affects sleep, school or play"
+            },
+            {
+              "id": "trajectory",
+              "label": "Whether it is getting better"
+            }
+          ],
           "priority": "core",
           "source_refs": [
             {
@@ -2214,6 +3822,32 @@ values (
             "Whether it affects eating, breathing or vision",
             "What the family was told to expect"
           ],
+          "facets": [
+            {
+              "id": "location",
+              "label": "Which areas are affected"
+            },
+            {
+              "id": "extent",
+              "label": "How visible it is"
+            },
+            {
+              "id": "sidedness",
+              "label": "Whether it is worse on one side"
+            },
+            {
+              "id": "trajectory",
+              "label": "How it has changed since treatment"
+            },
+            {
+              "id": "function_effect",
+              "label": "Whether it affects eating, breathing or vision"
+            },
+            {
+              "id": "expectations",
+              "label": "What the family was told to expect"
+            }
+          ],
           "priority": "standard",
           "source_refs": [
             {
@@ -2241,6 +3875,32 @@ values (
             "Whether it is changing over time",
             "Whether it affects eating or drinking"
           ],
+          "facets": [
+            {
+              "id": "location",
+              "label": "Where the odd feeling is"
+            },
+            {
+              "id": "extent",
+              "label": "How large an area"
+            },
+            {
+              "id": "quality",
+              "label": "Numb, tingly, itchy or oversensitive"
+            },
+            {
+              "id": "trajectory",
+              "label": "Whether it is changing over time"
+            },
+            {
+              "id": "daily_effect",
+              "label": "Whether it affects eating or drinking"
+            },
+            {
+              "id": "touching",
+              "label": "Whether the child touches, rubs or picks at the area"
+            }
+          ],
           "priority": "standard",
           "source_refs": [
             {
@@ -2265,6 +3925,36 @@ values (
             "Whether other children ask about the scar",
             "Whether the child wants to hide it",
             "Scar care being used"
+          ],
+          "facets": [
+            {
+              "id": "location",
+              "label": "Which scars and where"
+            },
+            {
+              "id": "visibility",
+              "label": "How noticeable they are"
+            },
+            {
+              "id": "colour",
+              "label": "Colour: red, dark or pale"
+            },
+            {
+              "id": "texture",
+              "label": "Raised, indented, tight or itchy"
+            },
+            {
+              "id": "maturity",
+              "label": "Whether they are still settling"
+            },
+            {
+              "id": "others_ask",
+              "label": "Whether other children ask about the scar"
+            },
+            {
+              "id": "concealment",
+              "label": "Whether the child wants to hide it, and scar care being used"
+            }
           ],
           "priority": "standard",
           "source_refs": [
@@ -2292,6 +3982,32 @@ values (
             "Which feature or side",
             "Whether it is worse when smiling or talking",
             "Whether it has changed with growth or treatment"
+          ],
+          "facets": [
+            {
+              "id": "feature",
+              "label": "Which feature looks uneven"
+            },
+            {
+              "id": "side",
+              "label": "Which side, and how different it looks"
+            },
+            {
+              "id": "rest_vs_movement",
+              "label": "Whether it shows more when smiling or talking"
+            },
+            {
+              "id": "others_notice",
+              "label": "Whether other children notice"
+            },
+            {
+              "id": "trajectory",
+              "label": "Whether it has changed with growth or treatment"
+            },
+            {
+              "id": "bother",
+              "label": "How much it bothers the child"
+            }
           ],
           "priority": "standard",
           "source_refs": [
@@ -2327,6 +4043,36 @@ values (
             "Whether they can play and sleep as usual",
             "How the family is coping with care and time off",
             "Whether recovery matches what the family was told"
+          ],
+          "facets": [
+            {
+              "id": "school_return",
+              "label": "Getting back to school and how many days were missed"
+            },
+            {
+              "id": "play_sport",
+              "label": "Play, sport and normal activity"
+            },
+            {
+              "id": "eating",
+              "label": "Back to normal eating and drinking"
+            },
+            {
+              "id": "sleep",
+              "label": "Sleep and energy"
+            },
+            {
+              "id": "help_needed",
+              "label": "How much help the child needs with care"
+            },
+            {
+              "id": "family_coping",
+              "label": "How the family is managing care and time off"
+            },
+            {
+              "id": "expectations",
+              "label": "Whether recovery matches what the family was told"
+            }
           ],
           "priority": "standard",
           "applicable_timepoints": [
@@ -2367,6 +4113,36 @@ values (
             "Which aspect disappoints, if any",
             "Whether their view is shifting as healing progresses"
           ],
+          "facets": [
+            {
+              "id": "expectation_vs_result",
+              "label": "What the family hoped for versus what they see"
+            },
+            {
+              "id": "child_view",
+              "label": "What the child says about the change"
+            },
+            {
+              "id": "naturalness",
+              "label": "Whether it looks natural and still like them"
+            },
+            {
+              "id": "specific_aspect",
+              "label": "Which aspect, if any, disappoints"
+            },
+            {
+              "id": "others_reaction",
+              "label": "What other children or family have said"
+            },
+            {
+              "id": "worth_it",
+              "label": "Whether it feels worth what it took"
+            },
+            {
+              "id": "view_shift",
+              "label": "Whether their view is shifting as healing progresses"
+            }
+          ],
           "priority": "core",
           "applicable_timepoints": [
             "post-op-2w",
@@ -2401,6 +4177,32 @@ values (
             "Whether the child was involved and how they felt about it",
             "Whether they felt rushed or pressured"
           ],
+          "facets": [
+            {
+              "id": "influences",
+              "label": "What influenced the decision"
+            },
+            {
+              "id": "timing",
+              "label": "Whether the timing felt right for the child"
+            },
+            {
+              "id": "child_involvement",
+              "label": "Whether the child was involved and how they felt about it"
+            },
+            {
+              "id": "pressure",
+              "label": "Whether they felt rushed or pressured"
+            },
+            {
+              "id": "regret",
+              "label": "Any regret, and what about"
+            },
+            {
+              "id": "advise_others",
+              "label": "Whether they would advise another family to do it"
+            }
+          ],
           "priority": "standard",
           "applicable_timepoints": [
             "post-op-2w",
@@ -2431,6 +4233,32 @@ values (
             "Whether the child had things explained at their level",
             "Questions they still have for the team"
           ],
+          "facets": [
+            {
+              "id": "before",
+              "label": "What the family was told to expect beforehand"
+            },
+            {
+              "id": "recovery_info",
+              "label": "Information about recovery and timescales"
+            },
+            {
+              "id": "risks",
+              "label": "How risks and possible complications were explained"
+            },
+            {
+              "id": "home_care",
+              "label": "How to care for the child at home"
+            },
+            {
+              "id": "child_level",
+              "label": "Whether the child had things explained at their level"
+            },
+            {
+              "id": "gaps",
+              "label": "What they wish they had known, and questions still open"
+            }
+          ],
           "priority": "standard",
           "applicable_timepoints": [
             "post-op-2w",
@@ -2449,11 +4277,59 @@ values (
       ]
     }
   ],
+  "triage": [
+    {
+      "id": "overall",
+      "intent": "How the child feels about their face right now; if the guardian is answering, what the child says and shows about it",
+      "maps_to": [
+        "appearance.overall"
+      ]
+    },
+    {
+      "id": "features",
+      "intent": "Which part of their face is most on their mind (let the child or guardian name it rather than offering a list)",
+      "maps_to": [
+        "appearance.*"
+      ]
+    },
+    {
+      "id": "function",
+      "intent": "Whether anything about the face makes everyday things harder: breathing, eating, being understood when they talk, moving the face",
+      "maps_to": [
+        "function.*"
+      ]
+    },
+    {
+      "id": "impact",
+      "intent": "How it affects school, friends and play: joining in, teasing or questions from other children, and how the child feels about themselves",
+      "maps_to": [
+        "psych.*",
+        "social.*",
+        "distress.*"
+      ]
+    },
+    {
+      "id": "recovery",
+      "intent": "How recovery is going: pain, swelling, numbness, scars, and getting back to school and play",
+      "maps_to": [
+        "adverse.*",
+        "recovery.*"
+      ],
+      "timepoints": [
+        "post-op-2w",
+        "post-op-6w",
+        "post-op-6m",
+        "post-op-12m",
+        "follow-up"
+      ]
+    }
+  ],
   "coverage_rules": {
     "min_confidence_to_count": 0.6,
     "drill_down_threshold": "moderate",
     "core_constructs_required": true,
-    "max_constructs_per_session": 18
+    "max_constructs_per_session": 18,
+    "focus_facet_threshold": 0.7
   }
 }$seed$::jsonb,
   'approved',

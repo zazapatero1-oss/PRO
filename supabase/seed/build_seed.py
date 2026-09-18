@@ -12,15 +12,21 @@ Standard library only. Deterministic output.
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 OUT = HERE / "seed.sql"
 
 # Stable ids so demo.sql and later migrations can reference maps by id or slug.
+# Keyed by (slug, version): a new map version is a new row, so it needs its own
+# id or it would collide with the previous version's primary key on a database
+# that already carries it. Ids of retired versions stay listed as history.
 MAP_IDS = {
-    "face-q-adult": "7a1c5e20-0002-4a00-8000-000000000001",
-    "face-q-pediatric": "7a1c5e20-0002-4a00-8000-000000000002",
+    ("face-q-adult", 1): "7a1c5e20-0002-4a00-8000-000000000001",
+    ("face-q-pediatric", 1): "7a1c5e20-0002-4a00-8000-000000000002",
+    ("face-q-adult", 2): "7a1c5e20-0002-4a00-8000-000000000011",
+    ("face-q-pediatric", 2): "7a1c5e20-0002-4a00-8000-000000000012",
 }
 
 TAG = "$seed$"
@@ -45,6 +51,44 @@ def uuid_array(values: list[str]) -> str:
     if not values:
         return "'{}'::uuid[]"
     return "array[" + ", ".join(f"'{v}'" for v in values) + "]::uuid[]"
+
+
+def check_facets_and_triage(m: dict) -> None:
+    """Enforce the SPEC v1.1 §A invariants the tracker relies on."""
+    slug = m["slug"]
+    construct_ids = [c["id"] for d in m["domains"] for c in d["constructs"]]
+    for dom in m["domains"]:
+        for c in dom["constructs"]:
+            facets = c.get("facets")
+            if not isinstance(facets, list) or not 5 <= len(facets) <= 8:
+                raise ValueError(f"{slug}/{c['id']}: needs 5-8 facets, has {len(facets or [])}")
+            ids = [f["id"] for f in facets]
+            if len(set(ids)) != len(ids):
+                raise ValueError(f"{slug}/{c['id']}: duplicate facet ids")
+            for f in facets:
+                if not re.fullmatch(r"[a-z][a-z0-9_]*", f["id"]) or not f.get("label"):
+                    raise ValueError(f"{slug}/{c['id']}: bad facet {f!r}")
+
+    triage = m.get("triage")
+    if not isinstance(triage, list) or len(triage) < 4:
+        raise ValueError(f"{slug}: triage block needs at least 4 items")
+    if len({t["id"] for t in triage}) != len(triage):
+        raise ValueError(f"{slug}: duplicate triage ids")
+    for t in triage:
+        if not t.get("intent") or not t.get("maps_to"):
+            raise ValueError(f"{slug}/triage {t.get('id')}: needs intent and maps_to")
+        for pattern in t["maps_to"]:
+            prefix = pattern[:-1] if pattern.endswith("*") else None
+            hit = (
+                any(cid.startswith(prefix) for cid in construct_ids)
+                if prefix is not None
+                else pattern in construct_ids
+            )
+            if not hit:
+                raise ValueError(f"{slug}/triage {t['id']}: {pattern} matches no construct")
+
+    if "focus_facet_threshold" not in m["coverage_rules"]:
+        raise ValueError(f"{slug}: coverage_rules needs focus_facet_threshold")
 
 
 def build() -> str:
@@ -122,8 +166,10 @@ def build() -> str:
     w("-- construct_maps (status approved; approved_by null = seeded, not clinician-approved)")
     for m in maps:
         slug = m["slug"]
-        if slug not in MAP_IDS:
-            raise ValueError(f"no stable id for map {slug}; add it to MAP_IDS")
+        version = int(m["version"])
+        if (slug, version) not in MAP_IDS:
+            raise ValueError(f"no stable id for map {slug}@{version}; add it to MAP_IDS")
+        check_facets_and_triage(m)
         ref_slugs = sorted(
             {
                 r["instrument"]
@@ -141,9 +187,9 @@ def build() -> str:
             "insert into public.construct_maps "
             "(id, slug, version, population, source_instrument_ids, map, status, approved_by, approved_at)\n"
             "values (\n"
-            f"  '{MAP_IDS[slug]}',\n"
+            f"  '{MAP_IDS[(slug, version)]}',\n"
             f"  {q(slug)},\n"
-            f"  {int(m['version'])},\n"
+            f"  {version},\n"
             f"  {q(m['population'])},\n"
             f"  {uuid_array(source_ids)},\n"
             f"  {q(map_json)}::jsonb,\n"
