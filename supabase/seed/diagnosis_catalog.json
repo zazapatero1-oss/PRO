@@ -1,0 +1,247 @@
+[
+  {
+    "code": "rhinoplasty",
+    "label_en": "Rhinoplasty",
+    "label_es": "Rinoplastia",
+    "module": "aesthetics",
+    "default_map_slug_adult": "face-q-adult",
+    "default_map_slug_pediatric": "face-q-pediatric",
+    "focus_constructs": [
+      "appearance.overall", "appearance.nose", "function.breathing",
+      "psych.self_confidence", "psych.mood", "social.comfort", "social.avoidance",
+      "distress.preoccupation", "distress.hiding",
+      "adverse.swelling_bruising", "adverse.numbness_sensation", "adverse.asymmetry", "adverse.pain_discomfort",
+      "recovery.daily_activities", "outcome.result", "outcome.decision", "outcome.information"
+    ]
+  },
+  {
+    "code": "facelift",
+    "label_en": "Facelift (rhytidectomy)",
+    "label_es": "Lifting facial (ritidectomía)",
+    "module": "aesthetics",
+    "default_map_slug_adult": "face-q-adult",
+    "default_map_slug_pediatric": "face-q-pediatric",
+    "focus_constructs": [
+      "appearance.overall", "appearance.chin_jawline", "appearance.cheeks", "appearance.skin", "aging.appraisal",
+      "psych.self_confidence", "psych.mood", "social.comfort", "distress.preoccupation",
+      "adverse.swelling_bruising", "adverse.numbness_sensation", "adverse.scarring", "adverse.pain_discomfort",
+      "recovery.daily_activities", "outcome.result", "outcome.decision", "outcome.information"
+    ]
+  },
+  {
+    "code": "injectables",
+    "label_en": "Injectables (neuromodulators / fillers)",
+    "label_es": "Inyectables (toxina botulínica / rellenos)",
+    "module": "aesthetics",
+    "default_map_slug_adult": "face-q-adult",
+    "default_map_slug_pediatric": "face-q-pediatric",
+    "focus_constructs": [
+      "appearance.overall", "appearance.lips", "appearance.cheeks", "appearance.skin", "appearance.eyes", "aging.appraisal",
+      "psych.self_confidence", "social.comfort", "distress.preoccupation",
+      "adverse.swelling_bruising", "adverse.asymmetry", "adverse.pain_discomfort",
+      "outcome.result", "outcome.information"
+    ]
+  },
+  {
+    "code": "blepharoplasty",
+    "label_en": "Eyelid surgery (blepharoplasty)",
+    "label_es": "Cirugía de párpados (blefaroplastia)",
+    "module": "aesthetics",
+    "default_map_slug_adult": "face-q-adult",
+    "default_map_slug_pediatric": "face-q-pediatric",
+    "focus_constructs": [
+      "appearance.overall", "appearance.eyes", "aging.appraisal",
+      "psych.self_confidence", "psych.mood", "social.comfort", "distress.preoccupation",
+      "adverse.swelling_bruising", "adverse.numbness_sensation", "adverse.asymmetry", "adverse.scarring", "adverse.pain_discomfort",
+      "recovery.daily_activities", "outcome.result", "outcome.decision", "outcome.information"
+    ]
+  },
+  {
+    "code": "skin-resurfacing",
+    "label_en": "Skin resurfacing (laser / peel)",
+    "label_es": "Rejuvenecimiento cutáneo (láser / peeling)",
+    "module": "aesthetics",
+    "default_map_slug_adult": "face-q-adult",
+    "default_map_slug_pediatric": "face-q-pediatric",
+    "focus_constructs": [
+      "appearance.overall", "appearance.skin", "aging.appraisal",
+      "psych.self_confidence", "social.comfort", "distress.preoccupation", "distress.hiding",
+      "adverse.swelling_bruising", "adverse.pain_discomfort",
+      "recovery.daily_activities", "outcome.result", "outcome.information"
+    ]
+  },
+  {
+    "code": "cleft-lip-palate",
+    "label_en": "Cleft lip and/or palate",
+    "label_es": "Labio y/o paladar hendido (fisura labiopalatina)",
+    "module": "craniofacial",
+    "default_map_slug_adult": "face-q-adult",
+    "default_map_slug_pediatric": "face-q-pediatric",
+    "focus_constructs": [
+      "appearance.overall", "appearance.lips", "appearance.nose", "appearance.smile_teeth", "adverse.scarring",
+      "function.speaking", "function.eating_drinking", "function.breathing",
+      "psych.self_confidence", "psych.mood", "social.comfort", "social.school", "social.teasing_comments",
+      "distress.preoccupation", "adverse.pain_discomfort", "outcome.result", "outcome.information"
+    ]
+  },
+  {
+    "code": "craniosynostosis",
+    "label_en": "Craniosynostosis",
+    "label_es": "Craneosinostosis",
+    "module": "craniofacial",
+    "default_map_slug_adult": "face-q-adult",
+    "default_map_slug_pediatric": "face-q-pediatric",
+    "focus_constructs": [
+      "appearance.overall", "appearance.eyes",
+      "psych.self_confidence", "psych.mood", "social.comfort", "social.school", "social.teasing_comments",
+      "distress.preoccupation", "distress.hiding",
+      "adverse.scarring", "adverse.pain_discomfort", "adverse.swelling_bruising",
+      "recovery.daily_activities", "outcome.result", "outcome.information"
+    ]
+  },
+  {
+    "code": "microtia",
+    "label_en": "Microtia / ear reconstruction",
+    "label_es": "Microtia / reconstrucción de oreja",
+    "module": "craniofacial",
+    "default_map_slug_adult": "face-q-adult",
+    "default_map_slug_pediatric": "face-q-pediatric",
+    "focus_constructs": [
+      "appearance.overall", "appearance.ears",
+      "psych.self_confidence", "psych.mood", "social.comfort", "social.school", "social.teasing_comments",
+      "distress.preoccupation", "distress.hiding",
+      "adverse.scarring", "adverse.pain_discomfort", "adverse.asymmetry",
+      "recovery.daily_activities", "outcome.result", "outcome.decision", "outcome.information"
+    ]
+  },
+  {
+    "code": "otoplasty",
+    "label_en": "Prominent ears (otoplasty)",
+    "label_es": "Orejas prominentes (otoplastia)",
+    "module": "craniofacial",
+    "default_map_slug_adult": "face-q-adult",
+    "default_map_slug_pediatric": "face-q-pediatric",
+    "focus_constructs": [
+      "appearance.overall", "appearance.ears",
+      "psych.self_confidence", "social.comfort", "social.school", "social.teasing_comments", "distress.hiding",
+      "adverse.pain_discomfort", "adverse.asymmetry", "adverse.scarring",
+      "outcome.result", "outcome.decision"
+    ]
+  },
+  {
+    "code": "hemifacial-microsomia",
+    "label_en": "Hemifacial microsomia",
+    "label_es": "Microsomía hemifacial",
+    "module": "craniofacial",
+    "default_map_slug_adult": "face-q-adult",
+    "default_map_slug_pediatric": "face-q-pediatric",
+    "focus_constructs": [
+      "appearance.overall", "appearance.ears", "appearance.cheeks", "appearance.chin_jawline", "adverse.asymmetry",
+      "function.eating_drinking", "function.facial_expression", "function.speaking",
+      "psych.self_confidence", "psych.mood", "social.comfort", "social.school", "social.teasing_comments",
+      "distress.preoccupation", "outcome.result", "outcome.information"
+    ]
+  },
+  {
+    "code": "facial-palsy",
+    "label_en": "Facial palsy",
+    "label_es": "Parálisis facial",
+    "module": "craniofacial",
+    "default_map_slug_adult": "face-q-adult",
+    "default_map_slug_pediatric": "face-q-pediatric",
+    "focus_constructs": [
+      "appearance.overall", "appearance.smile_teeth",
+      "function.facial_expression", "function.eating_drinking", "function.speaking", "adverse.asymmetry",
+      "psych.self_confidence", "psych.mood", "social.comfort", "social.avoidance", "social.teasing_comments",
+      "distress.preoccupation", "distress.hiding", "outcome.result"
+    ]
+  },
+  {
+    "code": "facial-trauma",
+    "label_en": "Facial trauma / reconstruction",
+    "label_es": "Traumatismo facial / reconstrucción",
+    "module": "craniofacial",
+    "default_map_slug_adult": "face-q-adult",
+    "default_map_slug_pediatric": "face-q-pediatric",
+    "focus_constructs": [
+      "appearance.overall", "adverse.scarring", "adverse.asymmetry", "adverse.numbness_sensation", "adverse.pain_discomfort",
+      "function.eating_drinking", "function.facial_expression", "function.breathing",
+      "psych.mood", "social.comfort", "distress.preoccupation",
+      "recovery.daily_activities", "outcome.result", "outcome.information"
+    ]
+  },
+  {
+    "code": "hn-cancer",
+    "label_en": "Head and neck cancer",
+    "label_es": "Cáncer de cabeza y cuello",
+    "module": "head-neck-cancer",
+    "default_map_slug_adult": "face-q-adult",
+    "default_map_slug_pediatric": "face-q-pediatric",
+    "focus_constructs": [
+      "appearance.overall", "appearance.smile_teeth",
+      "function.eating_drinking", "function.speaking", "function.swallowing_oral", "function.facial_expression",
+      "adverse.scarring", "adverse.pain_discomfort", "adverse.numbness_sensation",
+      "psych.self_confidence", "psych.mood", "social.comfort", "social.avoidance",
+      "distress.preoccupation", "distress.cancer_worry",
+      "recovery.daily_activities", "outcome.result", "outcome.information"
+    ]
+  },
+  {
+    "code": "oral-cancer",
+    "label_en": "Oral cavity cancer",
+    "label_es": "Cáncer de cavidad oral",
+    "module": "head-neck-cancer",
+    "default_map_slug_adult": "face-q-adult",
+    "default_map_slug_pediatric": "face-q-pediatric",
+    "focus_constructs": [
+      "appearance.overall", "appearance.smile_teeth",
+      "function.eating_drinking", "function.speaking", "function.swallowing_oral",
+      "adverse.pain_discomfort", "adverse.scarring",
+      "psych.mood", "social.comfort", "social.avoidance", "distress.cancer_worry",
+      "recovery.daily_activities", "outcome.result", "outcome.information"
+    ]
+  },
+  {
+    "code": "skin-cancer-face",
+    "label_en": "Facial skin cancer",
+    "label_es": "Cáncer de piel facial",
+    "module": "skin-cancer",
+    "default_map_slug_adult": "face-q-adult",
+    "default_map_slug_pediatric": "face-q-pediatric",
+    "focus_constructs": [
+      "appearance.overall", "appearance.skin",
+      "adverse.scarring", "adverse.asymmetry", "adverse.numbness_sensation", "adverse.pain_discomfort",
+      "psych.self_confidence", "psych.mood", "social.comfort",
+      "distress.preoccupation", "distress.hiding", "distress.cancer_worry",
+      "recovery.daily_activities", "outcome.result", "outcome.information"
+    ]
+  },
+  {
+    "code": "mohs-reconstruction",
+    "label_en": "Reconstruction after Mohs surgery",
+    "label_es": "Reconstrucción tras cirugía de Mohs",
+    "module": "skin-cancer",
+    "default_map_slug_adult": "face-q-adult",
+    "default_map_slug_pediatric": "face-q-pediatric",
+    "focus_constructs": [
+      "appearance.overall", "appearance.nose", "appearance.eyes", "appearance.lips",
+      "adverse.scarring", "adverse.asymmetry", "adverse.numbness_sensation", "adverse.swelling_bruising", "adverse.pain_discomfort",
+      "function.facial_expression", "psych.mood", "social.comfort", "distress.cancer_worry",
+      "recovery.daily_activities", "outcome.result", "outcome.information"
+    ]
+  },
+  {
+    "code": "other",
+    "label_en": "Other (see free text)",
+    "label_es": "Otro (ver texto libre)",
+    "module": "aesthetics",
+    "default_map_slug_adult": "face-q-adult",
+    "default_map_slug_pediatric": "face-q-pediatric",
+    "focus_constructs": [
+      "appearance.overall", "psych.self_confidence", "psych.mood", "social.comfort", "social.avoidance",
+      "distress.preoccupation", "distress.hiding",
+      "adverse.pain_discomfort", "adverse.scarring", "function.facial_expression",
+      "outcome.result", "outcome.information"
+    ]
+  }
+]

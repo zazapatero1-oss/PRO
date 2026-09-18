@@ -1,0 +1,42 @@
+[
+  {
+    "id": "6d2f3a10-0001-4a00-8000-000000000001",
+    "slug": "face-q-aesthetics",
+    "name": "FACE-Q Aesthetics",
+    "version": "2015 (as published; scale list current as of qportfolio.org)",
+    "publisher": "Q-Portfolio (McMaster University / Memorial Sloan Kettering Cancer Center); distributed by Mapi Research Trust",
+    "license_notes": "FACE-Q Aesthetics is a licensed patient-reported outcome instrument distributed through Q-Portfolio and Mapi Research Trust (ePROVIDE). Use is free of charge for non-commercial academic and clinical use subject to registration and a user agreement; commercial use requires a paid licence. Questionnaire item text is copyrighted and is NOT stored in this repository or shown to patients. Only publicly documented scale names and paraphrased descriptions of what the scales measure are used to build construct maps.",
+    "license_url": "https://qportfolio.org/face-q/face-q-aesthetics/",
+    "item_text_stored": false
+  },
+  {
+    "id": "6d2f3a10-0001-4a00-8000-000000000002",
+    "slug": "face-q-craniofacial",
+    "name": "FACE-Q Craniofacial Module",
+    "version": "2021 (as published; scale list current as of qportfolio.org)",
+    "publisher": "Q-Portfolio (McMaster University / Memorial Sloan Kettering Cancer Center); distributed by Mapi Research Trust",
+    "license_notes": "FACE-Q Craniofacial Module (child and young adult, with parent-report options) is a licensed patient-reported outcome instrument distributed through Q-Portfolio and Mapi Research Trust (ePROVIDE). Use is free of charge for non-commercial academic and clinical use subject to registration and a user agreement; commercial use requires a paid licence. Questionnaire item text is copyrighted and is NOT stored in this repository or shown to patients. Only publicly documented scale names and paraphrased descriptions of what the scales measure are used to build construct maps.",
+    "license_url": "https://qportfolio.org/face-q/face-q-craniofacial/",
+    "item_text_stored": false
+  },
+  {
+    "id": "6d2f3a10-0001-4a00-8000-000000000003",
+    "slug": "face-q-head-neck-cancer",
+    "name": "FACE-Q Head and Neck Cancer Module",
+    "version": "2019 (as published; scale list current as of qportfolio.org)",
+    "publisher": "Q-Portfolio (McMaster University / Memorial Sloan Kettering Cancer Center); distributed by Mapi Research Trust",
+    "license_notes": "FACE-Q Head and Neck Cancer Module is a licensed patient-reported outcome instrument distributed through Q-Portfolio and Mapi Research Trust (ePROVIDE). Use is free of charge for non-commercial academic and clinical use subject to registration and a user agreement; commercial use requires a paid licence. Questionnaire item text is copyrighted and is NOT stored in this repository or shown to patients. Only publicly documented scale names and paraphrased descriptions of what the scales measure are used to build construct maps.",
+    "license_url": "https://qportfolio.org/face-q/face-q-head-and-neck-cancer/",
+    "item_text_stored": false
+  },
+  {
+    "id": "6d2f3a10-0001-4a00-8000-000000000004",
+    "slug": "face-q-skin-cancer",
+    "name": "FACE-Q Skin Cancer Module",
+    "version": "2018 (as published; scale list current as of qportfolio.org)",
+    "publisher": "Q-Portfolio (McMaster University / Memorial Sloan Kettering Cancer Center); distributed by Mapi Research Trust",
+    "license_notes": "FACE-Q Skin Cancer Module is a licensed patient-reported outcome instrument distributed through Q-Portfolio and Mapi Research Trust (ePROVIDE). Use is free of charge for non-commercial academic and clinical use subject to registration and a user agreement; commercial use requires a paid licence. Questionnaire item text is copyrighted and is NOT stored in this repository or shown to patients. Only publicly documented scale names and paraphrased descriptions of what the scales measure are used to build construct maps.",
+    "license_url": "https://qportfolio.org/face-q/face-q-skin-cancer/",
+    "item_text_stored": false
+  }
+]
