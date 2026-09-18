@@ -2,6 +2,7 @@ import type {
   ConsentVariant,
   ConstructMapRow,
   DiagnosisCatalogEntry,
+  IngestResult,
   InputMode,
   InstrumentRow,
   IntakeFields,
@@ -59,10 +60,11 @@ export interface Api {
   exportSession(sessionId: string, format: 'fhir' | 'csv'): Promise<Blob>
   deleteParticipant(participantId: string): Promise<void>
   reopenSession(sessionId: string): Promise<void>
+  /** Merges into the latest approved map for the population and returns the draft + diff (v1.1 §E). */
   ingestInstrument(input: {
     instrument_slug: string
     text: string
     population: 'adult' | 'pediatric'
-  }): Promise<ConstructMapRow>
+  }): Promise<IngestResult>
   approveConstructMap(constructMapId: string): Promise<ConstructMapRow>
 }

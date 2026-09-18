@@ -18,6 +18,9 @@ const sessionState: SessionState = {
     { seq: 3, role: 'system-event', content: 'pause_requested', created_at: '' },
   ],
   coverage: { covered: 2, total_active: 9 },
+  phase: 'triage',
+  current_focus: null,
+  focus_progress: { confirmed: 0, total: 3 },
   turns_used: 1,
   max_turns: 40,
 }
@@ -27,6 +30,8 @@ describe('chatReducer', () => {
     const s = chatReducer(initialChatState, { type: 'hydrate', state: sessionState })
     expect(s.messages.map((m) => m.role)).toEqual(['assistant', 'patient'])
     expect(s.coverage).toEqual({ covered: 2, total_active: 9 })
+    expect(s.sessionPhase).toBe('triage')
+    expect(s.focusProgress).toEqual({ confirmed: 0, total: 3 })
     expect(s.phase).toBe('idle')
     expect(chatReducer(initialChatState, { type: 'hydrate', state: { ...sessionState, status: 'safety-halted' } }).phase).toBe('safety')
   })
@@ -57,14 +62,76 @@ describe('chatReducer', () => {
     expect(run([{ type: 'turn_start', text: null, inputMode: null }]).messages).toHaveLength(0)
   })
 
-  it('records evidence hints and status updates', () => {
+  it('records evidence hints and the v1.1 status fields', () => {
     const s = run([
       { type: 'event', event: { event: 'evidence', data: { construct_id: 'appearance.nose', severity: 'severe', confidence: 0.9 } } },
-      { type: 'event', event: { event: 'status', data: { coverage: { covered: 3, total_active: 9 }, turns_used: 4, max_turns: 40 } } },
+      {
+        type: 'event',
+        event: {
+          event: 'status',
+          data: {
+            coverage: { covered: 3, total_active: 9 },
+            phase: 'explore',
+            current_focus: 'appearance.nose',
+            focus_progress: { confirmed: 1, total: 3 },
+            turns_used: 4,
+            max_turns: 40,
+          },
+        },
+      },
     ])
     expect(s.lastEvidence?.construct_id).toBe('appearance.nose')
     expect(s.coverage).toEqual({ covered: 3, total_active: 9 })
+    expect(s.sessionPhase).toBe('explore')
+    expect(s.currentFocus).toBe('appearance.nose')
+    expect(s.focusProgress).toEqual({ confirmed: 1, total: 3 })
     expect(s.turnsUsed).toBe(4)
+  })
+
+  it('accepts evidence that arrives after the reply text without disturbing the bubble', () => {
+    // v1.1 §C: extraction runs after the reply, so evidence lands between the last token and
+    // the status event — and sometimes after `ended`.
+    const s = run([
+      { type: 'turn_start', text: 'My nose', inputMode: 'text' },
+      { type: 'event', event: { event: 'token', data: { t: 'Thanks ' } } },
+      { type: 'event', event: { event: 'token', data: { t: 'for that.' } } },
+      { type: 'event', event: { event: 'evidence', data: { construct_id: 'appearance.nose', severity: 'moderate', confidence: 0.8 } } },
+      { type: 'event', event: { event: 'evidence', data: { construct_id: 'psych.distress', severity: 'mild', confidence: 0.6 } } },
+      {
+        type: 'event',
+        event: {
+          event: 'status',
+          data: {
+            coverage: { covered: 4, total_active: 9 },
+            phase: 'explore',
+            current_focus: 'appearance.nose',
+            focus_progress: { confirmed: 0, total: 3 },
+            turns_used: 5,
+            max_turns: 40,
+          },
+        },
+      },
+    ])
+    expect(s.messages).toHaveLength(2)
+    expect(s.messages[1]).toMatchObject({ role: 'assistant', content: 'Thanks for that.', streaming: true })
+    expect(s.phase).toBe('streaming')
+    expect(s.lastEvidence?.construct_id).toBe('psych.distress')
+
+    const done = chatReducer(s, { type: 'stream_done' })
+    expect(done.messages[1].streaming).toBe(false)
+
+    // …and after `ended`, evidence still only updates the hint.
+    const late = run(
+      [
+        { type: 'event', event: { event: 'ended', data: { reason: 'coverage_complete' } } },
+        { type: 'event', event: { event: 'evidence', data: { construct_id: 'function.breathing', severity: 'mild', confidence: 0.7 } } },
+      ],
+      s,
+    )
+    expect(late.phase).toBe('ended')
+    expect(late.messages).toHaveLength(2)
+    expect(late.messages[1].content).toBe('Thanks for that.')
+    expect(late.lastEvidence?.construct_id).toBe('function.breathing')
   })
 
   it('safety event renders the fixed message and disables input', () => {

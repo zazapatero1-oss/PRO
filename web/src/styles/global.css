@@ -23,6 +23,8 @@
   --sev-severe: #c8281e;
   --sev-unclear: #8b96a3;
   --sev-declined: #5b6673;
+  --ok-bg: #e4f4ea;
+  --ok-text: #1d6b3f;
   --radius: 12px;
   --radius-sm: 8px;
   --shadow: 0 1px 2px rgb(16 24 40 / 6%), 0 1px 3px rgb(16 24 40 / 10%);
@@ -50,6 +52,8 @@
     --danger-bg: #3b1613;
     --warn-bg: #3a2c0b;
     --warn: #ffd166;
+    --ok-bg: #16301f;
+    --ok-text: #7bd1a0;
     --shadow: none;
   }
 }
@@ -404,6 +408,76 @@ a {
 .badge--sev {
   color: #fff;
 }
+.badge--ok {
+  background: var(--ok-bg);
+  color: var(--ok-text);
+}
+.badge--open {
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+
+/* facet chips (v1.1 §A) */
+.facets {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+.facets__group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: baseline;
+}
+.facets__label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  min-width: 72px;
+}
+.chip {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+.chip--covered {
+  background: var(--ok-bg);
+  border-color: var(--ok-text);
+  color: var(--ok-text);
+}
+.chip--missing {
+  background: transparent;
+  color: var(--text-muted);
+  border-style: dashed;
+}
+
+/* opening-screen answers */
+.triage {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+.triage__item {
+  padding: 8px 0;
+  border-top: 1px solid var(--border);
+}
+.triage__intent {
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+/* ingestion diff */
+.diff__group {
+  margin-top: 12px;
+}
+.diff__construct {
+  padding: 6px 0;
+  border-top: 1px solid var(--border);
+}
 
 /* ---- landing ---- */
 .landing {
@@ -463,6 +537,11 @@ a {
 .chat__coverage {
   color: var(--text-muted);
   font-size: 0.85rem;
+  text-align: end;
+}
+.chat__focus {
+  opacity: 0.8;
+  font-style: italic;
 }
 .chat__log {
   flex: 1;

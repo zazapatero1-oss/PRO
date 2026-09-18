@@ -2,9 +2,12 @@ import { DIAGNOSIS_CATALOG } from '../../data/diagnosisCatalog'
 import { aggregateDomainSeverity } from '../../lib/severity'
 import type {
   ConsentVariant,
+  ConstructDef,
   ConstructEvidenceRow,
   ConstructMap,
   ConstructMapRow,
+  FacetDef,
+  IngestDiff,
   Language,
   MessageRow,
   Participant,
@@ -13,12 +16,13 @@ import type {
   SessionProfileRow,
   SessionRow,
   SessionState,
+  TriageItem,
 } from '../../types'
 import { TIMEPOINTS } from '../../types'
 import { ApiError } from '../errors'
 import type { Api, AuthUser } from '../types'
 import { CONSTRUCT_MAP_ROWS, INSTRUMENT_ROWS, findConstruct } from './constructMaps'
-import { buildDemoStore, type MockStore } from './demoData'
+import { buildDemoStore, type ConvoState, type MockStore } from './demoData'
 import { SCRIPTS, detectControlPhrase, detectSafety } from './script'
 import { fakeSseStream, tokenFrames, type SseFrame } from './sse'
 import { buildCsv, buildFhirBundle } from './exporters'
@@ -47,6 +51,7 @@ function loadStore(): MockStore {
       const parsed = JSON.parse(raw) as MockStore
       parsed.scriptPos ??= {}
       parsed.lastAsks ??= {}
+      parsed.convo ??= {}
       return parsed
     }
   } catch {
@@ -100,6 +105,40 @@ function activeConstructIds(map: ConstructMap, diagnosisCode: string, focus: str
   return merged.slice(0, map.coverage_rules.max_constructs_per_session)
 }
 
+const STOP_WORDS = new Set(['the', 'a', 'an', 'of', 'and', 'or', 'with', 'your', 'you', 'my', 'about', 'how', 'in', 'on', 'to', 'for', 'is', 'are', 'feel', 'feelings', 'satisfaction'])
+
+const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')
+
+const words = (s: string) => s.toLowerCase().split(/[^a-z]+/).filter((w) => w.length > 2 && !STOP_WORDS.has(w))
+
+/** Rewrites a pasted heading into a facet label; never reproduces the source wording verbatim. */
+function paraphraseFacet(heading: string): string {
+  const key = words(heading).slice(0, 4).join(' ')
+  return key ? `What they say about ${key}` : 'An additional detail to explore'
+}
+
+/** The construct whose label/description shares the most keywords with the heading, if any. */
+function bestMatch(map: ConstructMap, heading: string): ConstructDef | null {
+  const hw = new Set(words(heading))
+  if (hw.size === 0) return null
+  let best: { c: ConstructDef; score: number } | null = null
+  for (const d of map.domains)
+    for (const c of d.constructs) {
+      const cw = words(`${c.label} ${c.id.replace(/[._]/g, ' ')}`)
+      const score = cw.filter((w) => hw.has(w)).length
+      if (score > 0 && (!best || score > best.score)) best = { c, score }
+    }
+  return best ? best.c : null
+}
+
+function suggestTriage(added: ConstructDef[]): TriageItem[] {
+  return added.slice(0, 2).map((c) => ({
+    id: `triage.${slugify(c.label).slice(0, 30)}`,
+    intent: `Whether ${c.label.toLowerCase()} is something on their mind right now`,
+    maps_to: [c.id],
+  }))
+}
+
 export function createMockApi(): Api {
   let store = loadStore()
   const persist = () => saveStore(store)
@@ -138,6 +177,16 @@ export function createMockApi(): Api {
     if (!p) throw new ApiError('Participant not found', { code: 'not_found', status: 404 })
     return p
   }
+  /** Latest approved map for a population; ingestion merges into this (v1.1 §E). */
+  const latestMapFor = (population: 'adult' | 'pediatric'): ConstructMapRow => {
+    const rows = [...CONSTRUCT_MAP_ROWS, ...store.draftMaps]
+      .filter((m) => m.population === population && m.status === 'approved')
+      .sort((a, b) => a.version - b.version)
+    const row = rows[rows.length - 1]
+    if (!row) throw new ApiError('No approved map for this population', { code: 'not_found', status: 404 })
+    return row
+  }
+
   const mapOf = (s: SessionRow): ConstructMap => {
     const row = mapRowFor(store, s.construct_map_id)
     if (!row) throw new ApiError('Construct map missing', { code: 'not_found', status: 500 })
@@ -164,6 +213,17 @@ export function createMockApi(): Api {
 
   const turnsUsed = (s: SessionRow) => store.messages.filter((m) => m.session_id === s.id && m.role === 'assistant').length
 
+  // Mock tracker state (v1.1 §B). Sessions seeded in the demo store predate it, so finished
+  // ones report `wrap-up` and everything else starts in triage.
+  const convoOf = (s: SessionRow): ConvoState => {
+    const stored = store.convo[s.id]
+    if (stored) return stored
+    const done = s.status === 'wrapping-up' || s.status === 'summary-review' || s.status === 'completed'
+    return { phase: done ? 'wrap-up' : 'triage', current_focus: null, confirmed: [] }
+  }
+  const focusTotal = (s: SessionRow) => SCRIPTS[s.language].focusPlan.length
+  const focusProgressOf = (s: SessionRow) => ({ confirmed: convoOf(s).confirmed.length, total: focusTotal(s) })
+
   const stateOf = (s: SessionRow): SessionState => {
     const p = participantOf(s)
     const variant: ConsentVariant = s.respondent === 'guardian' ? 'guardian' : isMinor(p.age_band) ? 'minor-assent' : 'adult'
@@ -188,6 +248,9 @@ export function createMockApi(): Api {
         .sort((a, b) => a.seq - b.seq)
         .map((m) => ({ seq: m.seq, role: m.role, content: m.content, created_at: m.created_at })),
       coverage: coverageOf(s),
+      phase: convoOf(s).phase,
+      current_focus: convoOf(s).current_focus,
+      focus_progress: focusProgressOf(s),
       turns_used: turnsUsed(s),
       max_turns: s.max_turns,
       patient_summary: profile?.patient_summary ?? null,
@@ -226,6 +289,7 @@ export function createMockApi(): Api {
     const active = activeConstructIds(map, p.diagnosis_code, focusOf(s))
     const evidence = store.evidence.filter((e) => e.session_id === s.id && !e.superseded_by)
     const findings = store.findings.filter((f) => f.session_id === s.id)
+    const confirmedFocus = convoOf(s).confirmed
     const domains: ProfileDomain[] = []
     const needs: Profile['needs_clarification'] = []
     const declined: string[] = []
@@ -248,6 +312,8 @@ export function createMockApi(): Api {
         }
         covered.add(c.id)
         const fs = findings.filter((f) => f.construct_id === c.id)
+        const seen = new Set(rows.flatMap((r) => r.facets))
+        const all = c.facets ?? []
         constructs.push({
           id: c.id,
           severity: best.severity,
@@ -255,6 +321,9 @@ export function createMockApi(): Api {
           quotes: rows.map((r) => ({ text: r.patient_quote, lang: s.language, gloss_en: r.quote_gloss_en })),
           findings: fs.map((f) => ({ category: f.category, text: f.finding })),
           status: fs.length >= 2 ? 'drill_down_done' : 'covered',
+          facets_covered: all.filter((x) => seen.has(x.id)).map((x) => x.id),
+          facets_missing: all.filter((x) => !seen.has(x.id)).map((x) => x.id),
+          confirmed: confirmedFocus.includes(c.id),
         })
       }
       if (constructs.length === 0) continue
@@ -359,7 +428,17 @@ export function createMockApi(): Api {
       const p = participantOf(s)
       const script = SCRIPTS[s.language]
       const frames: SseFrame[] = []
-      const status = (): SseFrame => ({ event: 'status', data: { coverage: coverageOf(s), turns_used: turnsUsed(s), max_turns: s.max_turns } })
+      const status = (): SseFrame => ({
+        event: 'status',
+        data: {
+          coverage: coverageOf(s),
+          phase: convoOf(s).phase,
+          current_focus: convoOf(s).current_focus,
+          focus_progress: focusProgressOf(s),
+          turns_used: turnsUsed(s),
+          max_turns: s.max_turns,
+        },
+      })
       const say = (reply: string) => {
         addMessage(s, 'assistant', reply)
         frames.push(...tokenFrames(reply, reply.length))
@@ -381,6 +460,7 @@ export function createMockApi(): Api {
           say(script.opening(p.display_name))
           store.scriptPos[s.id] = 0
           store.lastAsks[s.id] = ['appearance.overall']
+          store.convo[s.id] = { phase: 'triage', current_focus: null, confirmed: [] }
         }
         frames.push(status())
         persist()
@@ -410,6 +490,7 @@ export function createMockApi(): Api {
           created_at: now(),
         })
         s.status = 'safety-halted'
+        store.convo[s.id] = { ...convoOf(s), current_focus: null }
         addMessage(s, 'system-event', 'safety_intercept')
         addMessage(s, 'assistant', script.safety)
         persist()
@@ -423,10 +504,20 @@ export function createMockApi(): Api {
       const lastScripted = pos >= script.turns.length - 1
       const control = detectControlPhrase(text, s.language)
 
+      // v1.1 §C: extraction runs *after* the reply, so evidence frames follow the tokens.
+      const evidenceFrames: SseFrame[] = []
+
       const advance = (prefix = '') => {
         say(`${prefix}${turn.reply}`)
         store.lastAsks[s.id] = turn.asks
         store.scriptPos[s.id] = pos + 1
+        const prev = convoOf(s)
+        store.convo[s.id] = {
+          phase: turn.phase,
+          current_focus: turn.focus ?? null,
+          confirmed: turn.confirms && !prev.confirmed.includes(turn.confirms) ? [...prev.confirmed, turn.confirms] : prev.confirmed,
+        }
+        frames.push(...evidenceFrames)
         frames.push(status())
         if (lastScripted) {
           s.status = 'wrapping-up'
@@ -445,6 +536,7 @@ export function createMockApi(): Api {
         addMessage(s, 'system-event', 'stop_requested')
         say(script.stopAck)
         s.status = 'wrapping-up'
+        store.convo[s.id] = { ...convoOf(s), phase: 'wrap-up', current_focus: null }
         frames.push(status(), { event: 'ended', data: { reason: 'patient_requested' }, delay: 300 })
         persist()
         return fakeSseStream(frames, { signal, speed: STREAM_SPEED })
@@ -454,7 +546,7 @@ export function createMockApi(): Api {
           store.evidence.push({
             id: uid(), session_id: s.id, construct_id: id, message_id: patientMsg.id,
             patient_quote: text, quote_gloss_en: glossOf(text, s.language), severity: 'declined', confidence: 1,
-            interference: [], note: 'patient skipped', superseded_by: null, created_at: now(),
+            interference: [], facets: [], triage_item: null, note: 'patient skipped', superseded_by: null, created_at: now(),
           })
         }
         addMessage(s, 'system-event', `declined:${askedIds.join(',')}`)
@@ -472,10 +564,11 @@ export function createMockApi(): Api {
           id: uid(), session_id: s.id, construct_id: id, message_id: patientMsg.id,
           patient_quote: quote, quote_gloss_en: glossOf(quote, s.language),
           severity: scripted?.severity ?? 'mild', confidence: scripted?.confidence ?? 0.7,
-          interference: [], note: null, superseded_by: null, created_at: now(),
+          interference: [], facets: scripted?.facets ?? [], triage_item: scripted?.triage_item ?? null,
+          note: null, superseded_by: null, created_at: now(),
         }
         store.evidence.push(row)
-        frames.push({ event: 'evidence', data: { construct_id: id, severity: row.severity, confidence: row.confidence }, delay: 150 })
+        evidenceFrames.push({ event: 'evidence', data: { construct_id: id, severity: row.severity, confidence: row.confidence }, delay: 150 })
         if (row.severity === 'moderate' || row.severity === 'severe') {
           store.findings.push({ id: uid(), session_id: s.id, construct_id: id, category: 'impact', finding: text.slice(0, 120), message_id: patientMsg.id, created_at: now() })
         }
@@ -487,7 +580,8 @@ export function createMockApi(): Api {
       if (turnsUsed(s) + 1 >= s.max_turns && !lastScripted) {
         say(script.wrapUp)
         s.status = 'wrapping-up'
-        frames.push(status(), { event: 'ended', data: { reason: 'turn_budget' }, delay: 300 })
+        store.convo[s.id] = { ...convoOf(s), phase: 'wrap-up', current_focus: null }
+        frames.push(...evidenceFrames, status(), { event: 'ended', data: { reason: 'turn_budget' }, delay: 300 })
       } else {
         advance()
       }
@@ -516,6 +610,7 @@ export function createMockApi(): Api {
           id: uid(), session_id: s.id, construct_id: id, message_id: null,
           patient_quote: c.patient_text, quote_gloss_en: glossOf(c.patient_text, s.language),
           severity: old?.severity ?? 'unclear', confidence: old?.confidence ?? 0.5, interference: [],
+          facets: old?.facets ?? [], triage_item: null,
           note: 'patient correction at summary review', superseded_by: null, created_at: now(),
         }
         if (old) old.superseded_by = row.id
@@ -734,40 +829,78 @@ export function createMockApi(): Api {
     async ingestInstrument(input) {
       requireUser()
       await sleep(1200)
-      // Stub: derive paraphrased constructs from section headings; item text is never copied.
+      // v1.1 §E: merge into the latest approved map for this population rather than replacing
+      // it. Headings become facets on the construct they best match, or a new construct when
+      // nothing in the map covers them. Item text is never copied: labels are rewritten.
+      const base = latestMapFor(input.population)
       const sections = input.text
         .split(/\n\s*\n|\r\n\s*\r\n/)
-        .map((s) => s.trim())
-        .filter((s) => s.length > 0)
+        .map((x) => x.trim())
+        .filter((x) => x.length > 0)
         .slice(0, 12)
-      const constructs = sections.map((sec, i) => {
+
+      const merged: ConstructMap = structuredClone(base.map)
+      const diff: IngestDiff = { facets_added: 0, constructs_added: [], triage_added: 0 }
+      const added: ConstructDef[] = []
+
+      for (const [i, sec] of sections.entries()) {
         const heading = sec.split(/\n/)[0].replace(/[:.]+$/, '').slice(0, 60) || `Section ${i + 1}`
-        const id = 'proposed.' + heading.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 40)
-        return {
-          id,
-          label: heading,
-          description: `What matters to understand about the person regarding "${heading.toLowerCase()}" (paraphrased; derived from ${sec.split(/\n/).length} lines of source text).`,
-          severity_signals: { none: 'no concern', mild: 'occasional concern', moderate: 'regular concern with some interference', severe: 'persistent distress affecting daily life' },
-          drill_down: ['Onset and trajectory', 'Situations where it is worse', 'Impact on daily life'],
-          priority: (i === 0 ? 'core' : 'standard') as 'core' | 'standard',
-          source_refs: [{ instrument: input.instrument_slug, scale: heading }],
+        const target = bestMatch(merged, heading)
+        if (target) {
+          const facet: FacetDef = { id: slugify(heading).slice(0, 40) || `facet_${i + 1}`, label: paraphraseFacet(heading) }
+          target.facets ??= []
+          if (!target.facets.some((x) => x.id === facet.id)) {
+            target.facets.push(facet)
+            diff.facets_added += 1
+          }
+        } else {
+          const id = 'proposed.' + (slugify(heading).slice(0, 40) || `section_${i + 1}`)
+          if (added.some((c) => c.id === id)) continue
+          added.push({
+            id,
+            label: heading,
+            description: `What matters to understand about the person regarding "${heading.toLowerCase()}" (paraphrased; derived from ${sec.split(/\n/).length} lines of source text).`,
+            severity_signals: { none: 'no concern', mild: 'occasional concern', moderate: 'regular concern with some interference', severe: 'persistent distress affecting daily life' },
+            drill_down: ['Onset and trajectory', 'Situations where it is worse', 'Impact on daily life'],
+            facets: [
+              { id: 'since_when', label: 'How long it has been like this' },
+              { id: 'when_worst', label: 'Situations where it is worse' },
+              { id: 'impact', label: 'What it stops them doing' },
+              { id: 'wanted_change', label: 'What they would want different' },
+            ],
+            priority: 'standard',
+            source_refs: [{ instrument: input.instrument_slug, scale: heading }],
+          })
+          diff.constructs_added.push(id)
         }
-      })
-      const existing = [...CONSTRUCT_MAP_ROWS, ...store.draftMaps].filter((m) => m.slug === `${input.instrument_slug}-${input.population}`)
+      }
+
+      if (added.length > 0) {
+        const domain = merged.domains.find((d) => d.id === 'proposed')
+        if (domain) domain.constructs.push(...added)
+        else merged.domains.push({ id: 'proposed', label: 'Proposed constructs (review before approval)', weight: 1, constructs: added })
+      }
+
+      // Suggested triage intents: one per new construct group, capped, never duplicated.
+      merged.triage ??= []
+      for (const t of suggestTriage(added)) {
+        if (!merged.triage.some((x) => x.id === t.id)) {
+          merged.triage.push(t)
+          diff.triage_added += 1
+        }
+      }
+
+      const version = Math.max(...[...CONSTRUCT_MAP_ROWS, ...store.draftMaps].filter((m) => m.slug === base.slug).map((m) => m.version)) + 1
+      merged.version = version
       const row: ConstructMapRow = {
         id: uid(),
-        slug: `${input.instrument_slug}-${input.population}`,
-        version: existing.length + 1,
+        slug: base.slug,
+        version,
         population: input.population,
-        source_instrument_ids: INSTRUMENT_ROWS.filter((i) => i.slug === input.instrument_slug).map((i) => i.id),
-        map: {
-          slug: `${input.instrument_slug}-${input.population}`,
-          version: existing.length + 1,
-          population: input.population,
-          language: 'en',
-          domains: [{ id: 'proposed', label: 'Proposed constructs (review before approval)', weight: 1, constructs }],
-          coverage_rules: { min_confidence_to_count: 0.6, drill_down_threshold: 'moderate', core_constructs_required: true, max_constructs_per_session: 18 },
-        },
+        source_instrument_ids: [
+          ...new Set([...base.source_instrument_ids, ...INSTRUMENT_ROWS.filter((i) => i.slug === input.instrument_slug).map((i) => i.id)]),
+        ],
+        map: merged,
         status: 'draft',
         approved_by: null,
         approved_at: null,
@@ -775,7 +908,7 @@ export function createMockApi(): Api {
       }
       store.draftMaps.push(row)
       persist()
-      return row
+      return { construct_map: row, diff }
     },
 
     async approveConstructMap(id) {

@@ -69,7 +69,30 @@ export type ConstructStatus =
 
 export type InputMode = 'text' | 'voice'
 
+/** Session phase (v1.1 addendum §B). */
+export type SessionPhase = 'triage' | 'explore' | 'wrap-up'
+
+/** Focus-construct confirmation progress (v1.1 addendum §B/§C). */
+export interface FocusProgress {
+  confirmed: number
+  total: number
+}
+
 // ---- Construct map (§6) ----
+
+/** 5–8 clinician-relevant details explored when a construct is a focus (v1.1 §A). */
+export interface FacetDef {
+  id: string
+  label: string
+}
+
+/** Stock opening screen asked at the start of every session (v1.1 §A). */
+export interface TriageItem {
+  id: string
+  intent: string
+  maps_to: string[]
+  timepoints?: Timepoint[]
+}
 
 export interface ConstructDef {
   id: string
@@ -77,6 +100,8 @@ export interface ConstructDef {
   description: string
   severity_signals: Partial<Record<'none' | 'mild' | 'moderate' | 'severe', string>>
   drill_down: string[]
+  /** Optional on the client: maps written before v1.1 (and ingestion drafts) carry no facets. */
+  facets?: FacetDef[]
   age_variants?: Record<string, { description?: string; drill_down?: string[] }>
   priority: 'core' | 'standard' | 'optional'
   source_refs?: { instrument: string; scale: string }[]
@@ -95,11 +120,15 @@ export interface ConstructMap {
   population: 'adult' | 'pediatric'
   language: string
   domains: DomainDef[]
+  /** Optional on the client for the same reason as `ConstructDef.facets`. */
+  triage?: TriageItem[]
   coverage_rules: {
     min_confidence_to_count: number
     drill_down_threshold: Severity
     core_constructs_required: boolean
     max_constructs_per_session: number
+    /** Fraction of a focus construct's facets needed to count it covered in depth (default 0.7). */
+    focus_facet_threshold?: number
   }
 }
 
@@ -200,6 +229,10 @@ export interface ConstructEvidenceRow {
   severity: Severity
   confidence: number
   interference: Interference[]
+  /** Facet ids of the focus construct this row speaks to (v1.1 §D). */
+  facets: string[]
+  /** Triage item this row answers, when it came from the opening screen. */
+  triage_item: string | null
   note: string | null
   superseded_by: string | null
   created_at: string
@@ -256,6 +289,11 @@ export interface ProfileConstruct {
   quotes: ProfileQuote[]
   findings: ProfileFinding[]
   status: ConstructStatus
+  /** v1.1 §D. Optional on the client: profiles generated before v1.1 have none of these. */
+  facets_covered?: string[]
+  facets_missing?: string[]
+  /** True once the patient confirmed the reflected-back summary of this construct. */
+  confirmed?: boolean
 }
 
 export interface ProfileDomain {
@@ -336,6 +374,9 @@ export interface SessionState {
   consent_variant_needed: ConsentVariant
   messages: { seq: number; role: MessageRow['role']; content: string; created_at: string }[]
   coverage: { covered: number; total_active: number }
+  phase: SessionPhase
+  current_focus: string | null
+  focus_progress: FocusProgress
   turns_used: number
   max_turns: number
   patient_summary?: string | null
@@ -349,11 +390,30 @@ export type ChatEvent =
   | { event: 'evidence'; data: { construct_id: string; severity: Severity; confidence: number } }
   | {
       event: 'status'
-      data: { coverage: { covered: number; total_active: number }; turns_used: number; max_turns: number }
+      data: {
+        coverage: { covered: number; total_active: number }
+        phase: SessionPhase
+        current_focus: string | null
+        focus_progress: FocusProgress
+        turns_used: number
+        max_turns: number
+      }
     }
   | { event: 'safety'; data: { message: string } }
   | { event: 'ended'; data: { reason: 'coverage_complete' | 'turn_budget' | 'patient_requested' } }
   | { event: 'error'; data: { retryable: boolean; message: string } }
+
+// §11 / v1.1 §E: ingestion merges into the latest approved map and reports what it added.
+export interface IngestDiff {
+  facets_added: number
+  constructs_added: string[]
+  triage_added: number
+}
+
+export interface IngestResult {
+  construct_map: ConstructMapRow
+  diff: IngestDiff
+}
 
 export interface ApiErrorBody {
   error: { code: string; message: string; retryable: boolean }

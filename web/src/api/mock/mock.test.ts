@@ -16,7 +16,19 @@ async function turn(api: ReturnType<typeof createMockApi>, sessionId: string, to
   const out: ChatEvent[] = []
   for await (const ev of chatEvents(await api.chatTurn(sessionId, token, text, text === null ? null : 'text'))) out.push(ev)
   const text_ = out.filter((e) => e.event === 'token').map((e) => (e as { data: { t: string } }).data.t).join('')
-  return { events: out, text: text_, names: out.map((e) => e.event) }
+  const status = [...out].reverse().find((e) => e.event === 'status') as Extract<ChatEvent, { event: 'status' }> | undefined
+  return { events: out, text: text_, names: out.map((e) => e.event), status: status?.data }
+}
+
+async function startEnglishSession(api: ReturnType<typeof createMockApi>) {
+  await api.signInAsDemo()
+  const started = await api.startSession({
+    participant: { display_name: 'Sam', preferred_language: 'en', age_band: '30-49', reading_comfort: 'comfortable', diagnosis_code: 'rhinoplasty', diagnosis_text: '' },
+    timepoint: 'baseline',
+    respondent: 'self',
+  })
+  await api.consent(started.resume_token, 'adult')
+  return started
 }
 
 describe('mock API end to end', () => {
@@ -137,5 +149,118 @@ describe('mock API end to end', () => {
 
     await api.deleteParticipant(minor.participant_id)
     await expect(api.sessionState(minor.resume_token)).rejects.toThrow(/Invalid/)
+  })
+})
+
+describe('mock conversation phases (v1.1 §B/§C)', () => {
+  beforeEach(() => {
+    resetMockStore()
+    sessionStorage.clear()
+  })
+
+  it('walks triage → explore with a confirm step, and reports phase on every status', async () => {
+    const api = createMockApi()
+    const { session_id, resume_token } = await startEnglishSession(api)
+
+    const opening = await turn(api, session_id, resume_token, null)
+    expect(opening.status?.phase).toBe('triage')
+    expect(opening.status?.current_focus).toBeNull()
+    expect(opening.status?.focus_progress).toEqual({ confirmed: 0, total: 3 })
+
+    // Four triage answers close out the opening screen.
+    for (let i = 0; i < 3; i++) {
+      const r = await turn(api, session_id, resume_token, `Triage answer ${i}`)
+      expect(r.status?.phase).toBe('triage')
+    }
+    const toExplore = await turn(api, session_id, resume_token, 'It affects how I feel at work')
+    expect(toExplore.status?.phase).toBe('explore')
+    expect(toExplore.status?.current_focus).toBe('appearance.nose')
+    expect(toExplore.status?.focus_progress).toEqual({ confirmed: 0, total: 3 })
+
+    // Two facet questions, then the reflect-back question, then the patient confirms.
+    await turn(api, session_id, resume_token, 'The side view mostly')
+    const reflect = await turn(api, session_id, resume_token, 'The left side sits lower')
+    expect(reflect.text).toMatch(/Have I got that right\?/)
+    expect(reflect.status?.focus_progress.confirmed).toBe(0)
+
+    const confirmed = await turn(api, session_id, resume_token, 'Yes, that is right')
+    expect(confirmed.status?.focus_progress).toEqual({ confirmed: 1, total: 3 })
+    expect(confirmed.status?.current_focus).toBe('function.breathing')
+
+    // Session state mirrors the tracker for a resumed session.
+    const state = await api.sessionState(resume_token)
+    expect(state.phase).toBe('explore')
+    expect(state.current_focus).toBe('function.breathing')
+    expect(state.focus_progress).toEqual({ confirmed: 1, total: 3 })
+
+    await turn(api, session_id, resume_token, 'The left side, and worse at night')
+    const last = await turn(api, session_id, resume_token, 'Yes, exactly')
+    expect(last.status?.phase).toBe('wrap-up')
+    expect(last.status?.focus_progress.confirmed).toBe(2)
+    expect(last.names).toContain('ended')
+  })
+
+  it('emits evidence after the reply text and before status, with facets and triage items', async () => {
+    const api = createMockApi()
+    const { session_id, resume_token } = await startEnglishSession(api)
+    await turn(api, session_id, resume_token, null)
+
+    const r = await turn(api, session_id, resume_token, 'I look tired all the time')
+    const lastToken = r.names.lastIndexOf('token')
+    const firstEvidence = r.names.indexOf('evidence')
+    const status = r.names.indexOf('status')
+    expect(firstEvidence).toBeGreaterThan(lastToken)
+    expect(status).toBeGreaterThan(firstEvidence)
+
+    const rows = (await api.sessionDetail(session_id)).evidence
+    expect(rows.find((e) => e.construct_id === 'appearance.overall')?.triage_item).toBe('overall')
+
+    // …and once exploring, evidence rows carry the facets they answered.
+    for (const t of ['features', 'function', 'impact', 'the side view']) await turn(api, session_id, resume_token, t)
+    const nose = (await api.sessionDetail(session_id)).evidence.filter((e) => e.construct_id === 'appearance.nose')
+    expect(nose.flatMap((e) => e.facets)).toEqual(expect.arrayContaining(['shape', 'profile']))
+  })
+
+  it('generates a profile carrying facets covered / missing and the confirmed flag', async () => {
+    const api = createMockApi()
+    const { session_id, resume_token } = await startEnglishSession(api)
+    await turn(api, session_id, resume_token, null)
+    for (let i = 0; i < 9; i++) await turn(api, session_id, resume_token, `Answer ${i}`)
+    await api.endSession(resume_token)
+
+    const profile = (await api.sessionDetail(session_id)).profile?.profile
+    const nose = profile?.domains.flatMap((d) => d.constructs).find((c) => c.id === 'appearance.nose')
+    expect(nose?.confirmed).toBe(true)
+    expect(nose?.facets_covered).toEqual(expect.arrayContaining(['shape', 'profile', 'symmetry']))
+    expect(nose?.facets_missing).toEqual(expect.arrayContaining(['others_comments']))
+    expect([...(nose?.facets_covered ?? []), ...(nose?.facets_missing ?? [])]).toHaveLength(7)
+  })
+})
+
+describe('mock instrument ingestion (v1.1 §E)', () => {
+  beforeEach(() => {
+    resetMockStore()
+    sessionStorage.clear()
+  })
+
+  it('merges into the latest approved adult map and returns a diff', async () => {
+    const api = createMockApi()
+    await api.signInAsDemo()
+    const { construct_map, diff } = await api.ingestInstrument({
+      instrument_slug: 'face-q-aesthetics',
+      population: 'adult',
+      text: 'Eyes and eyelids\nsome lines\n\nSleep quality\nmore lines',
+    })
+    expect(construct_map.slug).toBe('face-q-adult')
+    expect(construct_map.version).toBe(2)
+    expect(construct_map.status).toBe('draft')
+    // The approved map's own constructs survive the merge.
+    expect(construct_map.map.domains.flatMap((d) => d.constructs).length).toBeGreaterThan(20)
+    expect(diff.facets_added).toBeGreaterThan(0)
+    expect(diff.constructs_added).toEqual(['proposed.sleep_quality'])
+    expect(diff.triage_added).toBe(1)
+
+    const approved = await api.approveConstructMap(construct_map.id)
+    expect(approved.status).toBe('approved')
   })
 })

@@ -1,4 +1,4 @@
-import type { ConstructDef, ConstructMap, ConstructMapRow, InstrumentRow } from '../../types'
+import type { ConstructDef, ConstructMap, ConstructMapRow, FacetDef, InstrumentRow, TriageItem } from '../../types'
 
 // Paraphrased construct abstractions built from publicly documented FACE-Q scale names.
 // No instrument item text appears here (SPEC §2.1).
@@ -27,6 +27,85 @@ const c = (
   ...extra,
 })
 
+const f = (...pairs: [string, string][]): FacetDef[] => pairs.map(([id, label]) => ({ id, label }))
+
+// v1.1 §A: facets are the details that must be explored once a construct becomes a focus.
+// Paraphrased prompts for the model, never item text. Seeded here for the constructs the
+// mock conversation focuses on; the real maps (workstream A2) carry them for every construct.
+const FACETS: Record<string, FacetDef[]> = {
+  'appearance.overall': f(
+    ['mirror_vs_photos', 'How the face looks in the mirror versus in photos'],
+    ['features', 'Which features come to mind first'],
+    ['age_fit', 'Whether the face fits how old they feel'],
+    ['since_when', 'How long they have felt this way'],
+    ['wanted_change', 'What they would want different'],
+  ),
+  'appearance.eyes': f(
+    ['shape', 'Shape of the eyes'],
+    ['symmetry', 'Whether the two eyes match'],
+    ['position', 'Where they sit on the face / spacing'],
+    ['lids', 'Eyelids and under-eye area'],
+    ['photos_vs_mirror', 'How they look in photos versus the mirror'],
+    ['wanted_change', 'What specifically they would want different'],
+    ['since_when', 'How long this has bothered them'],
+  ),
+  'appearance.nose': f(
+    ['shape', 'Shape of the nose from the front'],
+    ['profile', 'The profile seen from the side'],
+    ['symmetry', 'Whether the two sides match'],
+    ['photos_vs_mirror', 'How it looks in photos versus the mirror'],
+    ['others_comments', 'Whether other people have remarked on it'],
+    ['wanted_change', 'What specifically they would want different'],
+    ['since_when', 'How long this has bothered them'],
+  ),
+  'function.breathing': f(
+    ['which_side', 'Whether one side is worse than the other'],
+    ['daytime', 'How breathing is during an ordinary day'],
+    ['sleep', 'Breathing at night and how they sleep'],
+    ['exercise', 'Breathing during exercise or exertion'],
+    ['since_when', 'When it started or changed'],
+    ['what_helps', 'Anything that makes it easier'],
+  ),
+  'psych.self_consciousness': f(
+    ['when_strongest', 'Situations where it is strongest'],
+    ['frequency', 'How often it comes to mind'],
+    ['avoidance', 'Whether it stops them doing things'],
+    ['since_when', 'How long it has been like this'],
+    ['what_helps', 'What makes it easier'],
+  ),
+}
+
+// The stock opening screen (v1.1 §A). `intent` is what the model must find out, in its own words.
+const ADULT_TRIAGE: TriageItem[] = [
+  { id: 'overall', intent: 'How they feel overall about how their face looks right now', maps_to: ['appearance.overall'] },
+  { id: 'features', intent: 'Which parts of their face are on their mind most (let them name features)', maps_to: ['appearance.*'] },
+  {
+    id: 'function',
+    intent: 'Whether anything about the face makes everyday things harder: breathing, eating, speaking, expressions',
+    maps_to: ['function.*'],
+  },
+  { id: 'impact', intent: 'How it affects how they feel about themselves and what they do socially', maps_to: ['psych.*', 'social.*'] },
+  {
+    id: 'recovery',
+    intent: 'How recovery is going: pain, swelling, numbness, scarring',
+    maps_to: ['adverse.*', 'recovery.*'],
+    timepoints: ['post-op-2w', 'post-op-6w', 'post-op-6m', 'post-op-12m', 'follow-up'],
+  },
+]
+
+const PEDIATRIC_TRIAGE: TriageItem[] = [
+  { id: 'overall', intent: 'How the child feels about their face at the moment', maps_to: ['appearance.overall'] },
+  { id: 'features', intent: 'Which part of their face they think about most', maps_to: ['appearance.*'] },
+  { id: 'function', intent: 'Whether talking or eating is harder because of their face', maps_to: ['function.*'] },
+  { id: 'impact', intent: 'How it goes at school and with friends, including teasing', maps_to: ['psych.*', 'social.*'] },
+  {
+    id: 'recovery',
+    intent: 'How healing is going: sore spots, scars, anything that feels tight',
+    maps_to: ['adverse.*'],
+    timepoints: ['post-op-2w', 'post-op-6w', 'post-op-6m', 'post-op-12m', 'follow-up'],
+  },
+]
+
 export const ADULT_MAP: ConstructMap = {
   slug: 'face-q-adult',
   version: 1,
@@ -41,14 +120,15 @@ export const ADULT_MAP: ConstructMap = {
         c('appearance.overall', 'Overall satisfaction with how the face looks',
           'How the person feels about their facial appearance as a whole: in the mirror, in photos, and how it fits their age.',
           ['Which features bother them most', 'Situations where it is worse (photos, video calls, bright light)', 'How long they have felt this way', 'What they hope will change'],
-          'core', 'Satisfaction with Facial Appearance Overall'),
+          'core', 'Satisfaction with Facial Appearance Overall', { facets: FACETS['appearance.overall'] }),
         c('appearance.nose', 'Feelings about the nose',
           'How the person feels about the shape, size and profile of their nose and how it fits the rest of the face.',
           ['Front view vs profile', 'Whether it changed after surgery or injury', 'Comments from others'],
-          'standard', 'Satisfaction with Nose'),
+          'standard', 'Satisfaction with Nose', { facets: FACETS['appearance.nose'] }),
         c('appearance.eyes', 'Feelings about the eyes and eye area',
           'How the person feels about the look of their eyes, eyelids and the area around them, including looking tired.',
-          ['Puffiness, hooding or asymmetry', 'Whether it affects looking rested'], 'optional', 'Satisfaction with Eyes'),
+          ['Puffiness, hooding or asymmetry', 'Whether it affects looking rested'], 'optional', 'Satisfaction with Eyes',
+          { facets: FACETS['appearance.eyes'] }),
         c('appearance.lips', 'Feelings about the lips',
           'How the person feels about the shape, fullness and symmetry of their lips.',
           ['Symmetry', 'Fullness expectations'], 'optional', 'Satisfaction with Lips'),
@@ -67,7 +147,8 @@ export const ADULT_MAP: ConstructMap = {
       constructs: [
         c('psych.self_consciousness', 'Self-consciousness about appearance',
           'How much the person thinks about or feels watched because of how their face looks.',
-          ['When it is strongest', 'Whether it stops them doing things', 'Change over time'], 'core', 'Psychological Function'),
+          ['When it is strongest', 'Whether it stops them doing things', 'Change over time'], 'core', 'Psychological Function',
+          { facets: FACETS['psych.self_consciousness'] }),
         c('psych.distress', 'Appearance-related distress',
           'Low mood, worry or upset that the person links to their facial appearance.',
           ['Frequency and triggers', 'What helps', 'Whether they have talked to anyone'], 'core', 'Appearance-related Psychosocial Distress'),
@@ -90,7 +171,8 @@ export const ADULT_MAP: ConstructMap = {
       constructs: [
         c('function.breathing', 'Breathing through the nose',
           'Ease of breathing through the nose during the day, exercise and sleep.',
-          ['Which side', 'Sleep or exercise impact', 'Change since surgery'], 'standard', 'Nasal Breathing'),
+          ['Which side', 'Sleep or exercise impact', 'Change since surgery'], 'standard', 'Nasal Breathing',
+          { facets: FACETS['function.breathing'] }),
         c('function.eating', 'Eating and drinking',
           'Ease of chewing, swallowing and keeping food or drink in the mouth.', ['Textures avoided', 'Social meals'], 'optional', 'Eating and Drinking'),
         c('function.speaking', 'Speaking clearly',
@@ -145,18 +227,28 @@ export const ADULT_MAP: ConstructMap = {
       ],
     },
   ],
+  triage: ADULT_TRIAGE,
   coverage_rules: {
     min_confidence_to_count: 0.6,
     drill_down_threshold: 'moderate',
     core_constructs_required: true,
     max_constructs_per_session: 18,
+    focus_facet_threshold: 0.7,
   },
 }
 
-const ped = (id: string, label: string, description: string, drill: string[], priority: ConstructDef['priority'] = 'standard') =>
+const ped = (
+  id: string,
+  label: string,
+  description: string,
+  drill: string[],
+  priority: ConstructDef['priority'] = 'standard',
+  extra: Partial<ConstructDef> = {},
+) =>
   c(id, label, description, drill, priority, label, {
     source_refs: [{ instrument: 'face-q-craniofacial', scale: label }],
     age_variants: { pediatric: { description, drill_down: drill } },
+    ...extra,
   })
 
 export const PEDIATRIC_MAP: ConstructMap = {
@@ -172,8 +264,24 @@ export const PEDIATRIC_MAP: ConstructMap = {
       constructs: [
         ped('appearance.overall', 'Feelings about their face overall', 'How the child feels about their face at school, with friends and in photos.', ['Teasing or comments from others', 'Whether they avoid activities'], 'core'),
         ped('appearance.lips', 'Feelings about the lip', 'How the child feels about the look of their lip and the area under the nose.', ['Whether they notice it in photos', 'Comments from other children']),
-        ped('appearance.nose', 'Feelings about the nose', 'How the child feels about the shape of their nose.', ['Front view vs side view']),
-        ped('appearance.eyes', 'Feelings about the eyes', 'How the child feels about their eyes and forehead area.', ['Symmetry concerns'], 'optional'),
+        ped('appearance.nose', 'Feelings about the nose', 'How the child feels about the shape of their nose.', ['Front view vs side view'], 'standard', {
+          facets: f(
+            ['shape', 'The shape of the nose'],
+            ['symmetry', 'Whether the two sides look the same'],
+            ['photos', 'How it looks in photos'],
+            ['comments', 'Whether other children have said anything'],
+            ['wanted_change', 'What they would want different'],
+          ),
+        }),
+        ped('appearance.eyes', 'Feelings about the eyes', 'How the child feels about their eyes and forehead area.', ['Symmetry concerns'], 'optional', {
+          facets: f(
+            ['shape', 'The shape of the eyes'],
+            ['symmetry', 'Whether the two eyes match'],
+            ['lids', 'The eyelids and the area around them'],
+            ['photos', 'How they look in photos'],
+            ['wanted_change', 'What they would want different'],
+          ),
+        }),
       ],
     },
     {
@@ -198,7 +306,15 @@ export const PEDIATRIC_MAP: ConstructMap = {
       label: 'Talking and eating',
       weight: 1,
       constructs: [
-        ped('function.speaking', 'Being understood when talking', 'Whether other people understand the child when they speak.', ['At school vs at home', 'Being asked to repeat']),
+        ped('function.speaking', 'Being understood when talking', 'Whether other people understand the child when they speak.', ['At school vs at home', 'Being asked to repeat'], 'standard', {
+          facets: f(
+            ['at_school', 'Being understood at school'],
+            ['at_home', 'Being understood at home'],
+            ['strangers', 'Being understood by people they do not know'],
+            ['repeating', 'How often they are asked to repeat themselves'],
+            ['how_it_feels', 'How that feels for them'],
+          ),
+        }),
         ped('function.eating', 'Eating and drinking', 'Whether eating and drinking are easy, including food or drink coming out of the nose.', ['Foods avoided', 'Meals at school'], 'optional'),
       ],
     },
@@ -212,11 +328,13 @@ export const PEDIATRIC_MAP: ConstructMap = {
       ],
     },
   ],
+  triage: PEDIATRIC_TRIAGE,
   coverage_rules: {
     min_confidence_to_count: 0.6,
     drill_down_threshold: 'moderate',
     core_constructs_required: true,
     max_constructs_per_session: 18,
+    focus_facet_threshold: 0.7,
   },
 }
 

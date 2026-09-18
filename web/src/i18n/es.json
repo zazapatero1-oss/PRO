@@ -102,6 +102,52 @@
       "break": "Hacer una pausa",
       "breakPhrase": "Necesito una pausa",
       "coverage": "Hemos hablado de {covered} de {total} temas",
+      "progress": {
+        "triage": "Vamos conociendo su situación",
+        "explore": "Profundizando: {confirmed} de {total} temas",
+        "wrapUp": "Cerrando la conversación"
+      },
+      "focus": {
+        "appearance": {
+          "overall": "cómo se ve su cara",
+          "nose": "su nariz",
+          "eyes": "sus ojos",
+          "lips": "sus labios",
+          "cheeks": "sus mejillas",
+          "jawline": "su barbilla y mandíbula",
+          "skin": "su piel"
+        },
+        "psych": {
+          "self_consciousness": "cuánto lo tiene en mente",
+          "distress": "cómo le hace sentir"
+        },
+        "social": {
+          "confidence": "estar con otras personas",
+          "school": "la escuela y los amigos"
+        },
+        "function": {
+          "breathing": "su respiración",
+          "eating": "comer y beber",
+          "speaking": "que le entiendan",
+          "expression": "sus gestos"
+        },
+        "adverse": {
+          "swelling_bruising": "la hinchazón y los moratones",
+          "numbness": "el adormecimiento",
+          "scarring": "sus cicatrices",
+          "pain": "el dolor o las molestias"
+        },
+        "recovery": {
+          "early_life": "volver a la normalidad"
+        },
+        "outcome": {
+          "decision": "la decisión de operarse",
+          "information": "lo que le contaron que esperara"
+        },
+        "age": {
+          "appraisal": "la edad que aparenta su cara"
+        }
+      },
       "assistant": "Asistente",
       "you": "Usted",
       "oneMoment": "Un momento…",
@@ -210,6 +256,14 @@
       "worst": "peor",
       "confidence": "confianza",
       "constructs": "Constructos y citas",
+      "firstImpressions": "Primeras impresiones",
+      "firstImpressionsIntro": "Lo que dijo el paciente en la pantalla inicial, antes de profundizar en ningún tema.",
+      "facetsCovered": "Cubierto",
+      "facetsMissing": "Pendiente",
+      "facetsNone": "El mapa no define detalles para este constructo.",
+      "confirmedWithPatient": "confirmado con el paciente",
+      "notConfirmed": "sin confirmar",
+      "unconfirmedReason": "Explorado pero no confirmado con el paciente",
       "gloss": "Glosa en inglés",
       "findings": "Hallazgos de profundización",
       "needsClarification": "Necesita aclaración",
@@ -260,6 +314,16 @@
       "propose": "Proponer mapa de constructos",
       "proposing": "Proponiendo…",
       "proposed": "Mapa propuesto",
+      "diff": {
+        "title": "Lo que cambiaría esta propuesta",
+        "summary": "Fusionado con {slug} v{base} → borrador v{version}. Detalles nuevos: {facets} · constructos nuevos: {constructs} · preguntas iniciales nuevas: {triage}.",
+        "facetsAdded": "Detalles nuevos en constructos existentes",
+        "constructsAdded": "Constructos nuevos",
+        "triageAdded": "Preguntas nuevas de la pantalla inicial",
+        "none": "No se añade nada en esta sección.",
+        "mergedInto": "Fusionado con"
+      },
+      "showJson": "Ver el JSON completo del mapa",
       "approve": "Aprobar",
       "approving": "Aprobando…",
       "approved": "Aprobado",

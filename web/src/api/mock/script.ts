@@ -1,4 +1,4 @@
-import type { Language, Severity } from '../../types'
+import type { Language, SessionPhase, Severity } from '../../types'
 
 // Scripted assistant turns for the mock conversation engine. Turn N of the script answers the
 // patient's Nth message regardless of content; control phrases and safety keywords are handled
@@ -8,6 +8,10 @@ export interface ScriptEvidence {
   construct_id: string
   severity: Severity
   confidence: number
+  /** facet ids of the construct this answer speaks to (v1.1 §A) */
+  facets?: string[]
+  /** triage item this answer closes out, during the opening screen */
+  triage_item?: string
 }
 
 export interface ScriptTurn {
@@ -15,11 +19,19 @@ export interface ScriptTurn {
   evidence?: ScriptEvidence[]
   /** construct(s) the assistant is asking about in this turn (used by Skip) */
   asks: string[]
+  /** phase the session is in once this reply has been sent */
+  phase: SessionPhase
+  /** focus construct the assistant is working through, in `explore` */
+  focus?: string | null
+  /** set when the patient's message just confirmed the reflected-back summary of this construct */
+  confirms?: string
 }
 
 export interface Script {
   opening: (name: string) => string
   turns: ScriptTurn[]
+  /** focus constructs the tracker derived after triage; drives `focus_progress.total` */
+  focusPlan: string[]
   skipAck: string
   breakAck: string
   stopAck: string
@@ -33,41 +45,69 @@ export const SCRIPTS: Record<Language, Script> = {
       `Hi ${name}, thanks for taking the time. There are no right or wrong answers here; I'd just like to hear how things are for you. To start, how do you feel about your face at the moment?`,
     turns: [
       {
-        reply: 'Thank you for telling me that. When you notice it most, what is usually going on around you, like photos, meeting people, or looking in the mirror?',
-        evidence: [{ construct_id: 'appearance.overall', severity: 'moderate', confidence: 0.7 }],
+        reply: 'Thank you for telling me that. Which parts of your face are on your mind the most at the moment?',
+        evidence: [{ construct_id: 'appearance.overall', severity: 'moderate', confidence: 0.7, triage_item: 'overall' }],
         asks: ['appearance.overall'],
+        phase: 'triage',
       },
       {
-        reply: 'That makes sense. Does it change how you feel inside, for example, do you find yourself thinking about it a lot or feeling low because of it?',
-        evidence: [{ construct_id: 'appearance.overall', severity: 'moderate', confidence: 0.85 }],
+        reply: 'That helps, thank you. Is there anything about your face that makes everyday things harder, like breathing, eating, speaking, or showing what you feel?',
+        evidence: [{ construct_id: 'appearance.overall', severity: 'moderate', confidence: 0.85, triage_item: 'features' }],
+        asks: ['function.breathing', 'function.eating'],
+        phase: 'triage',
+      },
+      {
+        reply: 'Got it. And how does all of this affect how you feel about yourself, or what you do around other people?',
+        evidence: [{ construct_id: 'function.breathing', severity: 'mild', confidence: 0.7, triage_item: 'function', facets: ['daytime'] }],
         asks: ['psych.self_consciousness', 'psych.distress'],
+        phase: 'triage',
       },
       {
-        reply: 'I appreciate you sharing that. What about being around other people, are there situations you avoid or feel less confident in?',
-        evidence: [{ construct_id: 'psych.self_consciousness', severity: 'moderate', confidence: 0.8 }],
-        asks: ['social.confidence'],
+        reply: 'That gives me a good picture of what matters to you. I would like to stay with your nose for a moment. When you look at it, is it more the shape from the front, or how it looks from the side?',
+        evidence: [{ construct_id: 'psych.self_consciousness', severity: 'moderate', confidence: 0.8, triage_item: 'impact' }],
+        asks: ['appearance.nose'],
+        phase: 'explore',
+        focus: 'appearance.nose',
       },
       {
-        reply: 'Got it. And thinking about the practical side, is there anything with breathing, eating or speaking that has been bothering you?',
-        evidence: [{ construct_id: 'social.confidence', severity: 'mild', confidence: 0.75 }],
-        asks: ['function.breathing', 'function.eating', 'function.speaking'],
+        reply: 'Thank you. And do the two sides look the same to you, or does one sit differently?',
+        evidence: [{ construct_id: 'appearance.nose', severity: 'moderate', confidence: 0.8, facets: ['shape', 'profile'] }],
+        asks: ['appearance.nose'],
+        phase: 'explore',
+        focus: 'appearance.nose',
       },
       {
-        reply: 'Thanks. Any swelling, numbness, scars or discomfort that you have noticed recently?',
-        evidence: [{ construct_id: 'function.breathing', severity: 'mild', confidence: 0.7 }],
-        asks: ['adverse.swelling_bruising', 'adverse.scarring', 'adverse.pain'],
+        reply: 'So the main things with your nose are the shape from the side, that the two sides do not quite match, and that it has been on your mind for a long time. Have I got that right?',
+        evidence: [{ construct_id: 'appearance.nose', severity: 'moderate', confidence: 0.85, facets: ['symmetry', 'since_when'] }],
+        asks: ['appearance.nose'],
+        phase: 'explore',
+        focus: 'appearance.nose',
       },
       {
-        reply: 'Noted. Last thing: what do you hope will be different, or what would a good result look like for you?',
-        evidence: [{ construct_id: 'adverse.scarring', severity: 'mild', confidence: 0.7 }],
-        asks: ['outcome.decision'],
+        reply: 'Thank you for checking that with me. Now about breathing through your nose: is it harder on one side, or on both?',
+        evidence: [{ construct_id: 'appearance.nose', severity: 'moderate', confidence: 0.9, facets: ['wanted_change'] }],
+        asks: ['function.breathing'],
+        phase: 'explore',
+        focus: 'function.breathing',
+        confirms: 'appearance.nose',
+      },
+      {
+        reply: 'So with your breathing it is mainly one side, and it is worse at night. Is that right?',
+        evidence: [{ construct_id: 'function.breathing', severity: 'mild', confidence: 0.8, facets: ['which_side', 'sleep'] }],
+        asks: ['function.breathing'],
+        phase: 'explore',
+        focus: 'function.breathing',
       },
       {
         reply: 'That is really helpful, thank you. I think I have a good picture now. I will put together a short summary of what I heard so you can check it and change anything.',
-        evidence: [{ construct_id: 'outcome.decision', severity: 'none', confidence: 0.8 }],
+        evidence: [{ construct_id: 'function.breathing', severity: 'mild', confidence: 0.85, facets: ['exercise'] }],
         asks: [],
+        phase: 'wrap-up',
+        focus: null,
+        confirms: 'function.breathing',
       },
     ],
+    focusPlan: ['appearance.nose', 'function.breathing', 'psych.self_consciousness'],
     skipAck: 'No problem, we can leave that one. Let me ask about something else.',
     breakAck: 'Of course, take all the time you need. This link will bring you straight back here whenever you are ready.',
     stopAck: 'Okay, we will stop here. Thank you for everything you shared. I will show you a short summary to check.',
@@ -80,41 +120,69 @@ export const SCRIPTS: Record<Language, Script> = {
       `Hola ${name}, gracias por su tiempo. Aquí no hay respuestas buenas ni malas; solo quiero saber cómo le va. Para empezar, ¿cómo se siente con su cara en este momento?`,
     turns: [
       {
-        reply: 'Gracias por contármelo. Cuando más lo nota, ¿qué suele estar pasando: fotos, conocer gente, mirarse al espejo?',
-        evidence: [{ construct_id: 'appearance.overall', severity: 'moderate', confidence: 0.7 }],
+        reply: 'Gracias por contármelo. ¿Qué partes de su cara son las que más tiene en mente ahora mismo?',
+        evidence: [{ construct_id: 'appearance.overall', severity: 'moderate', confidence: 0.7, triage_item: 'overall' }],
         asks: ['appearance.overall'],
+        phase: 'triage',
       },
       {
-        reply: 'Tiene sentido. ¿Cambia cómo se siente por dentro? Por ejemplo, ¿piensa mucho en ello o se siente triste por eso?',
-        evidence: [{ construct_id: 'appearance.overall', severity: 'moderate', confidence: 0.85 }],
+        reply: 'Me ayuda, gracias. ¿Hay algo de su cara que le complique el día a día, como respirar, comer, hablar o expresar lo que siente?',
+        evidence: [{ construct_id: 'appearance.overall', severity: 'moderate', confidence: 0.85, triage_item: 'features' }],
+        asks: ['function.breathing', 'function.eating'],
+        phase: 'triage',
+      },
+      {
+        reply: 'Entendido. ¿Y cómo afecta todo esto a cómo se siente consigo misma, o a lo que hace con otras personas?',
+        evidence: [{ construct_id: 'function.breathing', severity: 'mild', confidence: 0.7, triage_item: 'function', facets: ['daytime'] }],
         asks: ['psych.self_consciousness', 'psych.distress'],
+        phase: 'triage',
       },
       {
-        reply: 'Le agradezco que lo comparta. ¿Y con otras personas? ¿Hay situaciones que evita o en las que se siente con menos confianza?',
-        evidence: [{ construct_id: 'psych.self_consciousness', severity: 'moderate', confidence: 0.8 }],
-        asks: ['social.confidence'],
+        reply: 'Con esto me hago una buena idea de lo que le importa. Me gustaría quedarme un momento con la nariz. Cuando se la mira, ¿es más la forma de frente o cómo se ve de lado?',
+        evidence: [{ construct_id: 'psych.self_consciousness', severity: 'moderate', confidence: 0.8, triage_item: 'impact' }],
+        asks: ['appearance.nose'],
+        phase: 'explore',
+        focus: 'appearance.nose',
       },
       {
-        reply: 'Entendido. En lo práctico, ¿hay algo con la respiración, comer o hablar que le esté molestando?',
-        evidence: [{ construct_id: 'social.confidence', severity: 'mild', confidence: 0.75 }],
-        asks: ['function.breathing', 'function.eating', 'function.speaking'],
+        reply: 'Gracias. ¿Y los dos lados le parecen iguales, o uno queda distinto?',
+        evidence: [{ construct_id: 'appearance.nose', severity: 'moderate', confidence: 0.8, facets: ['shape', 'profile'] }],
+        asks: ['appearance.nose'],
+        phase: 'explore',
+        focus: 'appearance.nose',
       },
       {
-        reply: 'Gracias. ¿Ha notado hinchazón, adormecimiento, cicatrices o molestias últimamente?',
-        evidence: [{ construct_id: 'function.breathing', severity: 'mild', confidence: 0.7 }],
-        asks: ['adverse.swelling_bruising', 'adverse.scarring', 'adverse.pain'],
+        reply: 'Entonces, con la nariz, lo principal es la forma de lado, que los dos lados no coinciden del todo y que lleva mucho tiempo dándole vueltas. ¿Lo he entendido bien?',
+        evidence: [{ construct_id: 'appearance.nose', severity: 'moderate', confidence: 0.85, facets: ['symmetry', 'since_when'] }],
+        asks: ['appearance.nose'],
+        phase: 'explore',
+        focus: 'appearance.nose',
       },
       {
-        reply: 'Anotado. Por último: ¿qué espera que cambie, o cómo sería un buen resultado para usted?',
-        evidence: [{ construct_id: 'adverse.scarring', severity: 'mild', confidence: 0.7 }],
-        asks: ['outcome.decision'],
+        reply: 'Gracias por confirmármelo. Ahora, sobre respirar por la nariz: ¿le cuesta más por un lado o por los dos?',
+        evidence: [{ construct_id: 'appearance.nose', severity: 'moderate', confidence: 0.9, facets: ['wanted_change'] }],
+        asks: ['function.breathing'],
+        phase: 'explore',
+        focus: 'function.breathing',
+        confirms: 'appearance.nose',
+      },
+      {
+        reply: 'Entonces, con la respiración, es sobre todo un lado y por la noche va peor. ¿Es así?',
+        evidence: [{ construct_id: 'function.breathing', severity: 'mild', confidence: 0.8, facets: ['which_side', 'sleep'] }],
+        asks: ['function.breathing'],
+        phase: 'explore',
+        focus: 'function.breathing',
       },
       {
         reply: 'Me ayuda mucho, gracias. Creo que ya tengo una buena idea. Voy a preparar un resumen breve de lo que escuché para que lo revise y corrija lo que quiera.',
-        evidence: [{ construct_id: 'outcome.decision', severity: 'none', confidence: 0.8 }],
+        evidence: [{ construct_id: 'function.breathing', severity: 'mild', confidence: 0.85, facets: ['exercise'] }],
         asks: [],
+        phase: 'wrap-up',
+        focus: null,
+        confirms: 'function.breathing',
       },
     ],
+    focusPlan: ['appearance.nose', 'function.breathing', 'psych.self_consciousness'],
     skipAck: 'Sin problema, lo dejamos. Le pregunto por otra cosa.',
     breakAck: 'Claro, tómese el tiempo que necesite. Este enlace le traerá de vuelta aquí cuando quiera.',
     stopAck: 'De acuerdo, paramos aquí. Gracias por todo lo que ha compartido. Le muestro un resumen breve para que lo revise.',

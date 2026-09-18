@@ -5,8 +5,9 @@ import { ConfirmDialog, ErrorBox, Loading, SeverityBadge, SeverityDot, Tooltip }
 import { DIAGNOSIS_CATALOG, diagnosisLabel } from '../data/diagnosisCatalog'
 import { useT } from '../i18n'
 import { downloadBlob } from '../lib/download'
+import { facetLabel, triageItem, triageOrder } from '../lib/constructMap'
 import { aggregateDomainSeverity, severityVar } from '../lib/severity'
-import type { ConstructMap, FindingCategory, ProfileConstruct, SessionDetail, Severity } from '../types'
+import type { ConstructEvidenceRow, ConstructMap, FindingCategory, ProfileConstruct, SessionDetail, Severity } from '../types'
 
 const CATEGORIES: FindingCategory[] = ['onset', 'trajectory', 'triggers', 'relief', 'impact', 'expectation', 'patient_question', 'other']
 
@@ -74,6 +75,14 @@ export function SessionReview() {
       setConfirmDelete(false)
     }
   }
+
+  // v1.1 §A/§B: evidence rows carrying a triage_item are answers to the opening screen.
+  const firstImpressions = useMemo(() => {
+    if (!detail) return []
+    return detail.evidence
+      .filter((e) => e.triage_item !== null && !e.superseded_by)
+      .sort((a, b) => triageOrder(map, a.triage_item ?? '') - triageOrder(map, b.triage_item ?? ''))
+  }, [detail, map])
 
   const findingsByCategory = useMemo(() => {
     if (!detail) return []
@@ -190,6 +199,14 @@ export function SessionReview() {
         </section>
       )}
 
+      {firstImpressions.length > 0 && (
+        <section className="card">
+          <h2>{t('clinician.session.firstImpressions')}</h2>
+          <p className="muted small">{t('clinician.session.firstImpressionsIntro')}</p>
+          <FirstImpressions rows={firstImpressions} map={map} label={label} />
+        </section>
+      )}
+
       {prof ? (
         <>
           <section className="card">
@@ -258,7 +275,7 @@ export function SessionReview() {
                 </h3>
                 {d.summary_en && <p className="small muted">{d.summary_en}</p>}
                 {d.constructs.map((c) => (
-                  <ConstructRow key={c.id} c={c} label={label(c.id)} />
+                  <ConstructRow key={c.id} c={c} label={label(c.id)} map={map} />
                 ))}
               </div>
             ))}
@@ -311,7 +328,19 @@ export function SessionReview() {
 
       {prof && (
         <section className="card">
-          <ListBlock title={t('clinician.session.needsClarification')} items={prof.needs_clarification.map((n) => `${label(n.construct_id)} — ${n.reason}`)} />
+          <ListBlock
+            title={t('clinician.session.needsClarification')}
+            items={[
+              ...prof.needs_clarification.map((n) => `${label(n.construct_id)} — ${n.reason}`),
+              // A focus construct that was explored but never reflected back and confirmed
+              // still needs the clinician's attention (v1.1 §B).
+              ...prof.domains
+                .flatMap((d) => d.constructs)
+                .filter((c) => c.confirmed === false && c.status !== 'declined')
+                .filter((c) => !prof.needs_clarification.some((n) => n.construct_id === c.id))
+                .map((c) => `${label(c.id)} — ${t('clinician.session.unconfirmedReason')}`),
+            ]}
+          />
           <ListBlock title={t('clinician.session.notCovered')} items={prof.not_covered.map(label)} />
           <ListBlock title={t('clinician.session.declined')} items={prof.declined.map(label)} />
           <ListBlock title={t('clinician.session.patientQuestions')} items={prof.patient_questions} />
@@ -388,6 +417,31 @@ export function SessionReview() {
   )
 }
 
+export function FirstImpressions({
+  rows,
+  map,
+  label,
+}: {
+  rows: ConstructEvidenceRow[]
+  map: ConstructMap | null
+  label: (id: string) => string
+}) {
+  return (
+    <ul className="triage">
+      {rows.map((e) => (
+        <li key={e.id} className="triage__item">
+          <div className="triage__intent">{triageItem(map, e.triage_item ?? '')?.intent ?? e.triage_item}</div>
+          <Quote text={e.patient_quote} gloss={e.quote_gloss_en} />
+          <div className="small muted">
+            {label(e.construct_id)}
+            {e.facets.length > 0 ? ` · ${e.facets.map((f) => facetLabel(map, e.construct_id, f)).join(', ')}` : ''}
+          </div>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
 function Quote({ text, gloss }: { text: string; gloss: string }) {
   const { t } = useT()
   return (
@@ -402,17 +456,45 @@ function Quote({ text, gloss }: { text: string; gloss: string }) {
   )
 }
 
-function ConstructRow({ c, label }: { c: ProfileConstruct; label: string }) {
+function ConstructRow({ c, label, map }: { c: ProfileConstruct; label: string; map: ConstructMap | null }) {
   const { t } = useT()
+  const covered = c.facets_covered ?? []
+  const missing = c.facets_missing ?? []
   return (
     <div className="construct">
       <div className="construct__head">
         <strong>{label}</strong>
         <SeverityBadge severity={c.severity as Severity} />
+        {c.confirmed === true && <span className="badge badge--ok">✓ {t('clinician.session.confirmedWithPatient')}</span>}
+        {c.confirmed === false && <span className="badge badge--open">{t('clinician.session.notConfirmed')}</span>}
         <span className="small muted">
           {t('clinician.session.confidence')} {Math.round(c.confidence * 100)}% · {t(`enum.constructStatus.${c.status}`)}
         </span>
       </div>
+      {(covered.length > 0 || missing.length > 0) && (
+        <div className="facets">
+          {covered.length > 0 && (
+            <div className="facets__group">
+              <span className="facets__label">{t('clinician.session.facetsCovered')}</span>
+              {covered.map((fid) => (
+                <span key={fid} className="chip chip--covered">
+                  {facetLabel(map, c.id, fid)}
+                </span>
+              ))}
+            </div>
+          )}
+          {missing.length > 0 && (
+            <div className="facets__group">
+              <span className="facets__label">{t('clinician.session.facetsMissing')}</span>
+              {missing.map((fid) => (
+                <span key={fid} className="chip chip--missing">
+                  {facetLabel(map, c.id, fid)}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
       {c.quotes.map((q, i) => (
         <Quote key={i} text={q.text} gloss={q.gloss_en} />
       ))}
