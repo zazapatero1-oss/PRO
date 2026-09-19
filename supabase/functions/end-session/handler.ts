@@ -13,7 +13,7 @@ import { badRequest, conflict, jsonResponse, notFound } from "../_shared/errors.
 import { requireClinician, requireSessionToken } from "../_shared/auth.ts";
 import { writeAudit } from "../_shared/db.ts";
 import { estimateCostUsd, MAX_JSON_OUTPUT_TOKENS } from "../_shared/config.ts";
-import { extractText } from "../_shared/anthropic.ts";
+import { extractText, NO_THINKING } from "../_shared/anthropic.ts";
 import { buildPatientSummaryPrompt } from "../_shared/prompt.ts";
 import { fallbackPatientSummary, generateProfile } from "../_shared/profile.ts";
 import {
@@ -81,6 +81,7 @@ export async function generateAndStoreProfile(
     });
     try {
       const msg = await deps.anthropic.messages.create({
+        ...NO_THINKING,
         model: deps.model,
         max_tokens: MAX_JSON_OUTPUT_TOKENS,
         system,

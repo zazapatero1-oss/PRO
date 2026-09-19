@@ -54,6 +54,8 @@ export async function loadSessionContext(db: Db, session: SessionRow): Promise<S
     diagnosis?.focus_constructs ?? [],
     clinicianFocus,
     session.timepoint,
+    undefined,
+    session.focus_constructs ?? [],
   );
   const coverage = computeCoverage(mapRow.map, activeConstructs, evidence, findings);
   return {

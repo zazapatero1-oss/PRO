@@ -4,6 +4,12 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { AnthropicClientLike } from "./types.ts";
 
+/**
+ * Claude 5 models think by default; in a chat that spends the whole output budget before
+ * the first visible word. Every call here is short-form, so thinking is off.
+ */
+export const NO_THINKING = { thinking: { type: "disabled" as const } };
+
 export interface Usage {
   input_tokens: number;
   output_tokens: number;
@@ -74,6 +80,7 @@ export async function streamTurn(opts: StreamTurnOptions): Promise<StreamTurnRes
   while (rounds < maxRounds) {
     rounds++;
     const stream = opts.client.messages.stream({
+      ...NO_THINKING,
       model: opts.model,
       max_tokens: opts.maxTokens,
       system: opts.system,
@@ -125,6 +132,7 @@ export async function streamTurn(opts: StreamTurnOptions): Promise<StreamTurnRes
     console.error("streamTurn: empty reply; retrying once");
     rounds++;
     const stream = opts.client.messages.stream({
+      ...NO_THINKING,
       model: opts.model,
       max_tokens: opts.maxTokens,
       system: opts.system,
@@ -142,6 +150,7 @@ export async function streamTurn(opts: StreamTurnOptions): Promise<StreamTurnRes
   if (hasTools && !text.trim() && (stopReason === "tool_use" || stopReason === "max_tokens")) {
     rounds++;
     const stream = opts.client.messages.stream({
+      ...NO_THINKING,
       model: opts.model,
       max_tokens: opts.maxTokens,
       system: opts.system,
@@ -218,6 +227,7 @@ export async function completeJson<T = unknown>(
 
   for (let attempt = 1; attempt <= 2; attempt++) {
     const message = await opts.client.messages.create({
+      ...NO_THINKING,
       model: opts.model,
       max_tokens: opts.maxTokens,
       system: opts.system,

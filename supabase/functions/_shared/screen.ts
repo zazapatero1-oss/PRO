@@ -81,12 +81,14 @@ export function focusFromScreen(
   scores: Record<string, number>,
   active: ActiveConstruct[],
   max = MAX_FOCUS_CONSTRUCTS,
+  /** Every construct id in the map; screened constructs outside the diagnosis set still count. */
+  mapIds: ReadonlySet<string> | null = null,
 ): string[] {
-  const activeIds = new Set(active.map((c) => c.id));
+  const allowed = mapIds ?? new Set(active.map((c) => c.id));
   const clinician = active.filter((c) => c.focus).map((c) => c.id);
   const byConstruct = new Map<string, number>();
   for (const item of items) {
-    if (!activeIds.has(item.construct_id)) continue;
+    if (!allowed.has(item.construct_id)) continue;
     const s = scores[item.id];
     const prev = byConstruct.get(item.construct_id);
     if (prev === undefined || s < prev) byConstruct.set(item.construct_id, s);

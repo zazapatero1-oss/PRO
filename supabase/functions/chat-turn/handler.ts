@@ -343,6 +343,19 @@ async function* runTurn(
   }
   const { result } = outcome;
   const latency = Date.now() - t0;
+  if (Deno.env.get("DEBUG_ERRORS") === "1") {
+    yield {
+      event: "debug",
+      data: {
+        stop: result.stopReason,
+        rounds: result.rounds,
+        text_len: result.text.length,
+        usage: result.usage,
+        system_len: stable.length + dynamic.length,
+        history_roles: history.map((m) => m.role),
+      },
+    };
+  }
 
   // ---- persist the reply ----
   if (result.text.trim()) {

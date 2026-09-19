@@ -677,3 +677,29 @@ for the clinician to review and approve. The pasted text is never stored.
 | B2 | Engine | tracker phases/focus/facets, prompt, talk/extract split, concurrent safety, ingestion merge, tests |
 | C2 | Web | phase-aware progress, late-evidence handling, ingestion diff view, tests |
 | D2 | Eval | facet recall, triage compliance, latency metrics, persona facets, tests |
+
+
+---
+
+# v1.2 addendum — numeric screen (binding)
+
+The conversational triage of v1.1 is replaced, when a screen is available, by a **numeric
+screen**: ~20 items (8 facial, 6 social-emotional, 6 function) rated 0–10 (10 = best)
+before the conversation. Items are our own wording (`screen_items` table, seeded per
+population, en/es), each tied to a construct; never instrument text.
+
+- `session-state` returns `screen: {items, done, scores}`; action `submit_screen`
+  (status `consented`, all items required, integers 0–10) stores `sessions.screen_scores`,
+  writes one `construct_evidence` row per item (`triage_item = "screen:<id>"`, severity by
+  band: 0–3 severe, 4–5 moderate, 6–7 mild, 8–10 none), derives focus and sets
+  `phase = explore`.
+- **Focus** = lowest scores first: all constructs scored ≤ 6, always at least 3, capped at 8;
+  clinician focus constructs first. Screened constructs are active even when the diagnosis
+  narrows the construct set.
+- The prompt receives the ratings lowest-first (no numbers are read back to the patient) and
+  the opening message goes straight to the lowest-rated area.
+- **Thinking is disabled on every model call**: Claude 5 models think by default, which spent
+  the whole per-turn output budget before the first visible word (blank replies, slow first
+  token).
+- Web: the Screen page sits between the face page and the chat; resume shows it until submitted.
+- If no screen items exist for a population, the v1.1 conversational triage still runs.

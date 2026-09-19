@@ -79,7 +79,10 @@ export async function handleSessionState(deps: SessionStateDeps, raw: unknown): 
     for (const row of evidenceForScreen(session.id, items, scores, session.language)) {
       await db.insertEvidence(row);
     }
-    const focus = focusFromScreen(items, scores, ctx0.activeConstructs);
+    const mapIds = new Set(
+      ctx0.mapRow.map.domains.flatMap((d) => d.constructs.map((c) => c.id)),
+    );
+    const focus = focusFromScreen(items, scores, ctx0.activeConstructs, undefined, mapIds);
     session = await db.updateSession(session.id, {
       screen_scores: scores,
       screen_completed_at: now().toISOString(),

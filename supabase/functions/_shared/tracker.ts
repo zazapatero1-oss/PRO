@@ -66,6 +66,8 @@ export function selectActiveConstructs(
   clinicianFocus: readonly string[],
   timepoint: Timepoint | null,
   maxConstructs = map.coverage_rules?.max_constructs_per_session ?? 18,
+  /** Constructs the patient flagged themselves (screen scores / stored focus): always active. */
+  patientFocus: readonly string[] = [],
 ): ActiveConstruct[] {
   const all = flattenConstructs(map).filter((c) =>
     !c.applicable_timepoints || timepoint === null || c.applicable_timepoints.includes(timepoint)
@@ -73,8 +75,9 @@ export function selectActiveConstructs(
   const byId = new Map(all.map((c) => [c.id, c]));
   const clinicianSet = new Set(clinicianFocus.filter((id) => byId.has(id)));
   const diagnosisSet = new Set(diagnosisFocus.filter((id) => byId.has(id)));
+  const patientSet = new Set(patientFocus.filter((id) => byId.has(id)));
   const candidates = diagnosisSet.size > 0
-    ? all.filter((c) => diagnosisSet.has(c.id) || clinicianSet.has(c.id))
+    ? all.filter((c) => diagnosisSet.has(c.id) || clinicianSet.has(c.id) || patientSet.has(c.id))
     : all;
 
   const chosen: ActiveConstruct[] = [];
@@ -86,6 +89,7 @@ export function selectActiveConstructs(
   };
 
   for (const id of clinicianFocus) admit(byId.get(id));
+  for (const id of patientFocus) admit(byId.get(id));
   for (const prio of ["core", "standard", "optional"] as const) {
     for (const c of candidates) if (c.priority === prio) admit(c);
   }
