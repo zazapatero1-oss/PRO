@@ -19,6 +19,7 @@ import type {
   TriageItem,
 } from '../../types'
 import { TIMEPOINTS } from '../../types'
+import { SCREEN_ITEMS } from './screenItems'
 import { ApiError } from '../errors'
 import type { Api, AuthUser } from '../types'
 import { CONSTRUCT_MAP_ROWS, INSTRUMENT_ROWS, findConstruct } from './constructMaps'
@@ -254,6 +255,11 @@ export function createMockApi(): Api {
       turns_used: turnsUsed(s),
       max_turns: s.max_turns,
       patient_summary: profile?.patient_summary ?? null,
+      screen: {
+        items: SCREEN_ITEMS.filter((i) => i.population === (isMinor(p.age_band) ? 'pediatric' : 'adult')),
+        done: !!s.screen_completed_at,
+        scores: s.screen_scores ?? null,
+      },
     }
   }
 
@@ -408,6 +414,28 @@ export function createMockApi(): Api {
       if (s.status === 'intake') s.status = 'consented'
       s.consent_given_at = now()
       s.consent_variant = variant
+      persist()
+      return stateOf(s)
+    },
+    async submitScreen(token, scores) {
+      await sleep(250)
+      const s = sessionByToken(token)
+      if (s.status !== 'consented') throw new ApiError('Screen must be answered after consent', { code: 'invalid_status', status: 409 })
+      if (s.screen_completed_at) throw new ApiError('Already submitted', { code: 'already_submitted', status: 409 })
+      const p = participantOf(s)
+      const items = SCREEN_ITEMS.filter((i) => i.population === (isMinor(p.age_band) ? 'pediatric' : 'adult'))
+      for (const item of items) {
+        const v = scores[item.id]
+        if (!Number.isInteger(v) || v < 0 || v > 10) throw new ApiError(`Missing score for ${item.id}`, { code: 'bad_request', status: 400 })
+      }
+      s.screen_scores = scores
+      s.screen_completed_at = now()
+      // Lowest scores first become the focus (≤6, at least three, cap eight).
+      const ranked = items.map((i) => ({ id: i.construct_id, score: scores[i.id] })).sort((a, b) => a.score - b.score)
+      const low = ranked.filter((r) => r.score <= 6)
+      const picked = (low.length >= 3 ? low : ranked.slice(0, 3)).map((r) => r.id)
+      const first = [...new Set([...focusOf(s), ...picked])][0] ?? null
+      store.convo[s.id] = { phase: 'explore', current_focus: first, confirmed: [] }
       persist()
       return stateOf(s)
     },

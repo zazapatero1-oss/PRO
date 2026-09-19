@@ -30,6 +30,8 @@ export interface Api {
   sessionState(resumeToken: string): Promise<SessionState>
   consent(resumeToken: string, variant: ConsentVariant): Promise<SessionState>
   updateIntake(resumeToken: string, fields: IntakeFields): Promise<SessionState>
+  /** Submits the numeric screen (every item, integer 0–10); the reply carries the new phase/focus. */
+  submitScreen(resumeToken: string, scores: Record<string, number>): Promise<SessionState>
   /** Returns the raw SSE byte stream; callers decode it with `chatEvents`. */
   chatTurn(
     sessionId: string,

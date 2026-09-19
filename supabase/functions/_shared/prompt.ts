@@ -176,6 +176,7 @@ function renderPatientContext(input: {
   diagnosisLabel: string;
   timepoint: Timepoint;
   priorBrief: string | null;
+  screenBrief?: string | null;
 }): string {
   const lines = [
     "# Patient context",
@@ -183,6 +184,7 @@ function renderPatientContext(input: {
     `Diagnosis / treatment (as the patient would say it): ${input.diagnosisLabel}`,
     `Timepoint: ${TIMEPOINT_TEXT[input.timepoint] ?? input.timepoint}`,
   ];
+  if (input.screenBrief) lines.push("", input.screenBrief);
   if (input.priorBrief) {
     lines.push(
       "",
@@ -413,6 +415,8 @@ export interface SystemPromptInput {
   diagnosisLabel: string;
   timepoint: Timepoint;
   priorBrief: string | null;
+  /** Rendered numeric-screen block (see screen.ts), or null when no screen was submitted. */
+  screenBrief?: string | null;
   clinicianNote: { note: string; focus_constructs: string[] } | null;
   population: Population;
   activeConstructs: ActiveConstruct[];

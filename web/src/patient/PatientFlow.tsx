@@ -7,11 +7,12 @@ import type { IntakeFields, Language, PatientCorrection, SessionState } from '..
 import { Chat } from './Chat'
 import { Consent } from './Consent'
 import { FacePage } from './FacePage'
+import { Screen } from './Screen'
 import { LanguagePicker } from './LanguagePicker'
 import { SummaryReview } from './SummaryReview'
 import { ThankYou } from './ThankYou'
 
-type Step = 'language' | 'consent' | 'face' | 'chat' | 'generating' | 'summary' | 'done'
+type Step = 'language' | 'consent' | 'face' | 'screen' | 'chat' | 'generating' | 'summary' | 'done'
 
 /**
  * `/p/:token`. The server's session status is the source of truth; the local `step` only
@@ -90,7 +91,20 @@ export function PatientFlow() {
   const submitIntake = async (fields: IntakeFields) => {
     setBusy(true)
     try {
-      setSession(await api.updateIntake(token, fields))
+      const s = await api.updateIntake(token, fields)
+      setSession(s)
+      setStep(needsScreen(s) ? 'screen' : 'chat')
+    } catch (e) {
+      setError(e)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const submitScreen = async (scores: Record<string, number>) => {
+    setBusy(true)
+    try {
+      setSession(await api.submitScreen(token, scores))
       setStep('chat')
     } catch (e) {
       setError(e)
@@ -127,6 +141,8 @@ export function PatientFlow() {
       return <Consent variant={session.consent_variant_needed} onAgree={agree} busy={busy} />
     case 'face':
       return <FacePage session={session} onSubmit={submitIntake} busy={busy} />
+    case 'screen':
+      return <Screen screen={session.screen!} language={lang} onSubmit={submitScreen} busy={busy} />
     case 'chat':
       return <Chat session={session} resumeToken={token} language={lang} onEnded={onEnded} />
     case 'generating':
@@ -140,6 +156,11 @@ export function PatientFlow() {
     case 'done':
       return <ThankYou />
   }
+}
+
+/** The screen is shown once, after the face page, when the server offers items and none were submitted. */
+function needsScreen(s: SessionState): boolean {
+  return !!s.screen && s.screen.items.length > 0 && !s.screen.done
 }
 
 function initialStep(s: SessionState): Step {

@@ -28,6 +28,8 @@ const session: SessionRow = {
   phase: "wrap-up",
   focus_constructs: ["appearance.overall"],
   resume_token_expires_at: null,
+  screen_scores: null,
+  screen_completed_at: null,
   resume_token_hash: "h",
   max_turns: 40,
   target_minutes: 12,

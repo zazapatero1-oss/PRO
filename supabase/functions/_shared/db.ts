@@ -23,6 +23,7 @@ import type {
   ProbeFindingRow,
   SafetyFlagInsert,
   SafetyFlagRow,
+  ScreenItemRow,
   SessionInsert,
   SessionProfileInsert,
   SessionProfileRow,
@@ -121,6 +122,11 @@ export function createDb(client: AnyClient): Db {
   return {
     getClinician: (id) => one<ClinicianRow>("clinicians", "id", id),
     getDiagnosis: (code) => one<DiagnosisCatalogRow>("diagnosis_catalog", "code", code),
+    listScreenItems: async (population) => {
+      const r: PgResult<ScreenItemRow[]> = await t("screen_items").select("*")
+        .eq("population", population).eq("active", true).order("sort_order", { ascending: true });
+      return unwrapNullable(r, "list screen_items") ?? [];
+    },
 
     getParticipant: (id) => one<ParticipantRow>("participants", "id", id),
     getParticipantByStudyId: (studyId) => one<ParticipantRow>("participants", "study_id", studyId),

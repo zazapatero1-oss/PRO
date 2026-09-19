@@ -226,6 +226,9 @@ export interface SessionRow {
   resume_token_hash: string;
   /** Links stop working after this; set on creation (SPEC §4). */
   resume_token_expires_at: string | null;
+  /** Numeric screen (v1.2): item id → 0–10 (10 = best); null until submitted. */
+  screen_scores: Record<string, number> | null;
+  screen_completed_at: string | null;
   max_turns: number;
   target_minutes: number;
   started_at: string | null;
@@ -578,10 +581,27 @@ export interface StartSessionResponse {
   patient_link_path: string;
 }
 
+export interface ScreenItemRow {
+  id: string;
+  population: Population;
+  construct_id: string;
+  domain: "facial" | "social" | "function";
+  text_en: string;
+  text_es: string;
+  low_en: string;
+  high_en: string;
+  low_es: string;
+  high_es: string;
+  sort_order: number;
+  active: boolean;
+}
+
 export interface SessionStateRequest {
   resume_token: string;
-  action?: "consent" | "update_intake";
+  action?: "consent" | "update_intake" | "submit_screen";
   consent_variant?: ConsentVariant;
+  /** submit_screen: item id → integer 0–10. Every active item for the population is required. */
+  scores?: Record<string, unknown>;
   fields?: Partial<
     Pick<
       ParticipantInput,
@@ -618,6 +638,8 @@ export interface SessionStateResponse {
   turns_used: number;
   max_turns: number;
   patient_summary: string | null;
+  /** The numeric screen for this population, and whether it has been submitted. */
+  screen: { items: ScreenItemRow[]; done: boolean; scores: Record<string, number> | null };
 }
 
 export interface ChatTurnRequest {
@@ -693,6 +715,7 @@ export interface ErrorBody {
 export interface Db {
   getClinician(id: string): Promise<ClinicianRow | null>;
   getDiagnosis(code: string): Promise<DiagnosisCatalogRow | null>;
+  listScreenItems(population: Population): Promise<ScreenItemRow[]>;
 
   getParticipant(id: string): Promise<ParticipantRow | null>;
   getParticipantByStudyId(studyId: string): Promise<ParticipantRow | null>;

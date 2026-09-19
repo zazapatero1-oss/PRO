@@ -285,12 +285,16 @@ const live = (evidence: ConstructEvidenceRow[], constructId: string) =>
  */
 export function triageState(
   map: ConstructMap,
-  session: Pick<SessionRow, "timepoint">,
+  session: Pick<SessionRow, "timepoint"> & Partial<Pick<SessionRow, "screen_completed_at">>,
   evidence: ConstructEvidenceRow[],
 ): TriageState {
   const items: TriageItem[] = (map.triage ?? []).filter((i) =>
     !i.timepoints || i.timepoints.includes(session.timepoint)
   );
+  // A submitted numeric screen replaces the conversational triage entirely.
+  if (session.screen_completed_at) {
+    return { items, answered: items.map((i) => i.id), next: null, done: true };
+  }
   const seen = new Set(
     evidence.map((e) => e.triage_item).filter((id): id is string => typeof id === "string" && !!id),
   );

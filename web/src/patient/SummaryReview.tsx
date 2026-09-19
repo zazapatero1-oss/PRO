@@ -35,7 +35,7 @@ export function SummaryReview({ summary, onConfirm }: Props) {
 
   return (
     <main className="page" id="main">
-      <Steps total={3} current={2} />
+      <Steps total={4} current={3} />
       <h1>{t('patient.summary.title')}</h1>
       <p className="muted">{t('patient.summary.intro')}</p>
       <div className="card">

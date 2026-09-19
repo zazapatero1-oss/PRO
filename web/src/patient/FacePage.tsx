@@ -44,7 +44,7 @@ export function FacePage({ session, onSubmit, busy }: Props) {
 
   return (
     <main className="page" id="main">
-      <Steps total={3} current={1} />
+      <Steps total={4} current={1} />
       <h1>{t('patient.face.title')}</h1>
       <p className="muted">{t('patient.face.intro')}</p>
       <form onSubmit={submit} className="card">

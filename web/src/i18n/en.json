@@ -190,7 +190,17 @@
       "close": "You can close this page now."
     },
     "abandoned": "This conversation has ended.",
-    "completed": "This conversation is complete. Thank you."
+    "completed": "This conversation is complete. Thank you.",
+    "screen": {
+      "title": "A few quick ratings",
+      "intro": "Tap a number for each one. 0 is the worst it could be, 10 is the best. There are no right answers — this just helps us know where to start.",
+      "facial": "How your face looks",
+      "social": "How you feel and get on with others",
+      "function": "How your face works",
+      "progress": "{done} of {total} answered",
+      "submit": "Continue to the conversation",
+      "missing": "Please answer every item to continue."
+    }
   },
   "clinician": {
     "signIn": {

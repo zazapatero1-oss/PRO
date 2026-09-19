@@ -69,7 +69,7 @@ enabled = true
 # Supports glob patterns relative to supabase directory: "./seeds/*.sql"
 # Reference data only. Demo participants live in ./seed/demo.sql and are loaded
 # explicitly (see seed/README.md) so that `dev` never carries demo rows by accident.
-sql_paths = ["./seed/seed.sql", "./seed/demo.sql"]
+sql_paths = ["./seed/seed.sql", "./seed/screen_items.sql", "./seed/demo.sql"]
 
 [db.network_restrictions]
 # Enable management of network restrictions.

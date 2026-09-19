@@ -19,7 +19,7 @@ export function Consent({ variant, onAgree, busy }: { variant: ConsentVariant; o
   return (
     <main className="page" id="main">
       <div className="row row--between">
-        <Steps total={3} current={0} />
+        <Steps total={4} current={0} />
         <LanguageSwitch />
       </div>
       <h1>{t(`${base}.title`)}</h1>

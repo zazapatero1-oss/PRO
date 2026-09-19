@@ -6,6 +6,7 @@ import type {
   SessionStateRequest,
   SessionStateResponse,
 } from "../_shared/types.ts";
+import { evidenceForScreen, focusFromScreen, validateScores } from "../_shared/screen.ts";
 import { badRequest, conflict, jsonResponse } from "../_shared/errors.ts";
 import { requireSessionToken } from "../_shared/auth.ts";
 import { writeAudit } from "../_shared/db.ts";
@@ -57,6 +58,42 @@ export async function handleSessionState(deps: SessionStateDeps, raw: unknown): 
         metadata: { consent_variant: variant },
       });
     }
+  } else if (body.action === "submit_screen") {
+    if (session.status !== "consented") {
+      throw conflict(
+        "The screen is answered after consent and before the conversation.",
+        "invalid_status",
+      );
+    }
+    if (session.screen_completed_at) {
+      throw conflict("The screen has already been submitted.", "already_submitted");
+    }
+    const ctx0 = await loadSessionContext(db, session);
+    const items = await db.listScreenItems(ctx0.mapRow.population);
+    let scores: Record<string, number>;
+    try {
+      scores = validateScores(body.scores, items);
+    } catch (err) {
+      throw badRequest((err as Error).message);
+    }
+    for (const row of evidenceForScreen(session.id, items, scores, session.language)) {
+      await db.insertEvidence(row);
+    }
+    const focus = focusFromScreen(items, scores, ctx0.activeConstructs);
+    session = await db.updateSession(session.id, {
+      screen_scores: scores,
+      screen_completed_at: now().toISOString(),
+      phase: "explore",
+      focus_constructs: focus,
+    });
+    await writeAudit(db, {
+      actor_type: "participant",
+      actor_id: session.id,
+      action: "session.screen_submitted",
+      target_type: "session",
+      target_id: session.id,
+      metadata: { items: items.length, focus },
+    });
   } else if (body.action === "update_intake") {
     if (session.status !== "intake" && session.status !== "consented") {
       throw conflict("Intake can only be edited before the conversation starts.", "invalid_status");
@@ -134,6 +171,11 @@ export async function handleSessionState(deps: SessionStateDeps, raw: unknown): 
     turns_used: countAssistantTurns(ctx.messages),
     max_turns: session.max_turns,
     patient_summary: profile?.patient_summary ?? null,
+    screen: {
+      items: await db.listScreenItems(ctx.mapRow.population),
+      done: !!session.screen_completed_at,
+      scores: session.screen_scores,
+    },
   };
   return jsonResponse(res, 200, origin);
 }

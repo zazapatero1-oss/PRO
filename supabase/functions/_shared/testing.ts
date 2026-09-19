@@ -17,8 +17,10 @@ import type {
   MessageRow,
   MessageStreamLike,
   ParticipantRow,
+  Population,
   ProbeFindingRow,
   SafetyFlagRow,
+  ScreenItemRow,
   SessionProfileRow,
   SessionRow,
 } from "./types.ts";
@@ -217,6 +219,13 @@ export class FakeDb implements Db {
   }
   getDiagnosis(code: string) {
     return Promise.resolve(this.diagnoses.find((d) => d.code === code) ?? null);
+  }
+  screenItems: ScreenItemRow[] = [];
+  listScreenItems(population: Population) {
+    return Promise.resolve(
+      this.screenItems.filter((i) => i.population === population && i.active)
+        .sort((a, b) => a.sort_order - b.sort_order),
+    );
   }
   getParticipant(id: string) {
     return Promise.resolve(this.participants.find((p) => p.id === id) ?? null);
@@ -621,6 +630,8 @@ export async function seedSession(
     focus_constructs: opts.focusConstructs ?? [],
     resume_token_hash: tokenHash,
     resume_token_expires_at: opts.expiresAt ?? null,
+    screen_scores: null,
+    screen_completed_at: null,
     max_turns: opts.maxTurns ?? 40,
     target_minutes: opts.targetMinutes ?? 12,
     started_at: opts.startedAt ?? null,

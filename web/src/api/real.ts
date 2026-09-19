@@ -99,6 +99,8 @@ export function createRealApi(): Api {
       callFn<SessionState>('session-state', { resume_token, action: 'consent', consent_variant }),
     updateIntake: (resume_token, fields) =>
       callFn<SessionState>('session-state', { resume_token, action: 'update_intake', fields }),
+    submitScreen: (resume_token, scores) =>
+      callFn<SessionState>('session-state', { resume_token, action: 'submit_screen', scores }),
 
     async chatTurn(session_id, resume_token, text, input_mode, signal) {
       const res = await fetch(`${config.functionsUrl}/chat-turn`, {

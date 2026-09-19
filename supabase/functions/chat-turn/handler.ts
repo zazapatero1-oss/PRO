@@ -41,6 +41,7 @@ import {
   isRetryableAnthropicError,
   streamTurn,
 } from "../_shared/anthropic.ts";
+import { renderScreenForPrompt } from "../_shared/screen.ts";
 import { classifySafety } from "../_shared/safety_classifier.ts";
 import { persistExtraction, validateExtraction } from "../_shared/extraction.ts";
 import {
@@ -252,6 +253,13 @@ async function* runTurn(
     diagnosisLabel: diagnosisLabel(ctx.diagnosis, ctx.participant, language),
     timepoint: session.timepoint,
     priorBrief,
+    screenBrief: session.screen_scores
+      ? renderScreenForPrompt(
+        await db.listScreenItems(ctx.mapRow.population),
+        session.screen_scores,
+        language,
+      )
+      : null,
     clinicianNote: note,
     population: ctx.mapRow.population,
     activeConstructs: ctx.activeConstructs,

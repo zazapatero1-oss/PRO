@@ -72,6 +72,27 @@ export type InputMode = 'text' | 'voice'
 /** Session phase (v1.1 addendum §B). */
 export type SessionPhase = 'triage' | 'explore' | 'wrap-up'
 
+/** Numeric screen item (v1.2): 0–10, 10 = best. Our own wording, tied to a construct. */
+export interface ScreenItem {
+  id: string
+  population: 'adult' | 'pediatric'
+  construct_id: string
+  domain: 'facial' | 'social' | 'function'
+  text_en: string
+  text_es: string
+  low_en: string
+  high_en: string
+  low_es: string
+  high_es: string
+  sort_order: number
+  active: boolean
+}
+export interface ScreenState {
+  items: ScreenItem[]
+  done: boolean
+  scores: Record<string, number> | null
+}
+
 /** Focus-construct confirmation progress (v1.1 addendum §B/§C). */
 export interface FocusProgress {
   confirmed: number
@@ -203,6 +224,8 @@ export interface SessionRow {
   input_tokens: number
   output_tokens: number
   cost_usd_estimate: number | null
+  screen_scores?: Record<string, number> | null
+  screen_completed_at?: string | null
   created_at: string
 }
 
@@ -380,6 +403,7 @@ export interface SessionState {
   turns_used: number
   max_turns: number
   patient_summary?: string | null
+  screen?: ScreenState
 }
 
 export type IntakeFields = Partial<SessionStateParticipant>

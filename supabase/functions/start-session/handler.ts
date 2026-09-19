@@ -153,6 +153,8 @@ export async function handleStartSession(
     focus_constructs: [],
     resume_token_hash: await hashToken(token),
     resume_token_expires_at: new Date(Date.now() + RESUME_TOKEN_TTL_MS).toISOString(),
+    screen_scores: null,
+    screen_completed_at: null,
     max_turns: DEFAULT_MAX_TURNS,
     target_minutes: DEFAULT_TARGET_MINUTES,
     started_at: null,

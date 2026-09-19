@@ -190,7 +190,17 @@
       "close": "Ya puede cerrar esta página."
     },
     "abandoned": "Esta conversación ha terminado.",
-    "completed": "Esta conversación está completa. Gracias."
+    "completed": "Esta conversación está completa. Gracias.",
+    "screen": {
+      "title": "Unas valoraciones rápidas",
+      "intro": "Toque un número en cada una. 0 es lo peor posible y 10 lo mejor. No hay respuestas correctas; esto solo nos ayuda a saber por dónde empezar.",
+      "facial": "Cómo se ve su cara",
+      "social": "Cómo se siente y cómo se relaciona con los demás",
+      "function": "Cómo funciona su cara",
+      "progress": "{done} de {total} respondidas",
+      "submit": "Continuar a la conversación",
+      "missing": "Responda todas las preguntas para continuar."
+    }
   },
   "clinician": {
     "signIn": {

@@ -947,3 +947,15 @@ details > summary {
     content: '';
   }
 }
+
+/* Numeric screen (v1.2) */
+.screen__group { margin: 20px 0 8px; }
+.screen__group h2 { font-size: 1rem; margin: 0 0 8px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.screen__item { border: 0; padding: 12px 0; margin: 0; border-top: 1px solid var(--border); }
+.screen__item legend { font-weight: 600; padding: 0; margin-bottom: 8px; }
+.screen__item--missing legend { color: var(--danger); }
+.screen__scale { display: grid; grid-template-columns: repeat(11, 1fr); gap: 4px; }
+.screen__btn { min-height: 40px; padding: 0; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font-size: 0.95rem; }
+.screen__btn--on { background: var(--accent); color: #fff; border-color: var(--accent); }
+.screen__labels { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; }
+.screen__progress { font-size: 0.9rem; color: var(--text-muted); }
