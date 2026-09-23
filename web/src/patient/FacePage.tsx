@@ -15,11 +15,11 @@ interface Props {
 export function FacePage({ session, onSubmit, busy }: Props) {
   const { t, lang } = useT()
   const p = session.participant
-  const [displayName, setDisplayName] = useState(p.display_name)
+  const [displayName, setDisplayName] = useState(p.display_name ?? '')
   const [ageBand, setAgeBand] = useState(p.age_band)
   const [reading, setReading] = useState(p.reading_comfort)
   const [dx, setDx] = useState(p.diagnosis_code)
-  const [dxText, setDxText] = useState(p.diagnosis_text)
+  const [dxText, setDxText] = useState(p.diagnosis_text ?? '')
   const [catalog, setCatalog] = useState<DiagnosisCatalogEntry[]>(DIAGNOSIS_CATALOG)
 
   useEffect(() => {
