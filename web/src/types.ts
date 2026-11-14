@@ -228,6 +228,9 @@ export interface SessionRow {
   cost_usd_estimate: number | null
   screen_scores?: Record<string, number> | null
   screen_completed_at?: string | null
+  /** Constructs the conversation went into (set after the ratings or the opening screen). */
+  focus_constructs?: string[]
+  phase?: SessionPhase
   created_at: string
 }
 
@@ -479,4 +482,6 @@ export interface SessionDetail {
   clinician_notes: ClinicianNoteRow[]
   construct_map: ConstructMapRow | null
   prior_session: { session: SessionRow; profile: SessionProfileRow | null } | null
+  /** Rating items for this session's population; empty when the session has no ratings. */
+  screen_items?: ScreenItem[]
 }

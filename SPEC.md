@@ -725,3 +725,18 @@ Clinicians no longer weight individual constructs when creating a session; they 
 - Web: the new-session form shows domain cards (label + what is inside); domains whose
   constructs do not apply at the chosen timepoint are hidden. The review page shows the chosen
   domains. The participants list has search and a last-activity column.
+
+
+---
+
+# v1.4 addendum — review page leads with the ratings
+
+When a session has numeric-screen scores, the clinician review opens with **At a glance**:
+mean rating per screen group (facial / social / function), then every area rated ≤ 6 (plus any
+focus area) lowest first with a 0–10 bar, up to three patient quotes, confirmed badge and
+details covered; areas rated ≥ 7 are listed compactly below. Change against the participant's
+previous completed visit is shown per item and per group. The rating rows stored as evidence
+("3/10 — …") are never shown as quotes. "For your attention" (needs clarification, not covered,
+declined, patient questions) and the patient summary follow; domain severities, per-construct
+evidence and findings sit behind "Show full detail" on screen and always print. Sessions
+without ratings keep the previous layout with the detail open.

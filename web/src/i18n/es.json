@@ -321,7 +321,24 @@
       "evidenceOnly": "Evidencia registrada hasta ahora (perfil aún no generado)",
       "empty": "Nada registrado.",
       "patientConfirmed": "Confirmado por el paciente",
-      "focusDomains": "Dominios de interés"
+      "focusDomains": "Dominios de interés",
+      "atAGlance": "De un vistazo",
+      "atAGlanceIntro": "Las valoraciones del propio paciente, de 0 (peor) a 10 (mejor), de menor a mayor, con lo que dijo sobre cada una.",
+      "comparedWith": "El cambio se muestra respecto a {timepoint}.",
+      "glanceSummary": "{low} de {total} áreas valoradas con {threshold} o menos · {discussed} tratadas en la conversación · {confirmed} confirmadas con el paciente",
+      "notDiscussed": "No se trató en la conversación.",
+      "detailsCovered": "{n} de {total} detalles cubiertos",
+      "ratedHigher": "Valoradas con {n} o más",
+      "wasAt": "{score} en {timepoint}",
+      "needsAttention": "Para su atención",
+      "showFullDetail": "Mostrar todo el detalle",
+      "hideFullDetail": "Ocultar el detalle",
+      "fullDetailHint": "Gravedad por dominio, cada constructo con su evidencia, hallazgos y detalles cubiertos.",
+      "screenDomain": {
+        "facial": "Cómo se ve la cara",
+        "social": "Emociones y vida social",
+        "function": "Cómo funciona la cara"
+      }
     },
     "instruments": {
       "title": "Instrumentos",

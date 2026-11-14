@@ -12,6 +12,7 @@ import type {
   Participant,
   ProbeFindingRow,
   SafetyFlagRow,
+  ScreenItem,
   SessionDetail,
   SessionProfileRow,
   SessionRow,
@@ -240,8 +241,14 @@ export function createRealApi(): Api {
         const pp = await (await q())('session_profiles').select('*').eq('session_id', prior.id).maybeSingle()
         prior_session = { session: prior, profile: (pp.data as SessionProfileRow | null) ?? null }
       }
+      const mapRow = (construct_map.data as ConstructMapRow | null) ?? null
+      const screen_items =
+        session.screen_scores && mapRow
+          ? (((await (await q())('screen_items').select('*').eq('population', mapRow.population).order('sort_order')).data as ScreenItem[] | null) ?? [])
+          : []
       return {
         session,
+        screen_items,
         participant: must(participant) as Participant,
         messages: must(messages) as MessageRow[],
         evidence: must(evidence) as ConstructEvidenceRow[],

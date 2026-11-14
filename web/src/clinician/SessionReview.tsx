@@ -4,6 +4,7 @@ import { api } from '../api'
 import { ConfirmDialog, ErrorBox, Loading, SeverityBadge, SeverityDot, Tooltip } from '../components/ui'
 import { DIAGNOSIS_CATALOG, diagnosisLabel } from '../data/diagnosisCatalog'
 import { useT } from '../i18n'
+import { AtAGlance } from './AtAGlance'
 import { downloadBlob } from '../lib/download'
 import { facetLabel, triageItem, triageOrder } from '../lib/constructMap'
 import { aggregateDomainSeverity, severityVar } from '../lib/severity'
@@ -26,6 +27,7 @@ export function SessionReview() {
   const [busy, setBusy] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [showDetail, setShowDetail] = useState(false)
 
   const load = useCallback(() => {
     setError(null)
@@ -80,7 +82,7 @@ export function SessionReview() {
   const firstImpressions = useMemo(() => {
     if (!detail) return []
     return detail.evidence
-      .filter((e) => e.triage_item !== null && !e.superseded_by)
+      .filter((e) => e.triage_item !== null && !e.triage_item.startsWith('screen:') && !e.superseded_by)
       .sort((a, b) => triageOrder(map, a.triage_item ?? '') - triageOrder(map, b.triage_item ?? ''))
   }, [detail, map])
 
@@ -111,6 +113,11 @@ export function SessionReview() {
   const prof = profile?.profile ?? null
   const dx = DIAGNOSIS_CATALOG.find((d) => d.code === p.diagnosis_code)
   const openFlags = detail.safety_flags.filter((f) => !f.reviewed_at)
+  const screenItems = detail.screen_items ?? []
+  const hasRatings = !!s.screen_scores && screenItems.length > 0
+  const priorScores = detail.prior_session?.session.screen_scores ?? null
+  // With ratings, the at-a-glance view leads and the full breakdown is one click away.
+  const detailOpen = showDetail || !hasRatings
 
   return (
     <main className="page page--wide" id="main">
@@ -209,6 +216,74 @@ export function SessionReview() {
         </section>
       )}
 
+      {hasRatings && (
+        <AtAGlance
+          items={screenItems}
+          scores={s.screen_scores!}
+          prior={priorScores && detail.prior_session ? { timepoint: detail.prior_session.session.timepoint, scores: priorScores } : null}
+          constructs={prof ? prof.domains.flatMap((d) => d.constructs) : []}
+          focus={s.focus_constructs ?? []}
+          map={map}
+        />
+      )}
+
+      {prof && (
+        <section className="card">
+          <h2>{t('clinician.session.needsAttention')}</h2>
+          <ListBlock
+            title={t('clinician.session.needsClarification')}
+            items={[
+              ...prof.needs_clarification.map((n) => `${label(n.construct_id)} — ${n.reason}`),
+              // A focus construct that was explored but never reflected back and confirmed
+              // still needs the clinician's attention (v1.1 §B).
+              ...prof.domains
+                .flatMap((d) => d.constructs)
+                .filter((c) => c.confirmed === false && c.status !== 'declined')
+                .filter((c) => !prof.needs_clarification.some((n) => n.construct_id === c.id))
+                .map((c) => `${label(c.id)} — ${t('clinician.session.unconfirmedReason')}`),
+            ]}
+          />
+          <ListBlock title={t('clinician.session.notCovered')} items={prof.not_covered.map(label)} />
+          <ListBlock title={t('clinician.session.declined')} items={prof.declined.map(label)} />
+          <ListBlock title={t('clinician.session.patientQuestions')} items={prof.patient_questions} />
+        </section>
+      )}
+
+      {profile && (
+        <section className="card">
+          <h2>{t('clinician.session.patientSummary')}</h2>
+          <p className="summary-text small">{profile.patient_summary}</p>
+          {profile.patient_summary_confirmed_at && (
+            <p className="small muted">
+              {t('clinician.session.patientConfirmed')}: {new Date(profile.patient_summary_confirmed_at).toLocaleString()}
+            </p>
+          )}
+          {profile.patient_corrections && profile.patient_corrections.length > 0 && (
+            <>
+              <h3>{t('clinician.session.corrections')}</h3>
+              <ul>
+                {profile.patient_corrections.map((c, i) => (
+                  <li key={i}>
+                    {c.construct_id && <span className="muted small">{label(c.construct_id)}: </span>}
+                    {c.patient_text}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </section>
+      )}
+
+      {hasRatings && (
+        <p className="no-print">
+          <button type="button" className="btn" aria-expanded={showDetail} onClick={() => setShowDetail((v) => !v)}>
+            {showDetail ? t('clinician.session.hideFullDetail') : t('clinician.session.showFullDetail')}
+          </button>{' '}
+          <span className="small muted">{t('clinician.session.fullDetailHint')}</span>
+        </p>
+      )}
+
+      <div className={detailOpen ? 'detail' : 'detail detail--collapsed'}>
       {firstImpressions.length > 0 && (
         <section className="card">
           <h2>{t('clinician.session.firstImpressions')}</h2>
@@ -336,51 +411,7 @@ export function SessionReview() {
         </section>
       )}
 
-      {prof && (
-        <section className="card">
-          <ListBlock
-            title={t('clinician.session.needsClarification')}
-            items={[
-              ...prof.needs_clarification.map((n) => `${label(n.construct_id)} — ${n.reason}`),
-              // A focus construct that was explored but never reflected back and confirmed
-              // still needs the clinician's attention (v1.1 §B).
-              ...prof.domains
-                .flatMap((d) => d.constructs)
-                .filter((c) => c.confirmed === false && c.status !== 'declined')
-                .filter((c) => !prof.needs_clarification.some((n) => n.construct_id === c.id))
-                .map((c) => `${label(c.id)} — ${t('clinician.session.unconfirmedReason')}`),
-            ]}
-          />
-          <ListBlock title={t('clinician.session.notCovered')} items={prof.not_covered.map(label)} />
-          <ListBlock title={t('clinician.session.declined')} items={prof.declined.map(label)} />
-          <ListBlock title={t('clinician.session.patientQuestions')} items={prof.patient_questions} />
-        </section>
-      )}
-
-      {profile && (
-        <section className="card">
-          <h2>{t('clinician.session.patientSummary')}</h2>
-          <p className="summary-text small">{profile.patient_summary}</p>
-          {profile.patient_summary_confirmed_at && (
-            <p className="small muted">
-              {t('clinician.session.patientConfirmed')}: {new Date(profile.patient_summary_confirmed_at).toLocaleString()}
-            </p>
-          )}
-          {profile.patient_corrections && profile.patient_corrections.length > 0 && (
-            <>
-              <h3>{t('clinician.session.corrections')}</h3>
-              <ul>
-                {profile.patient_corrections.map((c, i) => (
-                  <li key={i}>
-                    {c.construct_id && <span className="muted small">{label(c.construct_id)}: </span>}
-                    {c.patient_text}
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
-        </section>
-      )}
+      </div>
 
       <section className="card">
         <details>

@@ -186,7 +186,15 @@ export const P3: Participant = {
 
 // ---------------- P1 baseline ----------------
 
+// Demo ratings (0–10, 10 = best) so the review page's at-a-glance view has something to show.
+const ADULT_ITEMS = ['face_overall', 'face_eyes', 'face_nose', 'face_lips', 'face_cheeks', 'face_chin', 'face_skin', 'face_smile', 'soc_confidence', 'soc_mood', 'soc_comfort', 'soc_joining', 'soc_thoughts', 'soc_hiding', 'fn_breathing', 'fn_eating', 'fn_speaking', 'fn_expression', 'fn_pain', 'fn_sensation']
+const demoScores = (base: number, overrides: Record<string, number>): Record<string, number> =>
+  Object.fromEntries(ADULT_ITEMS.map((k) => [`adult:${k}`, overrides[k] ?? base]))
+
 const S1 = session('s-0001-baseline', P1.id, 'baseline', 'self', 'en', 'map-adult-1', 'completed', '2026-08-20')
+S1.screen_scores = demoScores(8, { face_overall: 5, face_nose: 2, soc_confidence: 5, soc_joining: 3, soc_thoughts: 4, soc_hiding: 5, fn_breathing: 3 })
+S1.screen_completed_at = S1.started_at
+S1.focus_constructs = ['appearance.nose', 'function.breathing']
 const S1m = [
   msg(S1.id, 'assistant', "Hi Sam, thanks for taking the time. There's no right or wrong here; I'd just like to hear how things are for you at the moment. How do you feel about your face these days?"),
   msg(S1.id, 'patient', "Honestly the nose is the whole reason I'm here. It's been bugging me since I was a teenager. From the front it's fine but the bump on the side profile makes me hate photos.", 'text'),
@@ -268,6 +276,9 @@ const S1profile: Profile = {
 // ---------------- P1 post-op 6 weeks ----------------
 
 const S2 = session('s-0001-postop6w', P1.id, 'post-op-6w', 'self', 'en', 'map-adult-1', 'completed', '2026-09-01')
+S2.screen_scores = demoScores(9, { face_overall: 8, face_nose: 7, soc_confidence: 8, soc_joining: 8, soc_thoughts: 7, fn_breathing: 8, fn_sensation: 5, fn_pain: 7 })
+S2.screen_completed_at = S2.started_at
+S2.focus_constructs = ['appearance.nose', 'adverse.numbness_sensation']
 const S2m = [
   msg(S2.id, 'assistant', "Welcome back, Sam. Last time you told me the bump on your profile was the main thing, and that breathing on the left was hard. It's been about six weeks since surgery; how are things now?"),
   msg(S2.id, 'patient', 'Way better. The profile is straight, I keep catching it in shop windows and smiling. Still puffy at the tip though.', 'text'),
@@ -355,6 +366,9 @@ const S2profile: Profile = {
 // ---------------- P2 baseline (es) ----------------
 
 const S3 = session('s-0002-baseline', P2.id, 'baseline', 'self', 'es', 'map-adult-1', 'completed', '2026-08-22')
+S3.screen_scores = demoScores(8, { face_overall: 4, face_cheeks: 3, face_chin: 3, face_skin: 5, soc_confidence: 5, soc_mood: 6 })
+S3.screen_completed_at = S3.started_at
+S3.focus_constructs = ['appearance.cheeks', 'appearance.chin_jawline']
 const S3m = [
   msg(S3.id, 'assistant', 'Hola Lucía, gracias por estar aquí. No hay respuestas buenas ni malas. ¿Cómo se siente con su cara últimamente?'),
   msg(S3.id, 'patient', 'Pues mire, me veo cansada. Las mejillas se me han caído y el cuello no me gusta nada.', 'voice'),

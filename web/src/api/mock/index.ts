@@ -738,6 +738,9 @@ export function createMockApi(): Api {
         .sort((a, b) => TIMEPOINTS.indexOf(b.timepoint) - TIMEPOINTS.indexOf(a.timepoint))[0]
       return {
         session,
+        screen_items: session.screen_scores
+          ? SCREEN_ITEMS.filter((i) => i.population === (isMinor(participantOf(session).age_band) ? 'pediatric' : 'adult'))
+          : [],
         participant: participantOf(session),
         messages: store.messages.filter((m) => m.session_id === sessionId).sort((a, b) => a.seq - b.seq),
         evidence: store.evidence.filter((e) => e.session_id === sessionId),

@@ -321,7 +321,24 @@
       "evidenceOnly": "Evidence recorded so far (profile not generated yet)",
       "empty": "Nothing recorded.",
       "patientConfirmed": "Confirmed by patient",
-      "focusDomains": "Domains of interest"
+      "focusDomains": "Domains of interest",
+      "atAGlance": "At a glance",
+      "atAGlanceIntro": "The patient's own ratings, 0 (worst) to 10 (best), lowest first, with what they said about each.",
+      "comparedWith": "Change is shown against {timepoint}.",
+      "glanceSummary": "{low} of {total} areas rated {threshold} or lower · {discussed} discussed in the conversation · {confirmed} confirmed with the patient",
+      "notDiscussed": "Not discussed in the conversation.",
+      "detailsCovered": "{n} of {total} details covered",
+      "ratedHigher": "Rated {n} or higher",
+      "wasAt": "{score} at {timepoint}",
+      "needsAttention": "For your attention",
+      "showFullDetail": "Show full detail",
+      "hideFullDetail": "Hide full detail",
+      "fullDetailHint": "Domain severities, every construct with evidence, findings and details covered.",
+      "screenDomain": {
+        "facial": "How the face looks",
+        "social": "Feelings and social life",
+        "function": "How the face works"
+      }
     },
     "instruments": {
       "title": "Instruments",
