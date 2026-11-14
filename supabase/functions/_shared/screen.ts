@@ -72,9 +72,15 @@ export function evidenceForScreen(
   });
 }
 
+/** Outside the clinician's domains of interest, only scores this low still earn a place. */
+export const SCREEN_OUTSIDE_DOMAIN_THRESHOLD = 3;
+
 /**
  * Focus = the lowest-scoring areas: everything at or below the threshold, always at least three,
  * capped at eight; clinician focus constructs come first regardless of score.
+ *
+ * With domains of interest, the same rule runs inside those domains first; constructs elsewhere
+ * are only followed up when rated very low, so a serious problem is never hidden by the filter.
  */
 export function focusFromScreen(
   items: ScreenItemRow[],
@@ -83,6 +89,7 @@ export function focusFromScreen(
   max = MAX_FOCUS_CONSTRUCTS,
   /** Every construct id in the map; screened constructs outside the diagnosis set still count. */
   mapIds: ReadonlySet<string> | null = null,
+  domains: { of: ReadonlyMap<string, string>; preferred: readonly string[] } | null = null,
 ): string[] {
   const allowed = mapIds ?? new Set(active.map((c) => c.id));
   const clinician = active.filter((c) => c.focus).map((c) => c.id);
@@ -96,11 +103,22 @@ export function focusFromScreen(
   const ranked = [...byConstruct.entries()]
     .filter(([id]) => !clinician.includes(id))
     .sort((a, b) => a[1] - b[1]);
-  const low = ranked.filter(([, s]) => s <= SCREEN_FOCUS_THRESHOLD).map(([id]) => id);
-  const picked = low.length >= SCREEN_MIN_FOCUS
-    ? low
-    : ranked.slice(0, SCREEN_MIN_FOCUS).map(([id]) => id);
-  return [...clinician, ...picked].slice(0, max);
+  const pick = (pool: [string, number][]) => {
+    const low = pool.filter(([, s]) => s <= SCREEN_FOCUS_THRESHOLD);
+    return (low.length >= SCREEN_MIN_FOCUS ? low : pool.slice(0, SCREEN_MIN_FOCUS)).map(([id]) =>
+      id
+    );
+  };
+
+  const preferred = new Set(domains?.preferred ?? []);
+  if (!domains || preferred.size === 0) return [...clinician, ...pick(ranked)].slice(0, max);
+
+  const inside = ranked.filter(([id]) => preferred.has(domains.of.get(id) ?? ""));
+  const outside = ranked
+    .filter(([id]) => !preferred.has(domains.of.get(id) ?? ""))
+    .filter(([, s]) => s <= SCREEN_OUTSIDE_DOMAIN_THRESHOLD)
+    .map(([id]) => id);
+  return [...clinician, ...pick(inside), ...outside].slice(0, max);
 }
 
 /** Lines for the system prompt: what was rated, lowest first, with the score. */

@@ -82,7 +82,13 @@ export async function handleSessionState(deps: SessionStateDeps, raw: unknown): 
     const mapIds = new Set(
       ctx0.mapRow.map.domains.flatMap((d) => d.constructs.map((c) => c.id)),
     );
-    const focus = focusFromScreen(items, scores, ctx0.activeConstructs, undefined, mapIds);
+    const domainOf = new Map(
+      ctx0.mapRow.map.domains.flatMap((d) => d.constructs.map((c) => [c.id, d.id] as const)),
+    );
+    const focus = focusFromScreen(items, scores, ctx0.activeConstructs, undefined, mapIds, {
+      of: domainOf,
+      preferred: ctx0.clinicianDomains,
+    });
     session = await db.updateSession(session.id, {
       screen_scores: scores,
       screen_completed_at: now().toISOString(),

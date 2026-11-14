@@ -116,6 +116,8 @@ export interface TriageItem {
 }
 
 export interface ConstructDef {
+  /** When present, the construct only applies at these timepoints (e.g. outcome after surgery). */
+  applicable_timepoints?: Timepoint[]
   id: string
   label: string
   description: string
@@ -289,6 +291,8 @@ export interface ClinicianNoteRow {
   clinician_id: string
   note: string
   focus_constructs: string[]
+  /** Construct-map domain ids to go deeper on (v1.3); absent on older rows. */
+  focus_domains?: string[]
   created_at: string
 }
 
@@ -367,7 +371,7 @@ export interface StartSessionInput {
   }
   timepoint: Timepoint
   respondent: Respondent
-  clinician_note?: { note: string; focus_constructs: string[] }
+  clinician_note?: { note: string; focus_constructs: string[]; focus_domains?: string[] }
 }
 
 export interface StartSessionResult {

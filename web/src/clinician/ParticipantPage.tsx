@@ -131,7 +131,7 @@ function Timeline({ timeline }: { timeline: ParticipantTimeline }) {
   )
 }
 
-function NewSessionForm({ participant, maps, onCreated }: { participant: Participant | null; maps: ConstructMapRow[]; onCreated: () => void }) {
+export function NewSessionForm({ participant, maps, onCreated }: { participant: Participant | null; maps: ConstructMapRow[]; onCreated: () => void }) {
   const { t, lang } = useT()
   const [displayName, setDisplayName] = useState(participant?.display_name ?? '')
   const [language, setLanguage] = useState<Language>(participant?.preferred_language ?? 'en')
@@ -142,7 +142,7 @@ function NewSessionForm({ participant, maps, onCreated }: { participant: Partici
   const [timepoint, setTimepoint] = useState<Timepoint>('baseline')
   const [respondent, setRespondent] = useState<Respondent>('self')
   const [note, setNote] = useState('')
-  const [focus, setFocus] = useState<string[]>([])
+  const [domains, setDomains] = useState<string[]>([])
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<unknown>(null)
   const [result, setResult] = useState<StartSessionResult | null>(null)
@@ -153,9 +153,17 @@ function NewSessionForm({ participant, maps, onCreated }: { participant: Partici
     () => maps.filter((m) => m.status === 'approved' && m.population === population).sort((a, b) => b.version - a.version)[0] ?? null,
     [maps, population],
   )
-  const dxDefaults = DIAGNOSIS_CATALOG.find((d) => d.code === dxCode)?.focus_constructs ?? []
+  // Domains whose constructs all sit outside this timepoint (recovery, outcome at baseline) are hidden.
+  const visibleDomains = useMemo(
+    () =>
+      (map?.map.domains ?? []).filter((d) =>
+        d.constructs.some((c) => !c.applicable_timepoints || c.applicable_timepoints.includes(timepoint)),
+      ),
+    [map, timepoint],
+  )
+  const chosen = domains.filter((id) => visibleDomains.some((d) => d.id === id))
 
-  const toggle = (id: string) => setFocus((f) => (f.includes(id) ? f.filter((x) => x !== id) : [...f, id]))
+  const toggle = (id: string) => setDomains((f) => (f.includes(id) ? f.filter((x) => x !== id) : [...f, id]))
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
@@ -174,7 +182,7 @@ function NewSessionForm({ participant, maps, onCreated }: { participant: Partici
         },
         timepoint,
         respondent,
-        clinician_note: note.trim() || focus.length ? { note: note.trim(), focus_constructs: focus } : undefined,
+        clinician_note: note.trim() || chosen.length ? { note: note.trim(), focus_constructs: [], focus_domains: chosen } : undefined,
       })
       setResult(r)
       onCreated()
@@ -229,6 +237,7 @@ function NewSessionForm({ participant, maps, onCreated }: { participant: Partici
 
       {!participant && (
         <>
+          <h3 className="form-section">{t('clinician.participant.sectionPatient')}</h3>
           <label className="field">
             <span className="field__label">{t('clinician.participant.displayName')}</span>
             <input className="input" value={displayName} onChange={(e) => setDisplayName(e.target.value)} required maxLength={40} />
@@ -284,6 +293,7 @@ function NewSessionForm({ participant, maps, onCreated }: { participant: Partici
         </>
       )}
 
+      <h3 className="form-section">{t('clinician.participant.sectionVisit')}</h3>
       <div className="row" style={{ alignItems: 'flex-start' }}>
         <label className="field" style={{ flex: 1, minWidth: 160 }}>
           <span className="field__label">{t('clinician.participant.timepoint')}</span>
@@ -307,36 +317,48 @@ function NewSessionForm({ participant, maps, onCreated }: { participant: Partici
         </label>
       </div>
 
+      <h3 className="form-section">{t('clinician.participant.sectionFocus')}</h3>
+      {visibleDomains.length > 0 && (
+        <fieldset className="field" style={{ border: 0, padding: 0 }}>
+          <legend className="field__label">{t('clinician.participant.focusDomains')}</legend>
+          <p className="small muted" style={{ margin: '0 0 8px' }}>
+            {t('clinician.participant.focusDomainsHelp')}
+          </p>
+          <div className="domain-grid">
+            {visibleDomains.map((d) => {
+              const names = d.constructs.map((c) => c.label)
+              const shown = names.slice(0, 3)
+              return (
+                <label key={d.id} className="domain-card">
+                  <input type="checkbox" checked={chosen.includes(d.id)} onChange={() => toggle(d.id)} />
+                  <span>
+                    <strong>{d.label}</strong>
+                    <span className="small muted domain-card__detail">
+                      {shown.join(' · ')}
+                      {names.length > shown.length ? ` · ${t('clinician.participant.andMore', { n: names.length - shown.length })}` : ''}
+                    </span>
+                  </span>
+                </label>
+              )
+            })}
+          </div>
+          <div className="row small muted" style={{ marginTop: 6 }} aria-live="polite">
+            <span>
+              {chosen.length ? t('clinician.participant.focusDomainsSelected', { n: chosen.length }) : t('clinician.participant.focusDomainsNone')}
+            </span>
+            {chosen.length > 0 && (
+              <button type="button" className="btn btn--sm" onClick={() => setDomains([])}>
+                {t('clinician.participant.clearSelection')}
+              </button>
+            )}
+          </div>
+        </fieldset>
+      )}
+
       <label className="field">
         <span className="field__label">{t('clinician.participant.focusNote')}</span>
         <textarea className="textarea" value={note} onChange={(e) => setNote(e.target.value)} placeholder={t('clinician.participant.focusNotePlaceholder')} rows={2} />
       </label>
-
-      {map && (
-        <fieldset className="field" style={{ border: 0, padding: 0 }}>
-          <legend className="field__label">
-            {t('clinician.participant.focusConstructs')} <span className="muted small">({map.slug} v{map.version})</span>
-          </legend>
-          {map.map.domains.map((d) => (
-            <div key={d.id} style={{ marginBottom: 8 }}>
-              <div className="small muted" style={{ marginBottom: 4 }}>
-                {d.label}
-              </div>
-              <div className="checkbox-grid">
-                {d.constructs.map((c) => (
-                  <label key={c.id} className="choice" title={c.description}>
-                    <input type="checkbox" checked={focus.includes(c.id)} onChange={() => toggle(c.id)} />
-                    <span>
-                      {c.label}
-                      {dxDefaults.includes(c.id) && <span className="muted small"> ★</span>}
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          ))}
-        </fieldset>
-      )}
 
       <button type="submit" className="btn btn--primary" disabled={busy || (!participant && !displayName.trim())}>
         {busy ? t('clinician.participant.creating') : t('clinician.participant.create')}

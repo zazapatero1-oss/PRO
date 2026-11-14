@@ -166,6 +166,16 @@ export function SessionReview() {
           {detail.clinician_notes.map((n) => (
             <div key={n.id}>
               {n.note && <p>{n.note}</p>}
+              {(n.focus_domains?.length ?? 0) > 0 && (
+                <div className="row" style={{ marginBottom: 6 }}>
+                  <span className="small muted">{t('clinician.session.focusDomains')}:</span>
+                  {n.focus_domains!.map((id) => (
+                    <span key={id} className="badge">
+                      {map?.domains.find((d) => d.id === id)?.label ?? id}
+                    </span>
+                  ))}
+                </div>
+              )}
               {n.focus_constructs.length > 0 && (
                 <div className="row">
                   {n.focus_constructs.map((c) => (

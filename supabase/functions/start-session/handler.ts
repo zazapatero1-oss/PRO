@@ -85,6 +85,10 @@ export function validateStartSession(raw: unknown): StartSessionRequest {
         focus_constructs: Array.isArray(note.focus_constructs)
           ? note.focus_constructs.filter((x): x is string => typeof x === "string")
           : [],
+        focus_domains: Array.isArray(note.focus_domains)
+          ? [...new Set(note.focus_domains.filter((x): x is string => typeof x === "string"))]
+            .slice(0, 20)
+          : [],
       }
       : null,
   };
@@ -167,13 +171,16 @@ export async function handleStartSession(
   });
 
   if (
-    body.clinician_note && (body.clinician_note.note || body.clinician_note.focus_constructs.length)
+    body.clinician_note &&
+    (body.clinician_note.note || body.clinician_note.focus_constructs.length ||
+      body.clinician_note.focus_domains.length)
   ) {
     await db.insertClinicianNote({
       session_id: session.id,
       clinician_id: clinician.clinicianId,
       note: body.clinician_note.note,
       focus_constructs: body.clinician_note.focus_constructs,
+      focus_domains: body.clinician_note.focus_domains,
     });
   }
 

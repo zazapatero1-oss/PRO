@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import { ErrorBox, Loading } from '../components/ui'
@@ -12,6 +12,16 @@ export function ParticipantsList() {
   const navigate = useNavigate()
   const [items, setItems] = useState<ParticipantListItem[] | null>(null)
   const [error, setError] = useState<unknown>(null)
+  const [query, setQuery] = useState('')
+
+  const shown = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!items || !q) return items
+    return items.filter(({ participant: p }) => {
+      const dx = diagnosisLabel(DIAGNOSIS_CATALOG.find((d) => d.code === p.diagnosis_code), lang) || p.diagnosis_code
+      return [p.study_id, p.display_name, dx, p.diagnosis_text ?? ''].some((v) => v.toLowerCase().includes(q))
+    })
+  }, [items, query, lang])
 
   const load = useCallback(() => {
     setError(null)
@@ -44,6 +54,18 @@ export function ParticipantsList() {
       {!items && !error && <Loading />}
       {items && items.length === 0 && <p className="muted">{t('clinician.participants.empty')}</p>}
       {items && items.length > 0 && (
+        <input
+          type="search"
+          className="input"
+          style={{ marginBottom: 12 }}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={t('clinician.participants.search')}
+          aria-label={t('clinician.participants.search')}
+        />
+      )}
+      {shown && items && items.length > 0 && shown.length === 0 && <p className="muted">{t('clinician.participants.noMatches')}</p>}
+      {shown && shown.length > 0 && (
         <div className="card table-wrap">
           <table className="table">
             <thead>
@@ -52,11 +74,12 @@ export function ParticipantsList() {
                 <th>{t('clinician.participants.diagnosis')}</th>
                 <th>{t('clinician.participants.timepoints')}</th>
                 <th>{t('clinician.participants.lastStatus')}</th>
+                <th>{t('clinician.participants.lastActivity')}</th>
                 <th>{t('clinician.participants.flags')}</th>
               </tr>
             </thead>
             <tbody>
-              {items.map(({ participant: p, timepoints_completed, last_session_status, flag_count }) => {
+              {shown.map(({ participant: p, timepoints_completed, last_session_status, last_session_at, flag_count }) => {
                 const dx = DIAGNOSIS_CATALOG.find((d) => d.code === p.diagnosis_code)
                 return (
                   <tr key={p.id} className="clickable" onClick={() => navigate(`/clinician/participant/${p.id}`)}>
@@ -82,6 +105,7 @@ export function ParticipantsList() {
                       )}
                     </td>
                     <td>{last_session_status ? t(`enum.status.${last_session_status}`) : '—'}</td>
+                    <td className="small">{last_session_at ? new Date(last_session_at).toLocaleDateString() : '—'}</td>
                     <td>
                       {flag_count > 0 ? (
                         <span className="badge" style={{ background: 'var(--danger-bg)', color: 'var(--danger)' }}>

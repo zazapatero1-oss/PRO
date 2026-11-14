@@ -493,3 +493,25 @@ Deno.test("isConfirmation: only an `other` finding starting with the marker coun
   assertFalse(isConfirmation({ category: "impact", finding: "confirmed: x" }));
   assertFalse(isConfirmation({ category: "other", finding: "they mentioned photos" }));
 });
+
+Deno.test("domains of interest: constructs are active despite the diagnosis set, and lead the focus", () => {
+  // Diagnosis narrows to the nose only; the clinician asks for the psychological domain.
+  const act = selectActiveConstructs(map, ["appearance.nose"], [], "baseline", undefined, [], [
+    "psychological",
+  ]);
+  const ids = act.map((c) => c.id);
+  assert(ids.includes("psych.mood") && ids.includes("psych.self_consciousness"));
+  assert(ids.includes("appearance.nose"));
+  assert(!ids.includes("appearance.overall"));
+
+  // Equal severity: the construct inside the domain of interest comes first.
+  const all = selectActiveConstructs(map, [], [], "baseline");
+  const focus = deriveFocus(
+    all,
+    [evf("appearance.nose", "moderate"), evf("psych.mood", "moderate")],
+    [],
+    undefined,
+    ["psychological"],
+  );
+  assertEquals(focus, ["psych.mood", "appearance.nose"]);
+});

@@ -242,6 +242,10 @@ async function* runTurn(
     ? {
       note: ctx.notes.map((n) => n.note).filter(Boolean).join("\n"),
       focus_constructs: [...new Set(ctx.notes.flatMap((n) => n.focus_constructs ?? []))],
+      // Labels, not ids: the model reads these.
+      focus_domains: ctx.clinicianDomains.map((id) =>
+        ctx.mapRow.map.domains.find((d) => d.id === id)?.label ?? id
+      ),
     }
     : null;
   const { stable, dynamic } = buildSystemPromptBlocks({

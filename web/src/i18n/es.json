@@ -225,7 +225,10 @@
       "empty": "Aún no hay participantes.",
       "newParticipant": "Nuevo participante",
       "resetDemo": "Restablecer datos de demostración",
-      "demo": "demo"
+      "demo": "demo",
+      "search": "Buscar por ID de estudio, nombre o diagnóstico",
+      "lastActivity": "Última actividad",
+      "noMatches": "Ningún participante coincide con la búsqueda."
     },
     "participant": {
       "title": "Participante",
@@ -237,7 +240,6 @@
       "respondent": "Quién responde",
       "focusNote": "Nota de enfoque para esta sesión",
       "focusNotePlaceholder": "¿Qué le interesa más saber esta vez?",
-      "focusConstructs": "Dar peso a estos constructos",
       "create": "Crear sesión y enlace de paciente",
       "creating": "Creando…",
       "linkTitle": "Enlace de paciente",
@@ -256,7 +258,16 @@
       "ageBand": "Franja de edad",
       "readingComfort": "Comodidad de lectura",
       "diagnosis": "Diagnóstico",
-      "diagnosisText": "Detalle del diagnóstico"
+      "diagnosisText": "Detalle del diagnóstico",
+      "sectionPatient": "Paciente",
+      "sectionVisit": "Esta visita",
+      "sectionFocus": "Áreas a explorar",
+      "focusDomains": "Dominios de interés",
+      "focusDomainsHelp": "Elija las áreas en las que esta conversación debe profundizar. Dentro de ellas, las valoraciones del paciente deciden qué va primero; todo lo que valore muy bajo en otras áreas también se explora. Deje todo sin seleccionar para que decidan las valoraciones.",
+      "focusDomainsSelected": "{n} seleccionados",
+      "focusDomainsNone": "Ninguno seleccionado: deciden las valoraciones",
+      "andMore": "+{n} más",
+      "clearSelection": "Borrar"
     },
     "session": {
       "title": "Revisión de sesión",
@@ -309,7 +320,8 @@
       "status": "Estado",
       "evidenceOnly": "Evidencia registrada hasta ahora (perfil aún no generado)",
       "empty": "Nada registrado.",
-      "patientConfirmed": "Confirmado por el paciente"
+      "patientConfirmed": "Confirmado por el paciente",
+      "focusDomains": "Dominios de interés"
     },
     "instruments": {
       "title": "Instrumentos",

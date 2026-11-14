@@ -703,3 +703,25 @@ population, en/es), each tied to a construct; never instrument text.
   token).
 - Web: the Screen page sits between the face page and the chat; resume shows it until submitted.
 - If no screen items exist for a population, the v1.1 conversational triage still runs.
+
+
+---
+
+# v1.3 addendum — domains of interest (binding)
+
+Clinicians no longer weight individual constructs when creating a session; they pick
+**domains of interest** (construct-map domain ids), stored in `clinician_notes.focus_domains`.
+
+- `start-session` accepts `clinician_note.focus_domains: string[]` (de-duplicated; ids not in
+  the session's map are ignored at use). `focus_constructs` is still accepted for API clients.
+- Constructs in a domain of interest are **active** even when the diagnosis narrows the set, and
+  are admitted before other candidates under the per-session cap.
+- **Focus with a numeric screen**: the v1.2 rule (scores ≤ 6, at least three, lowest first) runs
+  *inside* the domains of interest; constructs outside them are followed up only when scored
+  ≤ 3, so a serious problem is never hidden by the clinician's filter. Cap 8 as before.
+- **Focus without a screen**: at equal standing, constructs in a domain of interest come first.
+- The prompt names the domains (labels) and asks the model to spend most of the conversation
+  there while still following up anything clearly serious elsewhere.
+- Web: the new-session form shows domain cards (label + what is inside); domains whose
+  constructs do not apply at the chosen timepoint are hidden. The review page shows the chosen
+  domains. The participants list has search and a last-activity column.

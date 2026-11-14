@@ -29,6 +29,8 @@ export interface SessionContext {
   mapRow: ConstructMapRow;
   diagnosis: DiagnosisCatalogRow | null;
   notes: ClinicianNoteRow[];
+  /** Domains of interest from the clinician's notes, limited to ids the map has. */
+  clinicianDomains: string[];
   activeConstructs: ActiveConstruct[];
   evidence: ConstructEvidenceRow[];
   findings: ProbeFindingRow[];
@@ -49,6 +51,9 @@ export async function loadSessionContext(db: Db, session: SessionRow): Promise<S
   if (!mapRow) throw notFound("Construct map not found");
   const diagnosis = await db.getDiagnosis(participant.diagnosis_code);
   const clinicianFocus = notes.flatMap((n) => n.focus_constructs ?? []);
+  const mapDomainIds = new Set(mapRow.map.domains.map((d) => d.id));
+  const clinicianDomains = [...new Set(notes.flatMap((n) => n.focus_domains ?? []))]
+    .filter((id) => mapDomainIds.has(id));
   const activeConstructs = selectActiveConstructs(
     mapRow.map,
     diagnosis?.focus_constructs ?? [],
@@ -56,6 +61,7 @@ export async function loadSessionContext(db: Db, session: SessionRow): Promise<S
     session.timepoint,
     undefined,
     session.focus_constructs ?? [],
+    clinicianDomains,
   );
   const coverage = computeCoverage(mapRow.map, activeConstructs, evidence, findings);
   return {
@@ -64,6 +70,7 @@ export async function loadSessionContext(db: Db, session: SessionRow): Promise<S
     mapRow,
     diagnosis,
     notes,
+    clinicianDomains,
     activeConstructs,
     evidence,
     findings,
@@ -88,6 +95,7 @@ export function trackerStateFor(
     evidence: ctx.evidence,
     findings: ctx.findings,
     diagnosisFocus: ctx.diagnosis?.focus_constructs ?? [],
+    clinicianDomains: ctx.clinicianDomains,
     assistantTurns: countAssistantTurns(ctx.messages),
     budgetFraction,
   });

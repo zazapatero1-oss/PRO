@@ -225,7 +225,10 @@
       "empty": "No participants yet.",
       "newParticipant": "New participant",
       "resetDemo": "Reset demo data",
-      "demo": "demo"
+      "demo": "demo",
+      "search": "Search by study ID, name or diagnosis",
+      "lastActivity": "Last activity",
+      "noMatches": "No participants match your search."
     },
     "participant": {
       "title": "Participant",
@@ -237,7 +240,6 @@
       "respondent": "Respondent",
       "focusNote": "Focus note for this session",
       "focusNotePlaceholder": "What do you most want to learn this time?",
-      "focusConstructs": "Weight these constructs",
       "create": "Create session and patient link",
       "creating": "Creating…",
       "linkTitle": "Patient link",
@@ -256,7 +258,16 @@
       "ageBand": "Age band",
       "readingComfort": "Reading comfort",
       "diagnosis": "Diagnosis",
-      "diagnosisText": "Diagnosis detail"
+      "diagnosisText": "Diagnosis detail",
+      "sectionPatient": "Patient",
+      "sectionVisit": "This visit",
+      "sectionFocus": "Areas to explore",
+      "focusDomains": "Domains of interest",
+      "focusDomainsHelp": "Choose the areas this conversation should go deeper on. Within them, the patient's own ratings decide what comes first; anything they rate very low elsewhere is still followed up. Leave all unselected to let the ratings decide.",
+      "focusDomainsSelected": "{n} selected",
+      "focusDomainsNone": "None selected — the ratings decide",
+      "andMore": "+{n} more",
+      "clearSelection": "Clear"
     },
     "session": {
       "title": "Session review",
@@ -309,7 +320,8 @@
       "status": "Status",
       "evidenceOnly": "Evidence recorded so far (profile not generated yet)",
       "empty": "Nothing recorded.",
-      "patientConfirmed": "Confirmed by patient"
+      "patientConfirmed": "Confirmed by patient",
+      "focusDomains": "Domains of interest"
     },
     "instruments": {
       "title": "Instruments",

@@ -92,3 +92,39 @@ Deno.test("renderScreenForPrompt lists lowest first", () => {
     "psych.mood",
   ]);
 });
+
+Deno.test("focusFromScreen with domains of interest: inside first, outside only when very low", () => {
+  const of = new Map([
+    ["appearance.overall", "appearance"],
+    ["appearance.nose", "appearance"],
+    ["appearance.eyes", "appearance"],
+    ["psych.mood", "psychological"],
+    ["function.breathing", "function"],
+  ]);
+  const plain = active.map((c) => ({ ...c, focus: false }));
+  // Function is the domain of interest: breathing (5) leads even though the nose (4) is lower;
+  // the nose is outside the domain and not ≤3, so it is left out; mood (2) is outside but severe.
+  assertEquals(
+    focusFromScreen(items, { a: 9, b: 4, c: 9, d: 2, e: 5 }, plain, undefined, null, {
+      of,
+      preferred: ["function"],
+    }),
+    ["function.breathing", "psych.mood"],
+  );
+  // Appearance of interest with nothing low inside it: still the lowest three within the domain.
+  assertEquals(
+    focusFromScreen(items, { a: 9, b: 8, c: 10, d: 9, e: 9 }, plain, undefined, null, {
+      of,
+      preferred: ["appearance"],
+    }),
+    ["appearance.nose", "appearance.overall", "appearance.eyes"],
+  );
+  // No domains chosen → unchanged behaviour.
+  assertEquals(
+    focusFromScreen(items, { a: 9, b: 4, c: 9, d: 2, e: 5 }, plain, undefined, null, {
+      of,
+      preferred: [],
+    }),
+    ["psych.mood", "appearance.nose", "function.breathing"],
+  );
+});

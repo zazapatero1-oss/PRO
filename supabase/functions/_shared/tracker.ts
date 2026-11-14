@@ -68,6 +68,8 @@ export function selectActiveConstructs(
   maxConstructs = map.coverage_rules?.max_constructs_per_session ?? 18,
   /** Constructs the patient flagged themselves (screen scores / stored focus): always active. */
   patientFocus: readonly string[] = [],
+  /** Domains the clinician wants explored: their constructs are active and admitted first. */
+  clinicianDomains: readonly string[] = [],
 ): ActiveConstruct[] {
   const all = flattenConstructs(map).filter((c) =>
     !c.applicable_timepoints || timepoint === null || c.applicable_timepoints.includes(timepoint)
@@ -76,8 +78,12 @@ export function selectActiveConstructs(
   const clinicianSet = new Set(clinicianFocus.filter((id) => byId.has(id)));
   const diagnosisSet = new Set(diagnosisFocus.filter((id) => byId.has(id)));
   const patientSet = new Set(patientFocus.filter((id) => byId.has(id)));
+  const domainSet = new Set(clinicianDomains);
   const candidates = diagnosisSet.size > 0
-    ? all.filter((c) => diagnosisSet.has(c.id) || clinicianSet.has(c.id) || patientSet.has(c.id))
+    ? all.filter((c) =>
+      diagnosisSet.has(c.id) || clinicianSet.has(c.id) || patientSet.has(c.id) ||
+      domainSet.has(c.domain_id)
+    )
     : all;
 
   const chosen: ActiveConstruct[] = [];
@@ -90,6 +96,11 @@ export function selectActiveConstructs(
 
   for (const id of clinicianFocus) admit(byId.get(id));
   for (const id of patientFocus) admit(byId.get(id));
+  if (domainSet.size > 0) {
+    for (const prio of ["core", "standard", "optional"] as const) {
+      for (const c of candidates) if (c.priority === prio && domainSet.has(c.domain_id)) admit(c);
+    }
+  }
   for (const prio of ["core", "standard", "optional"] as const) {
     for (const c of candidates) if (c.priority === prio) admit(c);
   }
@@ -318,11 +329,15 @@ export function deriveFocus(
   evidence: ConstructEvidenceRow[],
   diagnosisFocus: readonly string[] = [],
   max = MAX_FOCUS_CONSTRUCTS,
+  /** Clinician's domains of interest: at equal standing, their constructs come first. */
+  clinicianDomains: readonly string[] = [],
 ): string[] {
   const diagnosisSet = new Set(diagnosisFocus);
+  const domainSet = new Set(clinicianDomains);
   const scored: {
     id: string;
     clinician: boolean;
+    inDomain: boolean;
     named: boolean;
     overall: boolean;
     rank: number;
@@ -346,6 +361,7 @@ export function deriveFocus(
     scored.push({
       id: c.id,
       clinician: c.focus,
+      inDomain: domainSet.has(c.domain_id),
       named: namedInTriage,
       overall: c.id.endsWith(".overall"),
       rank: best,
@@ -357,6 +373,7 @@ export function deriveFocus(
   return scored
     .sort((a, b) =>
       Number(b.clinician) - Number(a.clinician) ||
+      Number(b.inDomain) - Number(a.inDomain) ||
       b.rank - a.rank ||
       // At equal severity, what the patient brought up themselves comes first.
       Number(b.named) - Number(a.named) ||
@@ -436,6 +453,7 @@ export interface TrackerInput {
   evidence: ConstructEvidenceRow[];
   findings: ProbeFindingRow[];
   diagnosisFocus?: readonly string[];
+  clinicianDomains?: readonly string[];
   /** Assistant messages so far; triage gives up after MAX_TRIAGE_TURNS. */
   assistantTurns: number;
   /** max(turns/max_turns, minutes/target_minutes); ≥1 forces the goodbye turn. */
@@ -460,7 +478,13 @@ export function computeTrackerState(input: TrackerInput): TrackerState {
   // Derived once, when triage ends, then kept stable so the conversation does not wander.
   let focusIds = (session.focus_constructs ?? []).filter((id) => active.some((c) => c.id === id));
   if (phase !== "triage" && focusIds.length === 0) {
-    focusIds = deriveFocus(active, evidence, input.diagnosisFocus ?? []);
+    focusIds = deriveFocus(
+      active,
+      evidence,
+      input.diagnosisFocus ?? [],
+      undefined,
+      input.clinicianDomains ?? [],
+    );
   }
   const focus = focusIds
     .map((id) => active.find((c) => c.id === id))

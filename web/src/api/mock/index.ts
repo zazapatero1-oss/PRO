@@ -432,8 +432,18 @@ export function createMockApi(): Api {
       s.screen_completed_at = now()
       // Lowest scores first become the focus (≤6, at least three, cap eight).
       const ranked = items.map((i) => ({ id: i.construct_id, score: scores[i.id] })).sort((a, b) => a.score - b.score)
-      const low = ranked.filter((r) => r.score <= 6)
-      const picked = (low.length >= 3 ? low : ranked.slice(0, 3)).map((r) => r.id)
+      // Domains of interest: lowest scores inside them first; elsewhere only when very low (≤3).
+      const mapRow = CONSTRUCT_MAP_ROWS.find((m) => m.id === s.construct_map_id)
+      const domainOf = new Map((mapRow?.map.domains ?? []).flatMap((d) => d.constructs.map((c) => [c.id, d.id] as const)))
+      const wanted = new Set(store.clinician_notes.filter((n) => n.session_id === s.id).flatMap((n) => n.focus_domains ?? []))
+      const pick = (pool: typeof ranked) => {
+        const low = pool.filter((r) => r.score <= 6)
+        return (low.length >= 3 ? low : pool.slice(0, 3)).map((r) => r.id)
+      }
+      const inside = (id: string) => wanted.has(domainOf.get(id) ?? '')
+      const picked = wanted.size
+        ? [...pick(ranked.filter((r) => inside(r.id))), ...ranked.filter((r) => !inside(r.id) && r.score <= 3).map((r) => r.id)]
+        : pick(ranked)
       const first = [...new Set([...focusOf(s), ...picked])][0] ?? null
       store.convo[s.id] = { phase: 'explore', current_focus: first, confirmed: [] }
       persist()
@@ -798,10 +808,11 @@ export function createMockApi(): Api {
         created_at: now(),
       }
       store.sessions.push(session)
-      if (input.clinician_note && (input.clinician_note.note || input.clinician_note.focus_constructs.length)) {
+      const cn = input.clinician_note
+      if (cn && (cn.note || cn.focus_constructs.length || cn.focus_domains?.length)) {
         store.clinician_notes.push({
           id: uid(), session_id: session.id, clinician_id: DEMO_USER.id,
-          note: input.clinician_note.note, focus_constructs: input.clinician_note.focus_constructs, created_at: now(),
+          note: cn.note, focus_constructs: cn.focus_constructs, focus_domains: cn.focus_domains ?? [], created_at: now(),
         })
       }
       const token = randomToken()

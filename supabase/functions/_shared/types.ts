@@ -247,6 +247,8 @@ export interface ClinicianNoteRow {
   clinician_id: string;
   note: string;
   focus_constructs: string[];
+  /** Construct-map domain ids to go deeper on (v1.3). */
+  focus_domains: string[];
   created_at: string;
 }
 
@@ -570,7 +572,7 @@ export interface StartSessionRequest {
   participant: ParticipantInput;
   timepoint: Timepoint;
   respondent: Respondent;
-  clinician_note?: { note: string; focus_constructs: string[] } | null;
+  clinician_note?: { note: string; focus_constructs: string[]; focus_domains: string[] } | null;
 }
 
 export interface StartSessionResponse {

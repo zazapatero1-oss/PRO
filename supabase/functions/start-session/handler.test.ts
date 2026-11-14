@@ -79,7 +79,11 @@ const body = {
   },
   timepoint: "baseline",
   respondent: "guardian",
-  clinician_note: { note: "School photos", focus_constructs: ["psych.self_consciousness"] },
+  clinician_note: {
+    note: "School photos",
+    focus_constructs: ["psych.self_consciousness"],
+    focus_domains: ["psychological", "psychological", 7],
+  },
 };
 
 Deno.test("start-session: creates participant + intake session on the latest approved pediatric map", async () => {
@@ -100,6 +104,7 @@ Deno.test("start-session: creates participant + intake session on the latest app
   const mapRow = db.maps.find((m) => m.id === session.construct_map_id)!;
   assertEquals([mapRow.slug, mapRow.version], ["face-q-pediatric", 2]);
   assertEquals(db.notes[0].focus_constructs, ["psych.self_consciousness"]);
+  assertEquals(db.notes[0].focus_domains, ["psychological"]);
   assertEquals(db.audit[0].action, "session.create");
 });
 
@@ -150,7 +155,8 @@ Deno.test("session-state: read, consent, update_intake; consent_variant_needed r
   assertEquals(state.status, "intake");
   assertEquals(state.consent_variant_needed, "guardian");
   assertEquals(state.participant.display_name, "Lu");
-  assertEquals(state.coverage.total_active, 2);
+  // Diagnosis focus + clinician construct, plus the rest of the psychological domain of interest.
+  assertEquals(state.coverage.total_active, 3);
   assertEquals(state.messages, []);
   assertEquals(state.patient_summary, null);
   assertEquals("participant_id" in state, false);

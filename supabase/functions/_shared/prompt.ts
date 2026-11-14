@@ -202,11 +202,25 @@ function renderPatientContext(input: {
 // ---------------------------------------------------------------------------
 
 function renderClinicianNote(
-  note: { note: string; focus_constructs: string[] } | null | undefined,
+  note:
+    | { note: string; focus_constructs: string[]; focus_domains?: string[] }
+    | null
+    | undefined,
 ): string | null {
-  if (!note || (!note.note && note.focus_constructs.length === 0)) return null;
+  const domains = note?.focus_domains ?? [];
+  if (!note || (!note.note && note.focus_constructs.length === 0 && domains.length === 0)) {
+    return null;
+  }
   const lines = ["# Clinician focus note"];
   if (note.note) lines.push(note.note.trim());
+  if (domains.length) {
+    lines.push(
+      `Domains of interest for this visit: ${
+        domains.join("; ")
+      }. Spend most of the conversation here; ` +
+        "still follow up anything outside them that is clearly a serious problem for the patient.",
+    );
+  }
   if (note.focus_constructs.length) {
     lines.push(`Focus constructs (marked [FOCUS] below): ${note.focus_constructs.join(", ")}`);
   }
@@ -417,7 +431,7 @@ export interface SystemPromptInput {
   priorBrief: string | null;
   /** Rendered numeric-screen block (see screen.ts), or null when no screen was submitted. */
   screenBrief?: string | null;
-  clinicianNote: { note: string; focus_constructs: string[] } | null;
+  clinicianNote: { note: string; focus_constructs: string[]; focus_domains?: string[] } | null;
   population: Population;
   activeConstructs: ActiveConstruct[];
   tracker: TrackerState;
